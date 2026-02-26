@@ -9,6 +9,7 @@ Standalone **Docusaurus documentation site** for trakrf (`trakrf/docs`). Content
 ## Package Manager
 
 **pnpm EXCLUSIVELY** — never use `npm` or `npx`.
+
 - `npx` → `pnpm dlx`
 - `npm run` → `pnpm`
 
@@ -25,6 +26,7 @@ pnpm lint         # Linting
 ## Git Workflow
 
 **NEVER PUSH DIRECTLY TO MAIN BRANCH**
+
 1. ALL changes go through a Pull Request — no exceptions
 2. Always create a feature/fix branch: `feature/add-xyz`, `fix/broken-xyz`, `docs/update-xyz`
 3. NEVER squash merge — preserve individual commit history

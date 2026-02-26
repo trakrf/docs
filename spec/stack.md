@@ -5,21 +5,25 @@
 > **Framework**: React + MDX
 
 ## Lint
+
 ```bash
-pnpm lint --fix
+pnpm lint:fix
 ```
 
 ## Typecheck
+
 ```bash
 pnpm typecheck
 ```
 
 ## Build
+
 ```bash
 pnpm build
 ```
 
 ## Dev
+
 ```bash
 pnpm dev
 ```

@@ -20,6 +20,7 @@ This proves CSW works and commits the infrastructure cleanly. You'll experience 
 ### Creating New Features
 
 1. **Create a specification**
+
    ```bash
    mkdir -p spec/my-feature
    cp spec/template.md spec/my-feature/spec.md
@@ -27,18 +28,21 @@ This proves CSW works and commits the infrastructure cleanly. You'll experience 
    ```
 
 2. **Generate implementation plan**
+
    ```
    /plan my-feature
    # or just: /plan (auto-detects if only one spec)
    ```
 
 3. **Build the feature**
+
    ```
    /build
    # Auto-detects the spec with plan.md
    ```
 
 4. **Validate readiness**
+
    ```
    /check
    ```
@@ -76,41 +80,50 @@ This system is built on three core principles:
 ## Workflow Overview
 
 ### 1. Specification (Human writes)
+
 Define WHAT needs to be built, not HOW. Include:
+
 - Clear outcome and success criteria
 - Examples and references
 - Constraints and context
 
 ### 2. Planning (AI generates)
+
 AI analyzes the spec and creates detailed implementation plan:
+
 - Task breakdown
 - Risk assessment
 - Validation steps
 
 ### 3. Building (AI executes)
+
 AI implements based on plan with:
+
 - Continuous validation
 - Progress tracking
 - Error recovery
 
 ### 4. Shipping (AI completes)
+
 Final validation and PR preparation:
+
 - Comprehensive checks
 - Documentation updates
 - Clean git history
 
 ## Command Reference
 
-| Command | Purpose | Input |
-|---------|---------|-------|
-| `/plan` | Generate implementation plan | `spec/active/{feature}/spec.md` |
-| `/build` | Execute implementation | `spec/active/{feature}/` |
-| `/check` | Validate PR readiness | None |
-| `/ship` | Complete and archive | `spec/active/{feature}/` |
+| Command  | Purpose                      | Input                           |
+| -------- | ---------------------------- | ------------------------------- |
+| `/plan`  | Generate implementation plan | `spec/active/{feature}/spec.md` |
+| `/build` | Execute implementation       | `spec/active/{feature}/`        |
+| `/check` | Validate PR readiness        | None                            |
+| `/ship`  | Complete and archive         | `spec/active/{feature}/`        |
 
 ## Best Practices
 
 ### DO:
+
 - ✅ Write clear, specific requirements
 - ✅ Include examples from the codebase
 - ✅ Reference documentation
@@ -118,6 +131,7 @@ Final validation and PR preparation:
 - ✅ Use semantic commit messages
 
 ### DON'T:
+
 - ❌ Mix multiple features in one spec
 - ❌ Skip validation steps
 - ❌ Ignore failing tests
@@ -127,6 +141,7 @@ Final validation and PR preparation:
 ## Validation Standards
 
 All features must pass validation commands defined in `spec/stack.md`:
+
 - **Lint** - No linting errors
 - **Typecheck** - No type errors (if applicable to your stack)
 - **Test** - All tests passing
@@ -144,16 +159,19 @@ The specific commands depend on your tech stack. See `spec/stack.md` for your pr
 ## Troubleshooting
 
 **Build fails validation?**
+
 - Check log.md for specific errors
 - Fix the code, not the tests
 - Re-run validation
 
 **Can't ship?**
+
 - Run `/check` for detailed report
 - Fix all critical issues
 - Try again
 
 **Lost context?**
+
 - Check log.md for progress
 - Plan.md has the full strategy
 - Resume from last completed task
