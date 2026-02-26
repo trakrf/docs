@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Docusaurus
+build/
+.docusaurus/
+
+# Environment variables
+.env
+.env.*
+!.envrc
+
+# OS
+.DS_Store
+
+# IDEs and editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# Claude Code local settings
+.claude/settings.local.json
