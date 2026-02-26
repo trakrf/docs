@@ -27,21 +27,25 @@ The repo already has project housekeeping (LICENSE, CONTRIBUTING, etc.) and CSW 
 ## Requirements
 
 ### 1. Docusaurus Init
+
 - Initialize Docusaurus with TypeScript
 - pnpm as package manager
 - Verify `pnpm dev`, `pnpm build`, `pnpm serve` all work
 - ES modules only
 
 ### 2. TrakRF Branding
+
 - Logo and favicon (source from trakrf.id or www repo assets)
 - Brand colors in custom CSS
 - Site title: "TrakRF Docs"
 - Tagline appropriate for RFID asset tracking platform
 
 ### 3. Navigation / Sidebar Structure
+
 Per TRA-83 content plan:
 
 **User Documentation**
+
 - Getting Started / Quickstart
 - Reader Setup (Web BLE pairing)
 - Asset Management
@@ -50,6 +54,7 @@ Per TRA-83 content plan:
 - Organization / Team Management
 
 **API Documentation** (placeholder)
+
 - Authentication
 - REST API Reference
 - Webhooks
@@ -57,19 +62,23 @@ Per TRA-83 content plan:
 - Error Codes
 
 **Integration Guides** (placeholder)
+
 - MQTT Message Format
 - Fixed Reader Setup (future)
 
 ### 4. Placeholder Pages
+
 - Each nav item should have a placeholder `.md` or `.mdx` page
 - Enough content to show the structure is real (title, brief description, "coming soon" note)
 
 ### 5. Build & Deploy Readiness
+
 - `pnpm build` produces clean output in `build/`
 - Static output compatible with Cloudflare Pages
 - No SSR dependencies — pure static site generation
 
 ## Out of Scope
+
 - Actual documentation content (that's follow-up work)
 - Cloudflare/DNS infra (TRA-327)
 - Search integration (Algolia — later)
@@ -77,6 +86,7 @@ Per TRA-83 content plan:
 - Versioning setup (later)
 
 ## Validation Criteria
+
 - [ ] `pnpm dev` starts local server successfully
 - [ ] `pnpm build` completes without errors
 - [ ] All nav items render and link to placeholder pages
@@ -86,6 +96,7 @@ Per TRA-83 content plan:
 - [ ] Output is static (no SSR runtime needed)
 
 ## References
+
 - [Docusaurus docs](https://docusaurus.io/docs)
 - [TRA-83](https://linear.app/trakrf/issue/TRA-83) — parent issue with content plan
 - [TRA-327](https://linear.app/trakrf/issue/TRA-327) — Cloudflare infra (separate)
