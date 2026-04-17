@@ -12,7 +12,7 @@ Establish a repeatable, two-track workflow for producing screenshot-based docume
 1. **Authoring track (agent-driven, one-shot per pass):** Claude Code tours the live preview app, captures screenshots, and writes first-pass prose for each screen. Output is committed markdown + images that a human can then enhance.
 2. **Refresh track (deterministic, human-runnable):** a bash script re-captures the screenshots in-place after a UI change, without touching the prose.
 
-The scope of this spec is the *tooling and structure* — not the content itself. Actual prose quality and human enhancement live with TRA-329.
+The scope of this spec is the _tooling and structure_ — not the content itself. Actual prose quality and human enhancement live with TRA-329.
 
 ## Non-goals
 
@@ -67,7 +67,7 @@ Every `docs/app-tour/<tab>.md` follows the same shape so `AppTourGrid` can treat
 
 ```md
 ---
-sidebar_position: <n>          # 1..9 matching nav order
+sidebar_position: <n> # 1..9 matching nav order
 title: <Tab Label>
 description: <one-line summary, ~120 chars — reused as site-map bullet>
 ---
@@ -132,20 +132,17 @@ The entries are kept in sync with per-page frontmatter manually. The authoring p
 A markdown file that is both human-readable and Claude-runnable. It contains:
 
 1. **Prerequisites**
-
    - `pnpm install` completed in the repo root.
    - `uvx` available (for the refresh script only).
    - Chromium available (Playwright MCP requirement for the agent pass; `rodney start` requirement for the refresh script).
    - `.env` present with `TRAKRF_PREVIEW_URL`, `TRAKRF_DOCS_USER_EMAIL`, `TRAKRF_DOCS_USER_PASSWORD`. If email/password are blank, the authoring pass performs signup and writes them back.
 
 2. **Signup flow (first-time only)**
-
    - Navigate to `TRAKRF_PREVIEW_URL`.
    - Click through to signup. Create an account with a generated email (`docs-<timestamp>@example.com`) and a random password; persist both to `.env`.
    - Complete any post-signup steps required to reach the main app (org creation prompt, etc.). Capture these post-auth screens as part of the tour if they appear as tabs; otherwise dismiss.
 
 3. **Per-tab capture loop** — for each of the 9 tabs in order:
-
    - Navigate to `<TRAKRF_PREVIEW_URL>/#<tab>`.
    - Wait for the page to stabilize (network idle + any obvious in-page load indicators clear).
    - Capture desktop screenshot at 1440×900 → `static/img/app-tour/<tab>-desktop.png`.
@@ -154,12 +151,10 @@ A markdown file that is both human-readable and Claude-runnable. It contains:
    - Write `docs/app-tour/<tab>.md` using the per-page template, filling in `sidebar_position`, `title`, `description`, "What this page does" (2–4 sentences), and "How it fits in the app" (1–2 sentences). Descriptions should be concrete and grounded in what was actually on screen, not assumed functionality.
 
 4. **Site-map sync**
-
    - After all 9 pages are written, update the `AppTourGrid` entries array in `src/components/AppTourGrid.tsx` so each entry matches the frontmatter of the corresponding `.md`.
    - Verify `docs/app-tour/index.md` renders without errors via `pnpm dev`.
 
 5. **Re-run modes**
-
    - **Full regenerate:** delete `docs/app-tour/*.md` (except `AUTHORING.md`) and `static/img/app-tour/*.png`, then run the authoring pass again.
    - **Screenshots only:** `bash scripts/refresh-screenshots.sh`. Prose untouched.
 

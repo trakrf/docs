@@ -53,6 +53,7 @@ If `git status` shows these files already on the branch (they were untracked and
 ## Task 2: Add `.env.example`
 
 **Files:**
+
 - Create: `.env.example`
 
 - [ ] **Step 1: Create `.env.example`**
@@ -86,6 +87,7 @@ git commit -m "chore: add .env.example for app-tour docs generation"
 ## Task 3: Create `AppTourGrid` React component
 
 **Files:**
+
 - Create: `src/components/AppTourGrid.tsx`
 - Create: `src/components/AppTourGrid.module.css`
 
@@ -116,7 +118,8 @@ const ENTRIES: TourEntry[] = [
   {
     id: "locate",
     title: "Locate",
-    description: "Find a specific item by walking the area with a handheld reader.",
+    description:
+      "Find a specific item by walking the area with a handheld reader.",
   },
   {
     id: "barcode",
@@ -247,6 +250,7 @@ git commit -m "feat: add AppTourGrid component for app-tour site-map"
 ## Task 4: Create placeholder images so build succeeds
 
 **Files:**
+
 - Create: `static/img/app-tour/<tab>-desktop.png` × 9
 - Create: `static/img/app-tour/<tab>-mobile.png` × 9
 
@@ -284,6 +288,7 @@ git commit -m "chore: seed placeholder app-tour images"
 ## Task 5: Create placeholder per-tab markdown files
 
 **Files:**
+
 - Create: `docs/app-tour/home.md`, `inventory.md`, `locate.md`, `barcode.md`, `assets.md`, `locations.md`, `reports.md`, `settings.md`, `help.md`
 
 **Why placeholders first:** The sidebar (Task 7) will reference these 9 doc IDs. Creating skeletons now lets the build validate cross-references before any prose is written.
@@ -332,17 +337,17 @@ This page was generated as a first-pass tour. Human enhancement welcome.
 
 Repeat for the remaining 8 tabs, substituting the values from this table:
 
-| file | sidebar_position | title | description |
-|---|---|---|---|
-| `home.md` | 1 | Home | Main dashboard with quick access to all features. |
-| `inventory.md` | 2 | Inventory | View scanned items and check what's missing from a list. |
-| `locate.md` | 3 | Locate | Find a specific item by walking the area with a handheld reader. |
-| `barcode.md` | 4 | Barcode | Use a phone camera to scan regular barcodes. |
-| `assets.md` | 5 | Assets | Create, view, and track asset records. |
-| `locations.md` | 6 | Locations | Create and organize the places where assets live. |
-| `reports.md` | 7 | Reports | View asset location reports and movement history. |
-| `settings.md` | 8 | Settings | Configure device and application settings. |
-| `help.md` | 9 | Help | Quick answers to common questions. |
+| file           | sidebar_position | title     | description                                                      |
+| -------------- | ---------------- | --------- | ---------------------------------------------------------------- |
+| `home.md`      | 1                | Home      | Main dashboard with quick access to all features.                |
+| `inventory.md` | 2                | Inventory | View scanned items and check what's missing from a list.         |
+| `locate.md`    | 3                | Locate    | Find a specific item by walking the area with a handheld reader. |
+| `barcode.md`   | 4                | Barcode   | Use a phone camera to scan regular barcodes.                     |
+| `assets.md`    | 5                | Assets    | Create, view, and track asset records.                           |
+| `locations.md` | 6                | Locations | Create and organize the places where assets live.                |
+| `reports.md`   | 7                | Reports   | View asset location reports and movement history.                |
+| `settings.md`  | 8                | Settings  | Configure device and application settings.                       |
+| `help.md`      | 9                | Help      | Quick answers to common questions.                               |
 
 Image references inside each file use the file's own base name, e.g. `inventory.md` references `/img/app-tour/inventory-desktop.png` and `/img/app-tour/inventory-mobile.png`. The `# H1` matches the `title` frontmatter value.
 
@@ -358,6 +363,7 @@ git commit -m "feat: add app-tour per-tab skeleton pages"
 ## Task 6: Create site-map `docs/app-tour/index.md`
 
 **Files:**
+
 - Create: `docs/app-tour/index.md`
 
 - [ ] **Step 1: Write `docs/app-tour/index.md`**
@@ -390,6 +396,7 @@ git commit -m "feat: add app-tour site-map index page"
 ## Task 7: Wire App Tour into sidebar and navbar
 
 **Files:**
+
 - Modify: `sidebars.ts`
 - Modify: `docusaurus.config.ts`
 
@@ -487,6 +494,7 @@ git commit -m "feat: add App Tour sidebar and navbar entry"
 ## Task 8: Create `scripts/refresh-screenshots.sh`
 
 **Files:**
+
 - Create: `scripts/refresh-screenshots.sh`
 
 - [ ] **Step 1: Write the script**
@@ -572,6 +580,7 @@ git commit -m "feat: add refresh-screenshots.sh for app-tour image regen"
 ## Task 9: Execute the first-pass authoring run
 
 **Files:**
+
 - Modify: `.env` (local only — NEVER commit)
 - Modify: `static/img/app-tour/*.png` (all 18 real screenshots)
 - Modify: `docs/app-tour/home.md`, `inventory.md`, `locate.md`, `barcode.md`, `assets.md`, `locations.md`, `reports.md`, `settings.md`, `help.md` (fill in prose)
@@ -634,6 +643,7 @@ For each of the 9 `docs/app-tour/<tab>.md` files, replace both `_Pending authori
 - "How it fits in the app": 1–2 sentences. Connect this tab to adjacent tabs or a typical workflow (e.g., "Locate complements Inventory: find Inventory tells you what's there; Locate narrows in on a single item.").
 
 Grounding sources:
+
 - The live page itself (primary).
 - `platform/frontend/src/components/TabNavigation.tsx` tooltips — useful one-liners but tend to be terse; expand.
 - Adjacent components in `platform/frontend/src/components/` — e.g., `AssetsScreen.tsx`, `ReportsScreen.tsx` — scan for visible features but do not copy implementation details into docs.
@@ -667,6 +677,7 @@ pnpm dev
 ```
 
 In a browser at `http://localhost:3000`:
+
 - Visit `/docs/app-tour` — site-map grid shows 9 cards with real thumbnails.
 - Click through to 2–3 tabs — verify desktop + mobile images render, prose is present, no `_Pending authoring pass._` leftovers.
 - Check the navbar — "App Tour" link is visible.
@@ -696,13 +707,14 @@ git commit -m "feat: write first-pass app-tour prose for all 9 tabs"
 ## Task 10: Write `docs/app-tour/AUTHORING.md` runbook
 
 **Files:**
+
 - Create: `docs/app-tour/AUTHORING.md`
 
 **Why now (after the authoring pass):** Writing the runbook after having done the work once means the instructions reflect what actually happened, including selector quirks or signup-flow gotchas discovered in Task 9.
 
 - [ ] **Step 1: Write `docs/app-tour/AUTHORING.md`**
 
-```md
+````md
 ---
 sidebar_position: 99
 title: Authoring the App Tour
@@ -729,8 +741,9 @@ This page explains how the App Tour was generated and how to regenerate or refre
   ```bash
   cp .env.example .env
   ```
+````
 
-  If `TRAKRF_DOCS_USER_EMAIL` / `TRAKRF_DOCS_USER_PASSWORD` are blank, the agent-driven authoring pass will create a new account on the preview app and write the creds back into `.env`.
+If `TRAKRF_DOCS_USER_EMAIL` / `TRAKRF_DOCS_USER_PASSWORD` are blank, the agent-driven authoring pass will create a new account on the preview app and write the creds back into `.env`.
 
 ## Refresh screenshots only
 
@@ -765,13 +778,14 @@ Ask Claude Code (or any agent with Playwright MCP) to follow this recipe:
 - **Mobile viewport caveat.** Rodney's `screenshot -w -h` resizes the viewport before each capture; if the app's layout depends on viewport size at mount time, the mobile shot may be a scaled desktop. If that happens, the fix is in `scripts/refresh-screenshots.sh`: either re-navigate after resize (the agent authoring recipe already does this) or drive viewport emulation via Rodney's JS bridge.
 - **Credentials are local.** `.env` is gitignored. Never commit it. Never paste credentials into commit messages or PR descriptions.
 - **Showboat is not used.** The original TRA-347 scope mentioned Showboat alongside Rodney. In practice, Showboat's `exec`/`verify` model targets executable docs, not screenshot tours — so this tooling uses Rodney for refresh and Playwright MCP (via Claude Code) for authoring, skipping Showboat entirely.
-```
+
+````
 
 - [ ] **Step 2: Build verification**
 
 ```bash
 pnpm build
-```
+````
 
 Expected: build includes `/docs/app-tour/authoring` in the output with no errors.
 
@@ -787,13 +801,14 @@ git commit -m "docs: add app-tour authoring runbook"
 ## Task 11: Update `README.md`
 
 **Files:**
+
 - Modify: `README.md`
 
 - [ ] **Step 1: Append an App Tour section**
 
 Open `README.md` and, after the "Serve" section (currently ending at line 40) and before the "Contributing" section, insert:
 
-```md
+````md
 ## App Tour Docs
 
 The `docs/app-tour/` section contains a visual walk-through of every screen in the TrakRF web app, auto-generated from `app.preview.trakrf.id`.
@@ -803,11 +818,13 @@ The `docs/app-tour/` section contains a visual walk-through of every screen in t
 ```bash
 bash scripts/refresh-screenshots.sh
 ```
+````
 
 Requires `.env` with `TRAKRF_PREVIEW_URL` and docs-tour credentials (copy from `.env.example`).
 
 **Full regeneration** (prose + images): see [`docs/app-tour/AUTHORING.md`](docs/app-tour/AUTHORING.md).
-```
+
+````
 
 - [ ] **Step 2: Lint passes**
 
@@ -819,7 +836,7 @@ Expected: no errors. If Prettier flags formatting, run `pnpm lint:fix` and re-st
 ```bash
 git add README.md
 git commit -m "docs: document app-tour regeneration in README"
-```
+````
 
 ---
 
