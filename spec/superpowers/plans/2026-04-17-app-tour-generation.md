@@ -8,7 +8,7 @@
 
 **Tech Stack:** Docusaurus 3.9 + React 19 + TypeScript (existing), bash + `uvx rodney` (screenshot refresh), Playwright MCP (authoring pass only), `pnpm` package manager.
 
-**Spec:** [`docs/superpowers/specs/2026-04-17-app-tour-generation-design.md`](../specs/2026-04-17-app-tour-generation-design.md)
+**Spec:** [`spec/superpowers/specs/2026-04-17-app-tour-generation-design.md`](../specs/2026-04-17-app-tour-generation-design.md)
 
 **Note on TDD:** This is a docs-site feature — no business logic and one tiny presentational React component. The "test" is `pnpm build` (catches MDX errors, broken links, missing images, type errors) and a live `pnpm dev` check. Unit tests for `AppTourGrid` would gain nothing beyond what the Docusaurus build already validates. Verification steps below lean on build + dev-server instead of unit tests.
 
@@ -41,8 +41,8 @@ Expected output: `feature/tra-347-app-tour`
 The spec and plan were written on the prior branch before this one existed. Move them into the feature branch cleanly:
 
 ```bash
-git add docs/superpowers/specs/2026-04-17-app-tour-generation-design.md
-git add docs/superpowers/plans/2026-04-17-app-tour-generation.md
+git add spec/superpowers/specs/2026-04-17-app-tour-generation-design.md
+git add spec/superpowers/plans/2026-04-17-app-tour-generation.md
 git commit -m "docs: add app-tour generation spec and plan"
 ```
 
@@ -849,7 +849,7 @@ Use `gh pr create`. PR title: `feat: app-tour docs generation (TRA-347)`. PR bod
 
 - What shipped (app-tour section, 9 pages, refresh script, authoring runbook).
 - Scope change from the ticket: Showboat dropped in favor of the simpler Rodney-refresh + agent-authoring split. Brief reasoning (Showboat's `verify`/`exec` model doesn't fit screenshot tours).
-- Link to `docs/superpowers/specs/2026-04-17-app-tour-generation-design.md` and this plan.
+- Link to `spec/superpowers/specs/2026-04-17-app-tour-generation-design.md` and this plan.
 - Test plan: reviewer pulls the branch, runs `pnpm dev`, visits `/docs/app-tour`, clicks a couple of cards.
 
 - [ ] **Step 4: Stop**
