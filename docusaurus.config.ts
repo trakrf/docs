@@ -57,6 +57,12 @@ const config: Config = {
         },
         {
           type: "docSidebar",
+          sidebarId: "appTourSidebar",
+          position: "left",
+          label: "App Tour",
+        },
+        {
+          type: "docSidebar",
           sidebarId: "apiSidebar",
           position: "left",
           label: "API",

@@ -15,6 +15,19 @@ const sidebars: SidebarsConfig = {
       ],
     },
   ],
+  appTourSidebar: [
+    "app-tour/index",
+    "app-tour/home",
+    "app-tour/inventory",
+    "app-tour/locate",
+    "app-tour/barcode",
+    "app-tour/assets",
+    "app-tour/locations",
+    "app-tour/reports",
+    "app-tour/settings",
+    "app-tour/help",
+    "app-tour/AUTHORING",
+  ],
   apiSidebar: [
     {
       type: "category",
