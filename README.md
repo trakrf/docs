@@ -39,6 +39,20 @@ pnpm serve
 
 Serves the production build locally for testing.
 
+## App Tour Docs
+
+The `docs/app-tour/` section contains a visual walk-through of every screen in the TrakRF web app, generated from `app.preview.trakrf.id`.
+
+**Refresh screenshots only:**
+
+```bash
+bash scripts/refresh-screenshots.sh
+```
+
+Requires `.env` with `TRAKRF_PREVIEW_URL` and docs-tour credentials (copy from `.env.example`).
+
+**Full regeneration** (prose + images): see [`docs/app-tour/AUTHORING.md`](docs/app-tour/AUTHORING.md).
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
