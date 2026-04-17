@@ -9,6 +9,7 @@ build/
 .env
 .env.*
 !.envrc
+!.env.example
 
 # OS
 .DS_Store
