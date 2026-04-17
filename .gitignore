@@ -26,5 +26,8 @@ build/
 # Claude Code local settings
 .claude/settings.local.json
 
+# Playwright MCP intermediate files
+.playwright-mcp/
+
 # CSW local symlink
 spec/csw
