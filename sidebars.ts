@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
     "app-tour/reports",
     "app-tour/settings",
     "app-tour/help",
+    "app-tour/AUTHORING",
   ],
   apiSidebar: [
     {
