@@ -10,8 +10,11 @@ This page takes you from "I just signed up" to "I've saved my first scan" in abo
 
 ## What you'll need
 
-- A supported handheld reader: **CS108** or **CS463**.
-- A Chromium-based browser (Chrome, Edge, or Opera) on the device that'll talk to the reader. Safari and Firefox don't support the Bluetooth APIs TrakRF uses.
+- A supported handheld reader: the Convergence **CS108** (CS463 and other fixed readers are out of scope here).
+- A Chromium-based browser on the device that'll talk to the reader:
+  - **Desktop / Android** — Chrome, Edge, or Opera.
+  - **iPhone / iPad** — [Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055) (free, App Store). iOS Safari and iOS Chrome/Edge don't expose Web BLE.
+  - Desktop Safari and Firefox are not supported.
 - A few RFID tags attached to things you want to track — even a handful of stick-on labels on nearby objects is enough to follow along.
 
 :::note Browser support
@@ -30,7 +33,7 @@ You'll land on the **Home** dashboard — a device-status summary, links to **In
 
 Detailed in [Reader Setup](./user-guide/reader-setup). The short version:
 
-1. Power on your CS108 or CS463 and put it in pairing mode.
+1. Power on your CS108 (hold the power button until the green LED is solid — the BLE indicator starts flashing on its own).
 2. In TrakRF, go to **Settings** in the left nav.
 3. Click **Connect Device** and pick your reader from the browser's Bluetooth dialog.
 4. Watch the **Device Status** pill flip from **Disconnected** to **Connected**.
