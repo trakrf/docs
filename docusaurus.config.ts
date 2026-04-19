@@ -108,7 +108,7 @@ const config: Config = {
             },
             {
               label: "API Reference",
-              to: "/docs/api/authentication",
+              to: "/api",
             },
           ],
         },
