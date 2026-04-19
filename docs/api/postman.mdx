@@ -1,0 +1,33 @@
+---
+title: Postman collection
+sidebar_position: 10
+---
+
+# Postman collection
+
+A Postman collection for the TrakRF API is available for download. It's
+regenerated from the OpenAPI spec on every platform release, so it always
+reflects the current v1 contract.
+
+## Download
+
+- [Postman collection (JSON)](/api/trakrf-api.postman_collection.json)
+
+## Raw OpenAPI spec
+
+If you'd rather use a codegen tool, the raw spec is available at:
+
+- [`/api/openapi.public.json`](/api/openapi.public.json) (JSON)
+- [`/api/openapi.public.yaml`](/api/openapi.public.yaml) (YAML)
+
+The rendered interactive reference lives at [`/api`](/api).
+
+## Importing into Postman
+
+1. Open Postman.
+2. Click **Import** → **File**.
+3. Select the downloaded `trakrf-api.postman_collection.json`.
+4. In the collection variables, set:
+   - `baseUrl` to `https://trakrf.id/api/v1`.
+   - `apiKey` to your API key (create one in **Settings → API Keys** on trakrf.id).
+5. The collection's **Authorization** is preconfigured as a Bearer token referencing `{{apiKey}}`.
