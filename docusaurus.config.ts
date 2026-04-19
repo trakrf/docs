@@ -41,7 +41,7 @@ const config: Config = {
         specs: [
           {
             id: "trakrf-api",
-            spec: "static/api/openapi.public.yaml",
+            spec: "static/api/openapi.yaml",
             route: "/api",
           },
         ],
