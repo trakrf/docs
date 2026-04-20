@@ -39,6 +39,7 @@ const sidebars: SidebarsConfig = {
         "api/webhooks",
         "api/rate-limits",
         "api/error-codes",
+        "api/private-endpoints",
         "api/postman",
       ],
     },

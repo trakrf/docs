@@ -75,7 +75,7 @@ One endpoint bypasses rate limiting entirely:
 
 - `GET /api/v1/orgs/me` — returns the organization your key belongs to, used as a connectivity/health check by most clients. Excluded so that liveness probes never trip the limit.
 
-**Response-shape note:** `GET /api/v1/orgs/me` returns a bare `{ "id": ..., "name": ... }` object — not the `{ "data": ... }` envelope used by the rest of the v1 API. Clients using this as a liveness probe should be aware the shape may change if the endpoint migrates to the standard envelope. Consider also verifying a "real" enveloped endpoint (e.g. `GET /api/v1/assets?limit=1`) in your health check if you want to detect envelope drift early.
+**Response-shape note:** `GET /api/v1/orgs/me` returns a bare `{ "id": ..., "name": ... }` object — not the `{ "data": ... }` envelope used by the rest of the v1 API. Clients using this as a liveness probe should be aware the shape may change if the endpoint migrates to the standard envelope. Consider also verifying a "real" enveloped endpoint (e.g. `GET /api/v1/assets?limit=1`) in your health check if you want to detect envelope drift early. See [Private endpoints → /orgs/me](./private-endpoints#orgs-me) for the full catalog entry.
 
 All other endpoints participate in the bucket.
 
