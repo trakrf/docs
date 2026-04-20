@@ -35,6 +35,21 @@ const config: Config = {
         },
       } satisfies Preset.Options,
     ],
+    [
+      "redocusaurus",
+      {
+        specs: [
+          {
+            id: "trakrf-api",
+            spec: "static/api/openapi.yaml",
+            route: "/api",
+          },
+        ],
+        theme: {
+          primaryColor: "#2e8555",
+        },
+      },
+    ],
   ],
 
   themeConfig: {
@@ -67,6 +82,7 @@ const config: Config = {
           position: "left",
           label: "API",
         },
+        { to: "/api", label: "API Reference", position: "left" },
         {
           type: "docSidebar",
           sidebarId: "integrationsSidebar",
@@ -92,7 +108,7 @@ const config: Config = {
             },
             {
               label: "API Reference",
-              to: "/docs/api/authentication",
+              to: "/api",
             },
           ],
         },
