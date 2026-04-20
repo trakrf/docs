@@ -1,8 +1,9 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
+title: Using the app
 ---
 
-# Getting Started
+# Getting started — using the app
 
 Welcome to TrakRF — the RFID asset tracking platform built for handheld readers and the browser.
 
@@ -18,7 +19,7 @@ This page takes you from "I just signed up" to "I've saved my first scan" in abo
 - A few RFID tags attached to things you want to track — even a handful of stick-on labels on nearby objects is enough to follow along.
 
 :::note Browser support
-TrakRF is a web app. There's no install — you just open it in a browser — but that browser must be Chromium-based. More detail in [Reader Setup](./user-guide/reader-setup#browser-support).
+TrakRF is a web app. There's no install — you just open it in a browser — but that browser must be Chromium-based. More detail in [Reader Setup](../user-guide/reader-setup#browser-support).
 :::
 
 ## 1. Create your account
@@ -31,7 +32,7 @@ You'll land on the **Home** dashboard — a device-status summary, links to **In
 
 ## 2. Pair your reader
 
-Detailed in [Reader Setup](./user-guide/reader-setup). The short version:
+Detailed in [Reader Setup](../user-guide/reader-setup). The short version:
 
 1. Power on your CS108 (hold the power button until the green LED is solid — the BLE indicator starts flashing on its own).
 2. In TrakRF, go to **Settings** in the left nav.
@@ -44,8 +45,8 @@ Chromium remembers the pairing, so subsequent sessions on the same browser profi
 
 Before your first scan means anything, give TrakRF a place to put things and at least one thing to find.
 
-1. **Locations** → create a root location (e.g. "Main Warehouse"). See [Asset Management: step 1](./user-guide/asset-management#1-create-a-location).
-2. **Assets** → click **Create Asset**, give it a name, pick the location, and paste the EPC (tag number) of one of your RFID tags under **RFID Tags**. See [Asset Management: step 2](./user-guide/asset-management#2-register-an-asset).
+1. **Locations** → create a root location (e.g. "Main Warehouse"). See [Asset Management: step 1](../user-guide/asset-management#1-create-a-location).
+2. **Assets** → click **Create Asset**, give it a name, pick the location, and paste the EPC (tag number) of one of your RFID tags under **RFID Tags**. See [Asset Management: step 2](../user-guide/asset-management#2-register-an-asset).
 
 :::tip Don't know your tag EPCs?
 Skip ahead to step 4 and scan first — unregistered tags show up under **Not Listed**. You can copy the EPC from there into a new asset record afterwards.
@@ -58,16 +59,16 @@ Skip ahead to step 4 and scan first — unregistered tags show up under **Not Li
 3. Release the trigger when you've covered your area.
 4. Click **Save** in the top toolbar to commit the session.
 
-Full detail: [Asset Management: step 3](./user-guide/asset-management#3-run-a-scan-session).
+Full detail: [Asset Management: step 3](../user-guide/asset-management#3-run-a-scan-session).
 
 ## 5. See what you captured
 
 Open **Reports** to see your saved scan rolled up into **Locations History** and **Asset History**. Filter by time (**Today**, **Last 7 days**, **Stale**) to answer "what did we actually see, and when?"
 
-More: [Asset Management: step 5](./user-guide/asset-management#5-review-in-reports).
+More: [Asset Management: step 5](../user-guide/asset-management#5-review-in-reports).
 
 ## Where to go next
 
-- [Reader Setup](./user-guide/reader-setup) — deeper reader pairing and troubleshooting.
-- [Asset Management](./user-guide/asset-management) — the full scan-to-report walkthrough.
+- [Reader Setup](../user-guide/reader-setup) — deeper reader pairing and troubleshooting.
+- [Asset Management](../user-guide/asset-management) — the full scan-to-report walkthrough.
 - [App Tour](/docs/app-tour) — one page per screen in the app, with screenshots.

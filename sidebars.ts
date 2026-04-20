@@ -2,7 +2,15 @@ import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
 const sidebars: SidebarsConfig = {
   userGuideSidebar: [
-    "getting-started",
+    {
+      type: "category",
+      label: "Getting started",
+      link: { type: "doc", id: "getting-started/index" },
+      items: [
+        "getting-started/ui",
+        "getting-started/api",
+      ],
+    },
     {
       type: "category",
       label: "User Guide",
@@ -35,14 +43,17 @@ const sidebars: SidebarsConfig = {
       items: [
         "api/authentication",
         "api/rest-api-reference",
+        "api/resource-identifiers",
         "api/webhooks",
         "api/rate-limits",
         "api/error-codes",
+        "api/private-endpoints",
         "api/postman",
       ],
     },
   ],
   integrationsSidebar: [
+    "integrations/index",
     {
       type: "category",
       label: "Integration Guides",
