@@ -6,9 +6,17 @@ sidebar_position: 1
 
 The TrakRF API uses **API keys** to authenticate every request. API keys are JSON Web Tokens (JWTs) scoped to a single organization and a set of permissions.
 
-:::note API Keys UI
-The key-management UI (mint, list, revoke) is in active development under [TRA-393](https://linear.app/trakrf/issue/TRA-393). Until it lands, contact [support@trakrf.id](mailto:support@trakrf.id) to request a key for integration testing.
-:::
+## Mint your first API key {#mint-your-first-api-key}
+
+API keys are created by an organization administrator in the TrakRF web app:
+
+1. Sign in at [app.trakrf.id](https://app.trakrf.id) with an admin account.
+2. In the left nav, go to **Settings** → **API Keys**.
+3. Click **Create Key**. Give it a descriptive name (e.g. `"prod-integration"` or `"local-dev"`) and pick the scopes the integration needs — only the scopes required for the endpoints you'll call. See the [Scopes](#scopes) table below.
+4. Submit. The full JWT is displayed **once** at creation. Copy it to your secrets store immediately; it cannot be shown again.
+5. Use it as the `Authorization: Bearer <key>` header on every API request. See [Request header](#request-header) for the exact format.
+
+<!-- TODO: screenshot of Settings → API Keys create-key flow; capture via scripts/refresh-screenshots.sh pattern. Tracked as a follow-up to TRA-408. -->
 
 ## Request header
 

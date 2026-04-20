@@ -47,8 +47,8 @@ Each event payload will include the full logical context — asset identifier, l
 
 Until webhooks ship, the equivalent patterns on the existing REST API:
 
-- **Poll `GET /api/v1/scans?from=<last-high-water-mark>`** to get new scan events since your last pull.
-- **Poll `GET /api/v1/locations/current`** for the current asset-at-location snapshot (cheaper than replaying the full scan stream).
+- **Poll `GET /api/v1/assets/{identifier}/history?from=<last-high-water-mark>`** per asset you're tracking, to get scan events for that asset since your last pull. (The `GET /api/v1/scans` endpoint referenced in earlier docs no longer exists — TRA-396 consolidated the read path under the asset-history endpoint.)
+- **Poll `GET /api/v1/locations/current`** for the current asset-at-location snapshot (cheaper than replaying the full scan stream). This endpoint was renamed from `/api/v1/reports/current-locations` under TRA-396; if you see the old path in any third-party code, update it.
 
 See [REST API Reference](./rest-api-reference) for the available endpoints and [Authentication](./authentication) for how to authenticate the polling calls.
 
