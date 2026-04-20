@@ -120,6 +120,20 @@ jobs:
 
             return result;
 
+      - name: Merge platform preview spec
+        run: |
+          if ! git ls-remote --exit-code --heads origin sync/platform-preview >/dev/null 2>&1; then
+            echo "sync/platform-preview branch absent on origin — skipping platform overlay."
+            exit 0
+          fi
+          git fetch origin sync/platform-preview:refs/remotes/origin/sync/platform-preview
+          if git merge origin/sync/platform-preview --no-edit -m 'Merge platform preview spec'; then
+            echo "Merged platform preview spec into preview branch."
+          else
+            echo "::warning::Conflict merging sync/platform-preview — aborting; preview branch continues without platform overlay for this cycle."
+            git merge --abort || true
+          fi
+
       - name: Push preview branch
         id: push-preview
         run: |
