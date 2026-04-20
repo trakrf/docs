@@ -45,6 +45,7 @@ const sidebars: SidebarsConfig = {
     },
   ],
   integrationsSidebar: [
+    "integrations/index",
     {
       type: "category",
       label: "Integration Guides",
