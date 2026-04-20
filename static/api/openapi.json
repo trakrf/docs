@@ -1,65 +1,6 @@
 {
   "components": {
     "schemas": {
-      "asset.AssetView": {
-        "properties": {
-          "created_at": {
-            "type": "string"
-          },
-          "current_location_id": {
-            "type": "integer"
-          },
-          "deleted_at": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "identifier": {
-            "type": "string"
-          },
-          "identifiers": {
-            "items": {
-              "$ref": "#/components/schemas/shared.TagIdentifier"
-            },
-            "type": "array"
-          },
-          "is_active": {
-            "type": "boolean"
-          },
-          "metadata": {},
-          "name": {
-            "type": "string"
-          },
-          "org": {
-            "$ref": "#/components/schemas/org.Org"
-          },
-          "org_id": {
-            "type": "integer"
-          },
-          "type": {
-            "enum": [
-              "asset"
-            ],
-            "example": "asset",
-            "type": "string",
-            "x-extensible-enum": "true"
-          },
-          "updated_at": {
-            "type": "string"
-          },
-          "valid_from": {
-            "type": "string"
-          },
-          "valid_to": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "asset.CreateAssetWithIdentifiersRequest": {
         "properties": {
           "current_location_id": {
@@ -149,181 +90,6 @@
         },
         "type": "object"
       },
-      "assets.ListAssetsResponse": {
-        "properties": {
-          "count": {
-            "example": 10,
-            "type": "integer"
-          },
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/asset.AssetView"
-            },
-            "type": "array"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "auth.ForgotPasswordRequest": {
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "reset_url": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "email",
-          "reset_url"
-        ],
-        "type": "object"
-      },
-      "auth.LoginRequest": {
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "password": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ],
-        "type": "object"
-      },
-      "auth.MessageResponse": {
-        "properties": {
-          "message": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "auth.ResetPasswordRequest": {
-        "properties": {
-          "password": {
-            "minLength": 8,
-            "type": "string"
-          },
-          "token": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "password",
-          "token"
-        ],
-        "type": "object"
-      },
-      "auth.SignupRequest": {
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "invitation_token": {
-            "type": "string"
-          },
-          "org_name": {
-            "maxLength": 100,
-            "minLength": 2,
-            "type": "string"
-          },
-          "password": {
-            "minLength": 8,
-            "type": "string"
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ],
-        "type": "object"
-      },
-      "bulkimport.ErrorDetail": {
-        "properties": {
-          "error": {
-            "type": "string"
-          },
-          "field": {
-            "type": "string"
-          },
-          "row": {
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "bulkimport.JobStatusResponse": {
-        "properties": {
-          "completed_at": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "errors": {
-            "items": {
-              "$ref": "#/components/schemas/bulkimport.ErrorDetail"
-            },
-            "type": "array"
-          },
-          "failed_rows": {
-            "type": "integer"
-          },
-          "job_id": {
-            "type": "string"
-          },
-          "processed_rows": {
-            "type": "integer"
-          },
-          "status": {
-            "type": "string"
-          },
-          "successful_rows": {
-            "description": "Calculated: processed - failed",
-            "type": "integer"
-          },
-          "tags_created": {
-            "type": "integer"
-          },
-          "total_rows": {
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "bulkimport.UploadResponse": {
-        "properties": {
-          "job_id": {
-            "description": "UUID string",
-            "type": "string"
-          },
-          "message": {
-            "description": "User-friendly message",
-            "type": "string"
-          },
-          "status": {
-            "description": "\"accepted\"",
-            "type": "string"
-          },
-          "status_url": {
-            "description": "\"/api/v1/assets/bulk/{jobId}\"",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
       "errors.ErrorResponse": {
         "properties": {
           "error": {
@@ -362,81 +128,6 @@
             "type": "object"
           }
         },
-        "type": "object"
-      },
-      "github_com_trakrf_platform_backend_internal_models_user.User": {
-        "properties": {
-          "created_at": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "is_superadmin": {
-            "description": "RBAC fields",
-            "type": "boolean"
-          },
-          "last_login_at": {
-            "type": "string"
-          },
-          "last_org_id": {
-            "type": "integer"
-          },
-          "metadata": {
-            "description": "JSONB"
-          },
-          "name": {
-            "type": "string"
-          },
-          "settings": {
-            "description": "JSONB"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "health.Response": {
-        "properties": {
-          "database": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string"
-          },
-          "uptime": {
-            "type": "string"
-          },
-          "version": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "inventory.SaveRequest": {
-        "properties": {
-          "asset_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "minItems": 1,
-            "type": "array"
-          },
-          "location_id": {
-            "type": "integer"
-          }
-        },
-        "required": [
-          "asset_ids",
-          "location_id"
-        ],
         "type": "object"
       },
       "location.CreateLocationWithIdentifiersRequest": {
@@ -488,152 +179,6 @@
         ],
         "type": "object"
       },
-      "location.Location": {
-        "properties": {
-          "ancestors": {
-            "items": {
-              "$ref": "#/components/schemas/location.Location"
-            },
-            "type": "array"
-          },
-          "children": {
-            "items": {
-              "$ref": "#/components/schemas/location.Location"
-            },
-            "type": "array"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "deleted_at": {
-            "type": "string"
-          },
-          "depth": {
-            "type": "integer"
-          },
-          "description": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "identifier": {
-            "maxLength": 255,
-            "minLength": 1,
-            "type": "string"
-          },
-          "is_active": {
-            "type": "boolean"
-          },
-          "name": {
-            "type": "string"
-          },
-          "org": {
-            "$ref": "#/components/schemas/org.Org"
-          },
-          "org_id": {
-            "type": "integer"
-          },
-          "parent": {
-            "$ref": "#/components/schemas/location.Location"
-          },
-          "parent_location_id": {
-            "type": "integer"
-          },
-          "path": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          },
-          "valid_from": {
-            "type": "string"
-          },
-          "valid_to": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "identifier"
-        ],
-        "type": "object"
-      },
-      "location.LocationView": {
-        "properties": {
-          "ancestors": {
-            "items": {
-              "$ref": "#/components/schemas/location.Location"
-            },
-            "type": "array"
-          },
-          "children": {
-            "items": {
-              "$ref": "#/components/schemas/location.Location"
-            },
-            "type": "array"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "deleted_at": {
-            "type": "string"
-          },
-          "depth": {
-            "type": "integer"
-          },
-          "description": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "identifier": {
-            "maxLength": 255,
-            "minLength": 1,
-            "type": "string"
-          },
-          "identifiers": {
-            "items": {
-              "$ref": "#/components/schemas/shared.TagIdentifier"
-            },
-            "type": "array"
-          },
-          "is_active": {
-            "type": "boolean"
-          },
-          "name": {
-            "type": "string"
-          },
-          "org": {
-            "$ref": "#/components/schemas/org.Org"
-          },
-          "org_id": {
-            "type": "integer"
-          },
-          "parent": {
-            "$ref": "#/components/schemas/location.Location"
-          },
-          "parent_location_id": {
-            "type": "integer"
-          },
-          "path": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          },
-          "valid_from": {
-            "type": "string"
-          },
-          "valid_to": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "identifier"
-        ],
-        "type": "object"
-      },
       "location.UpdateLocationRequest": {
         "properties": {
           "description": {
@@ -673,243 +218,6 @@
         },
         "type": "object"
       },
-      "locations.ListLocationsResponse": {
-        "properties": {
-          "count": {
-            "example": 10,
-            "type": "integer"
-          },
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/location.LocationView"
-            },
-            "type": "array"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "lookup.BatchLookupRequest": {
-        "properties": {
-          "type": {
-            "description": "e.g., \"rfid\"",
-            "type": "string"
-          },
-          "values": {
-            "description": "EPCs to lookup",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "org.Org": {
-        "properties": {
-          "billing_email": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "domain": {
-            "type": "string"
-          },
-          "id": {
-            "type": "integer"
-          },
-          "max_storage_gb": {
-            "type": "integer"
-          },
-          "max_users": {
-            "type": "integer"
-          },
-          "metadata": {
-            "description": "JSONB"
-          },
-          "name": {
-            "type": "string"
-          },
-          "settings": {
-            "description": "JSONB"
-          },
-          "status": {
-            "type": "string"
-          },
-          "subscription_tier": {
-            "type": "string"
-          },
-          "technical_email": {
-            "type": "string"
-          },
-          "updated_at": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "organization.AcceptInvitationRequest": {
-        "properties": {
-          "token": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "token"
-        ],
-        "type": "object"
-      },
-      "report.AssetHistoryItem": {
-        "properties": {
-          "duration_seconds": {
-            "type": "integer"
-          },
-          "location_id": {
-            "type": "integer"
-          },
-          "location_name": {
-            "type": "string"
-          },
-          "timestamp": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "report.AssetHistoryResponse": {
-        "properties": {
-          "asset": {
-            "$ref": "#/components/schemas/report.AssetInfo"
-          },
-          "count": {
-            "type": "integer"
-          },
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/report.AssetHistoryItem"
-            },
-            "type": "array"
-          },
-          "offset": {
-            "type": "integer"
-          },
-          "total_count": {
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "report.AssetInfo": {
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "identifier": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "report.CurrentLocationItem": {
-        "properties": {
-          "asset_id": {
-            "type": "integer"
-          },
-          "asset_identifier": {
-            "type": "string"
-          },
-          "asset_name": {
-            "type": "string"
-          },
-          "last_seen": {
-            "type": "string"
-          },
-          "location_id": {
-            "description": "nullable",
-            "type": "integer"
-          },
-          "location_name": {
-            "description": "nullable",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "report.CurrentLocationsResponse": {
-        "properties": {
-          "count": {
-            "type": "integer"
-          },
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/report.CurrentLocationItem"
-            },
-            "type": "array"
-          },
-          "offset": {
-            "type": "integer"
-          },
-          "total_count": {
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "shared.Pagination": {
-        "properties": {
-          "page": {
-            "type": "integer"
-          },
-          "per_page": {
-            "type": "integer"
-          },
-          "total": {
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "shared.TagIdentifier": {
-        "properties": {
-          "id": {
-            "type": "integer"
-          },
-          "is_active": {
-            "type": "boolean"
-          },
-          "type": {
-            "enum": [
-              "rfid",
-              "ble",
-              "barcode"
-            ],
-            "example": "rfid",
-            "type": "string",
-            "x-extensible-enum": "true"
-          },
-          "value": {
-            "maxLength": 255,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "value"
-        ],
-        "type": "object"
-      },
       "shared.TagIdentifierRequest": {
         "properties": {
           "type": {
@@ -931,56 +239,6 @@
         "required": [
           "value"
         ],
-        "type": "object"
-      },
-      "user.CreateUserRequest": {
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "name": {
-            "maxLength": 255,
-            "minLength": 1,
-            "type": "string"
-          },
-          "password_hash": {
-            "description": "Temporary, Phase 5 will hash",
-            "minLength": 8,
-            "type": "string"
-          }
-        },
-        "required": [
-          "email",
-          "name",
-          "password_hash"
-        ],
-        "type": "object"
-      },
-      "user.UpdateUserRequest": {
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "name": {
-            "maxLength": 255,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "users.ListResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_user.User"
-            },
-            "type": "array"
-          },
-          "pagination": {
-            "$ref": "#/components/schemas/shared.Pagination"
-          }
-        },
         "type": "object"
       }
     },
@@ -1016,40 +274,78 @@
   "paths": {
     "/api/v1/assets": {
       "get": {
-        "description": "Return a paginated list of all assets in the organization, each with their associated tag identifiers.",
+        "description": "Paginated assets list with natural-key filters, sort, and fuzzy search",
         "parameters": [
           {
-            "description": "Max results (default 10, max 200)",
+            "description": "max 200",
             "in": "query",
             "name": "limit",
             "schema": {
-              "default": 10,
-              "maximum": 200,
-              "minimum": 1,
+              "default": 50,
               "type": "integer"
             }
           },
           {
-            "description": "Pagination offset",
+            "description": "min 0",
             "in": "query",
             "name": "offset",
             "schema": {
               "default": 0,
-              "minimum": 0,
               "type": "integer"
+            }
+          },
+          {
+            "description": "filter by location natural key (may repeat)",
+            "in": "query",
+            "name": "location",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by active flag",
+            "in": "query",
+            "name": "is_active",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "filter by type",
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "fuzzy search on name / identifier / description",
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "comma-separated; prefix '-' for DESC",
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string"
             }
           }
         ],
         "responses": {
-          "202": {
+          "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/assets.ListAssetsResponse"
+                  "additionalProperties": true,
+                  "type": "object"
                 }
               }
             },
-            "description": "Paginated list of assets with metadata"
+            "description": "envelope with data / limit / offset / total_count"
           },
           "400": {
             "content": {
@@ -1059,7 +355,7 @@
                 }
               }
             },
-            "description": "bad_request"
+            "description": "Bad Request"
           },
           "401": {
             "content": {
@@ -1069,7 +365,7 @@
                 }
               }
             },
-            "description": "unauthorized"
+            "description": "Unauthorized"
           },
           "403": {
             "content": {
@@ -1079,17 +375,7 @@
                 }
               }
             },
-            "description": "forbidden"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "rate_limited"
+            "description": "Forbidden"
           },
           "500": {
             "content": {
@@ -1099,14 +385,12 @@
                 }
               }
             },
-            "description": "internal_error"
+            "description": "Internal Server Error"
           }
         },
         "security": [
           {
-            "APIKey": [
-              "assets:read"
-            ]
+            "BearerAuth": []
           }
         ],
         "summary": "List assets",
@@ -1214,6 +498,183 @@
         ]
       }
     },
+    "/api/v1/assets/{identifier}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "Asset identifier (natural key)",
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get asset by natural identifier",
+        "tags": [
+          "assets"
+        ]
+      }
+    },
+    "/api/v1/assets/{identifier}/history": {
+      "get": {
+        "description": "Location history for an asset identified by its natural key.",
+        "parameters": [
+          {
+            "description": "Asset identifier (natural key)",
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "max 200",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "pagination offset",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "RFC 3339 start timestamp",
+            "in": "query",
+            "name": "from",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "RFC 3339 end timestamp",
+            "in": "query",
+            "name": "to",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Asset movement history",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
     "/api/v1/assets/{id}": {
       "delete": {
         "description": "Soft-delete an asset by its numeric ID. The asset is marked inactive and removed from future list results.",
@@ -1301,94 +762,6 @@
           }
         ],
         "summary": "Delete an asset",
-        "tags": [
-          "assets"
-        ]
-      },
-      "get": {
-        "description": "Fetch a single asset by its numeric ID, including all associated tag identifiers.",
-        "parameters": [
-          {
-            "description": "Asset ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "202": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object"
-                }
-              }
-            },
-            "description": "data: asset.AssetView"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "not_found"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "rate_limited"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "internal_error"
-          }
-        },
-        "security": [
-          {
-            "APIKey": [
-              "assets:read"
-            ]
-          }
-        ],
-        "summary": "Retrieve an asset",
         "tags": [
           "assets"
         ]
@@ -1739,97 +1112,72 @@
     },
     "/api/v1/locations": {
       "get": {
-        "description": "Return a paginated list of all locations in the organization, each with their associated tag identifiers.",
         "parameters": [
           {
-            "description": "Max results (default 10, max 200)",
+            "description": "max 200",
             "in": "query",
             "name": "limit",
             "schema": {
-              "default": 10,
-              "maximum": 200,
-              "minimum": 1,
               "type": "integer"
             }
           },
           {
-            "description": "Pagination offset",
+            "description": "pagination offset",
             "in": "query",
             "name": "offset",
             "schema": {
-              "default": 0,
-              "minimum": 0,
               "type": "integer"
+            }
+          },
+          {
+            "description": "filter by parent identifier (may repeat)",
+            "in": "query",
+            "name": "parent",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "filter by active flag",
+            "in": "query",
+            "name": "is_active",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "fuzzy search on name, identifier, description",
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "comma-separated, prefix '-' for DESC",
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string"
             }
           }
         ],
         "responses": {
-          "202": {
+          "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/locations.ListLocationsResponse"
+                  "additionalProperties": true,
+                  "type": "object"
                 }
               }
             },
-            "description": "Paginated list of locations with metadata"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "bad_request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "forbidden"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "rate_limited"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "internal_error"
+            "description": "OK"
           }
         },
         "security": [
           {
-            "APIKey": [
-              "locations:read"
-            ]
+            "BearerAuth": []
           }
         ],
         "summary": "List locations",
@@ -1927,9 +1275,175 @@
         ]
       }
     },
+    "/api/v1/locations/current": {
+      "get": {
+        "description": "Snapshot of each asset's most recent location, filterable by natural key.",
+        "parameters": [
+          {
+            "description": "max 200",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "pagination offset",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "filter by location identifier (may repeat)",
+            "in": "query",
+            "name": "location",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "fuzzy search on asset name / identifier",
+            "in": "query",
+            "name": "q",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "comma-separated sort fields; prefix '-' for DESC",
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List current asset locations",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/locations/{identifier}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "Location identifier (natural key)",
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Get location by natural identifier",
+        "tags": [
+          "locations"
+        ]
+      }
+    },
     "/api/v1/locations/{id}": {
       "delete": {
-        "description": "Soft-delete a location by its numeric ID. The location is marked inactive and removed from future list results.",
+        "description": "Soft delete a location by ID",
         "parameters": [
           {
             "description": "Location ID",
@@ -1955,7 +1469,7 @@
             },
             "description": "deleted: true/false"
           },
-          "401": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
@@ -1963,37 +1477,7 @@
                 }
               }
             },
-            "description": "unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "not_found"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "rate_limited"
+            "description": "Invalid location ID"
           },
           "500": {
             "content": {
@@ -2003,116 +1487,15 @@
                 }
               }
             },
-            "description": "internal_error"
+            "description": "Internal server error"
           }
         },
         "security": [
           {
-            "APIKey": [
-              "locations:write"
-            ]
+            "BearerAuth": []
           }
         ],
-        "summary": "Delete a location",
-        "tags": [
-          "locations"
-        ]
-      },
-      "get": {
-        "description": "Fetch a single location by its numeric ID, including associated tag identifiers.\nPass include=relations to also receive the location's ancestors and immediate children in the response.",
-        "parameters": [
-          {
-            "description": "Location ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Pass 'relations' to include ancestors and children",
-            "in": "query",
-            "name": "include",
-            "schema": {
-              "enum": [
-                "relations"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "202": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object"
-                }
-              }
-            },
-            "description": "data: location.LocationView"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "not_found"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "rate_limited"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "internal_error"
-          }
-        },
-        "security": [
-          {
-            "APIKey": [
-              "locations:read"
-            ]
-          }
-        ],
-        "summary": "Retrieve a location",
+        "summary": "Delete location",
         "tags": [
           "locations"
         ]
@@ -2728,259 +2111,6 @@
         "summary": "Remove an identifier from a location",
         "tags": [
           "locations"
-        ]
-      }
-    },
-    "/api/v1/reports/assets/{id}/history": {
-      "get": {
-        "description": "Return a paginated timeline of where an asset has been scanned, with duration-at-location calculations.\nDefaults to the last 30 days when no date range is supplied. Dates must be RFC 3339 (e.g. 2026-01-15T00:00:00Z).",
-        "parameters": [
-          {
-            "description": "Asset ID",
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Max results (default 50, max 100)",
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "default": 50,
-              "maximum": 100,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Pagination offset (default 0)",
-            "in": "query",
-            "name": "offset",
-            "schema": {
-              "default": 0,
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Include scans on or after this time (RFC 3339)",
-            "in": "query",
-            "name": "start_date",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Include scans on or before this time (RFC 3339)",
-            "in": "query",
-            "name": "end_date",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/report.AssetHistoryResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "bad_request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "not_found"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "rate_limited"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "internal_error"
-          }
-        },
-        "security": [
-          {
-            "APIKey": [
-              "scans:read"
-            ]
-          }
-        ],
-        "summary": "Get asset location history",
-        "tags": [
-          "reports"
-        ]
-      }
-    },
-    "/api/v1/reports/current-locations": {
-      "get": {
-        "description": "Return a paginated snapshot of every asset paired with its most recent scan location.\nOptionally filter by a specific location or search by asset name/identifier.",
-        "parameters": [
-          {
-            "description": "Max results (default 50, max 100)",
-            "in": "query",
-            "name": "limit",
-            "schema": {
-              "default": 50,
-              "maximum": 100,
-              "minimum": 1,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Pagination offset (default 0)",
-            "in": "query",
-            "name": "offset",
-            "schema": {
-              "default": 0,
-              "minimum": 0,
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Filter to assets last seen at this location ID",
-            "in": "query",
-            "name": "location_id",
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "description": "Full-text match on asset name or identifier",
-            "in": "query",
-            "name": "search",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/report.CurrentLocationsResponse"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "bad_request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "forbidden"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "rate_limited"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "internal_error"
-          }
-        },
-        "security": [
-          {
-            "APIKey": [
-              "scans:read"
-            ]
-          }
-        ],
-        "summary": "List current asset locations",
-        "tags": [
-          "reports"
         ]
       }
     }
