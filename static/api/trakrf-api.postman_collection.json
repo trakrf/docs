@@ -13,7 +13,7 @@
                             "description": "",
                             "item": [
                                 {
-                                    "id": "faee9984-9d68-4193-a90a-d4806fc090ed",
+                                    "id": "b9ff1210-efd0-4394-a6ae-cd53f96b266c",
                                     "name": "List assets",
                                     "request": {
                                         "name": "List assets",
@@ -125,7 +125,7 @@
                                     },
                                     "response": [
                                         {
-                                            "id": "51a0e1c3-ba82-44d6-9eb2-aa2544ca2f9c",
+                                            "id": "91b6ac42-c686-46a5-9561-891117842b2f",
                                             "name": "envelope with data / limit / offset / total_count",
                                             "originalRequest": {
                                                 "url": {
@@ -227,14 +227,41 @@
                                                 {
                                                     "key": "Content-Type",
                                                     "value": "application/json"
+                                                },
+                                                {
+                                                    "disabled": false,
+                                                    "description": {
+                                                        "content": "Steady-state requests/min for this API key",
+                                                        "type": "text/plain"
+                                                    },
+                                                    "key": "X-RateLimit-Limit",
+                                                    "value": "<integer>"
+                                                },
+                                                {
+                                                    "disabled": false,
+                                                    "description": {
+                                                        "content": "Tokens left in bucket at response time",
+                                                        "type": "text/plain"
+                                                    },
+                                                    "key": "X-RateLimit-Remaining",
+                                                    "value": "<integer>"
+                                                },
+                                                {
+                                                    "disabled": false,
+                                                    "description": {
+                                                        "content": "Unix timestamp when bucket fully refills",
+                                                        "type": "text/plain"
+                                                    },
+                                                    "key": "X-RateLimit-Reset",
+                                                    "value": "<integer>"
                                                 }
                                             ],
-                                            "body": "{\n  \"key_0\": 2168,\n  \"key_1\": 6365,\n  \"key_2\": 6481\n}",
+                                            "body": "{\n  \"key_0\": 3280.083640633806,\n  \"key_1\": 3861\n}",
                                             "cookie": [],
                                             "_postman_previewlanguage": "json"
                                         },
                                         {
-                                            "id": "2b96811a-55c2-47ae-8229-cb4ae754c39a",
+                                            "id": "5dbb96ab-4c9b-4d24-9814-25877abddc2f",
                                             "name": "Bad Request",
                                             "originalRequest": {
                                                 "url": {
@@ -338,12 +365,12 @@
                                                     "value": "application/json"
                                                 }
                                             ],
-                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                             "cookie": [],
                                             "_postman_previewlanguage": "json"
                                         },
                                         {
-                                            "id": "95881e69-31b4-4d41-8cb2-1b4c891d2036",
+                                            "id": "451f476e-15a2-4d6f-9c60-a329978888eb",
                                             "name": "Unauthorized",
                                             "originalRequest": {
                                                 "url": {
@@ -447,12 +474,12 @@
                                                     "value": "application/json"
                                                 }
                                             ],
-                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                             "cookie": [],
                                             "_postman_previewlanguage": "json"
                                         },
                                         {
-                                            "id": "e83f6237-5a69-45a8-8b95-534f38554c0d",
+                                            "id": "3ec510a8-b4b7-4223-bdc5-a46a818adb11",
                                             "name": "Forbidden",
                                             "originalRequest": {
                                                 "url": {
@@ -556,12 +583,130 @@
                                                     "value": "application/json"
                                                 }
                                             ],
-                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                             "cookie": [],
                                             "_postman_previewlanguage": "json"
                                         },
                                         {
-                                            "id": "9cdf09e1-71d7-4e8e-b9ae-06a339c068a4",
+                                            "id": "c06cc449-faa1-4d26-949d-98b0da3b0d3b",
+                                            "name": "rate_limited",
+                                            "originalRequest": {
+                                                "url": {
+                                                    "path": [
+                                                        "api",
+                                                        "v1",
+                                                        "assets"
+                                                    ],
+                                                    "host": [
+                                                        "{{baseUrl}}"
+                                                    ],
+                                                    "query": [
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "max 200",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "limit",
+                                                            "value": "50"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "min 0",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "offset",
+                                                            "value": "0"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "filter by location natural key (may repeat)",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "location",
+                                                            "value": "<string>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "filter by active flag",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "is_active",
+                                                            "value": "<boolean>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "filter by type",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "type",
+                                                            "value": "<string>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "fuzzy search on name / identifier / description",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "q",
+                                                            "value": "<string>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "comma-separated; prefix '-' for DESC",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "sort",
+                                                            "value": "<string>"
+                                                        }
+                                                    ],
+                                                    "variable": []
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "description": {
+                                                            "content": "Added as a part of security scheme: apikey",
+                                                            "type": "text/plain"
+                                                        },
+                                                        "key": "Authorization",
+                                                        "value": "<API Key>"
+                                                    }
+                                                ],
+                                                "method": "GET",
+                                                "body": {}
+                                            },
+                                            "status": "Too Many Requests",
+                                            "code": 429,
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                },
+                                                {
+                                                    "disabled": false,
+                                                    "description": {
+                                                        "content": "Seconds to wait before retrying",
+                                                        "type": "text/plain"
+                                                    },
+                                                    "key": "Retry-After",
+                                                    "value": "<integer>"
+                                                }
+                                            ],
+                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
+                                            "cookie": [],
+                                            "_postman_previewlanguage": "json"
+                                        },
+                                        {
+                                            "id": "e47c9de7-42c4-4956-8fbd-1de60471c64e",
                                             "name": "Internal Server Error",
                                             "originalRequest": {
                                                 "url": {
@@ -665,7 +810,7 @@
                                                     "value": "application/json"
                                                 }
                                             ],
-                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                             "cookie": [],
                                             "_postman_previewlanguage": "json"
                                         }
@@ -680,7 +825,7 @@
                                     "description": "",
                                     "item": [
                                         {
-                                            "id": "f6b64208-cd1b-46e8-860a-845624e0acd2",
+                                            "id": "f2ba354b-62a5-4df5-be9e-170ad5f5b133",
                                             "name": "Get asset by natural identifier",
                                             "request": {
                                                 "name": "Get asset by natural identifier",
@@ -737,7 +882,7 @@
                                             },
                                             "response": [
                                                 {
-                                                    "id": "e968340e-a5c9-4537-a262-b0737d89d99c",
+                                                    "id": "7ec7a318-f5ae-4325-8600-241f7655c670",
                                                     "name": "OK",
                                                     "originalRequest": {
                                                         "url": {
@@ -787,14 +932,41 @@
                                                         {
                                                             "key": "Content-Type",
                                                             "value": "application/json"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Steady-state requests/min for this API key",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "X-RateLimit-Limit",
+                                                            "value": "<integer>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Tokens left in bucket at response time",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "X-RateLimit-Remaining",
+                                                            "value": "<integer>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Unix timestamp when bucket fully refills",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "X-RateLimit-Reset",
+                                                            "value": "<integer>"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"key_0\": 2168,\n  \"key_1\": 6365,\n  \"key_2\": 6481\n}",
+                                                    "body": "{\n  \"key_0\": 3280.083640633806,\n  \"key_1\": 3861\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "b615ab92-1e0b-43f3-b39b-db24c6376903",
+                                                    "id": "023b8264-4801-4f27-b45c-e7d5a8d0d523",
                                                     "name": "Bad Request",
                                                     "originalRequest": {
                                                         "url": {
@@ -846,12 +1018,12 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "c0471bb2-7da0-4d9c-8aa4-eb6a5061f847",
+                                                    "id": "af084360-921e-4ba3-90e9-7223f2a4d6a2",
                                                     "name": "Unauthorized",
                                                     "originalRequest": {
                                                         "url": {
@@ -903,12 +1075,12 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "c5991336-f6b8-4d9a-9c88-ed5499e9e8db",
+                                                    "id": "e60a533f-96f8-4961-9d3a-b3f7f75dbb43",
                                                     "name": "Forbidden",
                                                     "originalRequest": {
                                                         "url": {
@@ -960,12 +1132,12 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "a0784774-c568-4b1e-9440-27dd7487475b",
+                                                    "id": "f8c563e4-d2e0-4e67-9885-5be13d0bce32",
                                                     "name": "Not Found",
                                                     "originalRequest": {
                                                         "url": {
@@ -1017,7 +1189,73 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
+                                                    "cookie": [],
+                                                    "_postman_previewlanguage": "json"
+                                                },
+                                                {
+                                                    "id": "8d36abe5-26bb-4ed9-bebf-69d981823e00",
+                                                    "name": "rate_limited",
+                                                    "originalRequest": {
+                                                        "url": {
+                                                            "path": [
+                                                                "api",
+                                                                "v1",
+                                                                "assets",
+                                                                ":identifier"
+                                                            ],
+                                                            "host": [
+                                                                "{{baseUrl}}"
+                                                            ],
+                                                            "query": [],
+                                                            "variable": [
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "(Required) Asset identifier (natural key)",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "type": "any",
+                                                                    "value": "<string>",
+                                                                    "key": "identifier"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "header": [
+                                                            {
+                                                                "key": "Accept",
+                                                                "value": "application/json"
+                                                            },
+                                                            {
+                                                                "description": {
+                                                                    "content": "Added as a part of security scheme: apikey",
+                                                                    "type": "text/plain"
+                                                                },
+                                                                "key": "Authorization",
+                                                                "value": "<API Key>"
+                                                            }
+                                                        ],
+                                                        "method": "GET",
+                                                        "body": {}
+                                                    },
+                                                    "status": "Too Many Requests",
+                                                    "code": 429,
+                                                    "header": [
+                                                        {
+                                                            "key": "Content-Type",
+                                                            "value": "application/json"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Seconds to wait before retrying",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "Retry-After",
+                                                            "value": "<integer>"
+                                                        }
+                                                    ],
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 }
@@ -1032,7 +1270,7 @@
                                             "description": "",
                                             "item": [
                                                 {
-                                                    "id": "9415aa7d-e6dd-4fd7-8da2-6ebb6cc549d0",
+                                                    "id": "a2536220-8316-47dc-ad65-cba66fc34018",
                                                     "name": "Asset movement history",
                                                     "request": {
                                                         "name": "Asset movement history",
@@ -1130,7 +1368,7 @@
                                                     },
                                                     "response": [
                                                         {
-                                                            "id": "2c6a781a-e616-4c44-a903-3d0def16e0e5",
+                                                            "id": "c32773ef-9ce8-4848-a5d0-125e82a32d6a",
                                                             "name": "OK",
                                                             "originalRequest": {
                                                                 "url": {
@@ -1218,14 +1456,41 @@
                                                                 {
                                                                     "key": "Content-Type",
                                                                     "value": "application/json"
+                                                                },
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "Steady-state requests/min for this API key",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "key": "X-RateLimit-Limit",
+                                                                    "value": "<integer>"
+                                                                },
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "Tokens left in bucket at response time",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "key": "X-RateLimit-Remaining",
+                                                                    "value": "<integer>"
+                                                                },
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "Unix timestamp when bucket fully refills",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "key": "X-RateLimit-Reset",
+                                                                    "value": "<integer>"
                                                                 }
                                                             ],
-                                                            "body": "{\n  \"key_0\": 2168,\n  \"key_1\": 6365,\n  \"key_2\": 6481\n}",
+                                                            "body": "{\n  \"key_0\": 3280.083640633806,\n  \"key_1\": 3861\n}",
                                                             "cookie": [],
                                                             "_postman_previewlanguage": "json"
                                                         },
                                                         {
-                                                            "id": "6953f3f4-7184-42b9-91f3-97e36f4660d3",
+                                                            "id": "324f8ba5-efaf-45e1-9bc8-87a08600418a",
                                                             "name": "Bad Request",
                                                             "originalRequest": {
                                                                 "url": {
@@ -1315,12 +1580,12 @@
                                                                     "value": "application/json"
                                                                 }
                                                             ],
-                                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                             "cookie": [],
                                                             "_postman_previewlanguage": "json"
                                                         },
                                                         {
-                                                            "id": "9359c53e-7e70-4967-a574-1eff4aaf4efe",
+                                                            "id": "e7da89ee-5173-49c7-9434-3d3eecdb2c02",
                                                             "name": "Unauthorized",
                                                             "originalRequest": {
                                                                 "url": {
@@ -1410,12 +1675,12 @@
                                                                     "value": "application/json"
                                                                 }
                                                             ],
-                                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                             "cookie": [],
                                                             "_postman_previewlanguage": "json"
                                                         },
                                                         {
-                                                            "id": "87b74de1-d238-4ed1-9310-c06222cef4ea",
+                                                            "id": "b8049c32-0908-4659-bcf0-bed89017439f",
                                                             "name": "Not Found",
                                                             "originalRequest": {
                                                                 "url": {
@@ -1505,7 +1770,111 @@
                                                                     "value": "application/json"
                                                                 }
                                                             ],
-                                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
+                                                            "cookie": [],
+                                                            "_postman_previewlanguage": "json"
+                                                        },
+                                                        {
+                                                            "id": "f7feef89-48ab-47c5-8e91-38239fdc22a4",
+                                                            "name": "rate_limited",
+                                                            "originalRequest": {
+                                                                "url": {
+                                                                    "path": [
+                                                                        "api",
+                                                                        "v1",
+                                                                        "assets",
+                                                                        ":identifier",
+                                                                        "history"
+                                                                    ],
+                                                                    "host": [
+                                                                        "{{baseUrl}}"
+                                                                    ],
+                                                                    "query": [
+                                                                        {
+                                                                            "disabled": false,
+                                                                            "description": {
+                                                                                "content": "max 200",
+                                                                                "type": "text/plain"
+                                                                            },
+                                                                            "key": "limit",
+                                                                            "value": "<integer>"
+                                                                        },
+                                                                        {
+                                                                            "disabled": false,
+                                                                            "description": {
+                                                                                "content": "pagination offset",
+                                                                                "type": "text/plain"
+                                                                            },
+                                                                            "key": "offset",
+                                                                            "value": "<integer>"
+                                                                        },
+                                                                        {
+                                                                            "disabled": false,
+                                                                            "description": {
+                                                                                "content": "RFC 3339 start timestamp",
+                                                                                "type": "text/plain"
+                                                                            },
+                                                                            "key": "from",
+                                                                            "value": "<string>"
+                                                                        },
+                                                                        {
+                                                                            "disabled": false,
+                                                                            "description": {
+                                                                                "content": "RFC 3339 end timestamp",
+                                                                                "type": "text/plain"
+                                                                            },
+                                                                            "key": "to",
+                                                                            "value": "<string>"
+                                                                        }
+                                                                    ],
+                                                                    "variable": [
+                                                                        {
+                                                                            "disabled": false,
+                                                                            "description": {
+                                                                                "content": "(Required) Asset identifier (natural key)",
+                                                                                "type": "text/plain"
+                                                                            },
+                                                                            "type": "any",
+                                                                            "value": "<string>",
+                                                                            "key": "identifier"
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "header": [
+                                                                    {
+                                                                        "key": "Accept",
+                                                                        "value": "application/json"
+                                                                    },
+                                                                    {
+                                                                        "description": {
+                                                                            "content": "Added as a part of security scheme: apikey",
+                                                                            "type": "text/plain"
+                                                                        },
+                                                                        "key": "Authorization",
+                                                                        "value": "<API Key>"
+                                                                    }
+                                                                ],
+                                                                "method": "GET",
+                                                                "body": {}
+                                                            },
+                                                            "status": "Too Many Requests",
+                                                            "code": 429,
+                                                            "header": [
+                                                                {
+                                                                    "key": "Content-Type",
+                                                                    "value": "application/json"
+                                                                },
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "Seconds to wait before retrying",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "key": "Retry-After",
+                                                                    "value": "<integer>"
+                                                                }
+                                                            ],
+                                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                             "cookie": [],
                                                             "_postman_previewlanguage": "json"
                                                         }
@@ -1526,7 +1895,7 @@
                             "description": "",
                             "item": [
                                 {
-                                    "id": "1f7c2061-c54f-4fad-a339-e05766d708ec",
+                                    "id": "6e235752-1b2a-46d9-98fe-9e1c8a2150c0",
                                     "name": "List locations",
                                     "request": {
                                         "name": "List locations",
@@ -1626,7 +1995,7 @@
                                     },
                                     "response": [
                                         {
-                                            "id": "cc3fb414-fa79-4d3d-9b4c-8c75ff5c2bcf",
+                                            "id": "4327945b-bf20-443c-a019-a952901faeb5",
                                             "name": "OK",
                                             "originalRequest": {
                                                 "url": {
@@ -1719,9 +2088,145 @@
                                                 {
                                                     "key": "Content-Type",
                                                     "value": "application/json"
+                                                },
+                                                {
+                                                    "disabled": false,
+                                                    "description": {
+                                                        "content": "Steady-state requests/min for this API key",
+                                                        "type": "text/plain"
+                                                    },
+                                                    "key": "X-RateLimit-Limit",
+                                                    "value": "<integer>"
+                                                },
+                                                {
+                                                    "disabled": false,
+                                                    "description": {
+                                                        "content": "Tokens left in bucket at response time",
+                                                        "type": "text/plain"
+                                                    },
+                                                    "key": "X-RateLimit-Remaining",
+                                                    "value": "<integer>"
+                                                },
+                                                {
+                                                    "disabled": false,
+                                                    "description": {
+                                                        "content": "Unix timestamp when bucket fully refills",
+                                                        "type": "text/plain"
+                                                    },
+                                                    "key": "X-RateLimit-Reset",
+                                                    "value": "<integer>"
                                                 }
                                             ],
-                                            "body": "{\n  \"key_0\": 2168,\n  \"key_1\": 6365,\n  \"key_2\": 6481\n}",
+                                            "body": "{\n  \"key_0\": 3280.083640633806,\n  \"key_1\": 3861\n}",
+                                            "cookie": [],
+                                            "_postman_previewlanguage": "json"
+                                        },
+                                        {
+                                            "id": "28b0379a-8462-4547-ab4f-d4b2785b8ae1",
+                                            "name": "rate_limited",
+                                            "originalRequest": {
+                                                "url": {
+                                                    "path": [
+                                                        "api",
+                                                        "v1",
+                                                        "locations"
+                                                    ],
+                                                    "host": [
+                                                        "{{baseUrl}}"
+                                                    ],
+                                                    "query": [
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "max 200",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "limit",
+                                                            "value": "<integer>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "pagination offset",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "offset",
+                                                            "value": "<integer>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "filter by parent identifier (may repeat)",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "parent",
+                                                            "value": "<string>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "filter by active flag",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "is_active",
+                                                            "value": "<boolean>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "fuzzy search on name, identifier, description",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "q",
+                                                            "value": "<string>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "comma-separated, prefix '-' for DESC",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "sort",
+                                                            "value": "<string>"
+                                                        }
+                                                    ],
+                                                    "variable": []
+                                                },
+                                                "header": [
+                                                    {
+                                                        "key": "Accept",
+                                                        "value": "application/json"
+                                                    },
+                                                    {
+                                                        "description": {
+                                                            "content": "Added as a part of security scheme: apikey",
+                                                            "type": "text/plain"
+                                                        },
+                                                        "key": "Authorization",
+                                                        "value": "<API Key>"
+                                                    }
+                                                ],
+                                                "method": "GET",
+                                                "body": {}
+                                            },
+                                            "status": "Too Many Requests",
+                                            "code": 429,
+                                            "header": [
+                                                {
+                                                    "key": "Content-Type",
+                                                    "value": "application/json"
+                                                },
+                                                {
+                                                    "disabled": false,
+                                                    "description": {
+                                                        "content": "Seconds to wait before retrying",
+                                                        "type": "text/plain"
+                                                    },
+                                                    "key": "Retry-After",
+                                                    "value": "<integer>"
+                                                }
+                                            ],
+                                            "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                             "cookie": [],
                                             "_postman_previewlanguage": "json"
                                         }
@@ -1736,7 +2241,7 @@
                                     "description": "",
                                     "item": [
                                         {
-                                            "id": "a7b14152-7d84-4a89-a0c2-af25663c5301",
+                                            "id": "a10e2836-0de0-4377-94f5-c16ef66ca4ab",
                                             "name": "List current asset locations",
                                             "request": {
                                                 "name": "List current asset locations",
@@ -1831,7 +2336,7 @@
                                             },
                                             "response": [
                                                 {
-                                                    "id": "25a2f604-96e3-4d5f-8da1-215010092242",
+                                                    "id": "8fdadfa6-362a-4ed2-8fcc-94f96cc21b60",
                                                     "name": "OK",
                                                     "originalRequest": {
                                                         "url": {
@@ -1916,14 +2421,41 @@
                                                         {
                                                             "key": "Content-Type",
                                                             "value": "application/json"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Steady-state requests/min for this API key",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "X-RateLimit-Limit",
+                                                            "value": "<integer>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Tokens left in bucket at response time",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "X-RateLimit-Remaining",
+                                                            "value": "<integer>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Unix timestamp when bucket fully refills",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "X-RateLimit-Reset",
+                                                            "value": "<integer>"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"key_0\": 2168,\n  \"key_1\": 6365,\n  \"key_2\": 6481\n}",
+                                                    "body": "{\n  \"key_0\": 3280.083640633806,\n  \"key_1\": 3861\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "b530465d-b1fb-41af-a8e0-5550752b8222",
+                                                    "id": "3b68cf1d-41c0-4bd0-8c86-1bb5ba948a11",
                                                     "name": "Bad Request",
                                                     "originalRequest": {
                                                         "url": {
@@ -2010,12 +2542,12 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "39c3fa24-8bc6-4f47-aa93-abbf561611ae",
+                                                    "id": "55f85918-c875-4884-8d28-710038d31dcb",
                                                     "name": "Unauthorized",
                                                     "originalRequest": {
                                                         "url": {
@@ -2102,7 +2634,108 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
+                                                    "cookie": [],
+                                                    "_postman_previewlanguage": "json"
+                                                },
+                                                {
+                                                    "id": "f06d3018-ff28-4c90-9b41-aea37e317ea6",
+                                                    "name": "rate_limited",
+                                                    "originalRequest": {
+                                                        "url": {
+                                                            "path": [
+                                                                "api",
+                                                                "v1",
+                                                                "locations",
+                                                                "current"
+                                                            ],
+                                                            "host": [
+                                                                "{{baseUrl}}"
+                                                            ],
+                                                            "query": [
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "max 200",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "key": "limit",
+                                                                    "value": "<integer>"
+                                                                },
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "pagination offset",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "key": "offset",
+                                                                    "value": "<integer>"
+                                                                },
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "filter by location identifier (may repeat)",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "key": "location",
+                                                                    "value": "<string>"
+                                                                },
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "fuzzy search on asset name / identifier",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "key": "q",
+                                                                    "value": "<string>"
+                                                                },
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "comma-separated sort fields; prefix '-' for DESC",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "key": "sort",
+                                                                    "value": "<string>"
+                                                                }
+                                                            ],
+                                                            "variable": []
+                                                        },
+                                                        "header": [
+                                                            {
+                                                                "key": "Accept",
+                                                                "value": "application/json"
+                                                            },
+                                                            {
+                                                                "description": {
+                                                                    "content": "Added as a part of security scheme: apikey",
+                                                                    "type": "text/plain"
+                                                                },
+                                                                "key": "Authorization",
+                                                                "value": "<API Key>"
+                                                            }
+                                                        ],
+                                                        "method": "GET",
+                                                        "body": {}
+                                                    },
+                                                    "status": "Too Many Requests",
+                                                    "code": 429,
+                                                    "header": [
+                                                        {
+                                                            "key": "Content-Type",
+                                                            "value": "application/json"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Seconds to wait before retrying",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "Retry-After",
+                                                            "value": "<integer>"
+                                                        }
+                                                    ],
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 }
@@ -2119,7 +2752,7 @@
                                     "description": "",
                                     "item": [
                                         {
-                                            "id": "52ab627f-6d2d-45de-be40-80e7e3c1507d",
+                                            "id": "e9de1e2d-d928-4d57-a1ed-9fb40fe60176",
                                             "name": "Get location by natural identifier",
                                             "request": {
                                                 "name": "Get location by natural identifier",
@@ -2176,7 +2809,7 @@
                                             },
                                             "response": [
                                                 {
-                                                    "id": "3e962914-43a0-45e0-9c7b-ee66eba38438",
+                                                    "id": "de67977e-7702-4c69-8a97-e90dc8ea191b",
                                                     "name": "OK",
                                                     "originalRequest": {
                                                         "url": {
@@ -2226,14 +2859,41 @@
                                                         {
                                                             "key": "Content-Type",
                                                             "value": "application/json"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Steady-state requests/min for this API key",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "X-RateLimit-Limit",
+                                                            "value": "<integer>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Tokens left in bucket at response time",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "X-RateLimit-Remaining",
+                                                            "value": "<integer>"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Unix timestamp when bucket fully refills",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "X-RateLimit-Reset",
+                                                            "value": "<integer>"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"key_0\": 2168,\n  \"key_1\": 6365,\n  \"key_2\": 6481\n}",
+                                                    "body": "{\n  \"key_0\": 3280.083640633806,\n  \"key_1\": 3861\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "4089d59c-ef12-48f4-a520-5c86318c3d63",
+                                                    "id": "440177ef-48b8-4ff1-a7c0-380c66aa5fe5",
                                                     "name": "Bad Request",
                                                     "originalRequest": {
                                                         "url": {
@@ -2285,12 +2945,12 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "92e12166-2856-4b12-a4a3-adb2d25e284b",
+                                                    "id": "c6b8713b-4b4d-4fd3-aaf4-7c0a83930e35",
                                                     "name": "Unauthorized",
                                                     "originalRequest": {
                                                         "url": {
@@ -2342,12 +3002,12 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "456cced0-b534-4bae-8f65-594019044831",
+                                                    "id": "d44fc5e2-88a4-42e1-b252-b818ab9cbc45",
                                                     "name": "Forbidden",
                                                     "originalRequest": {
                                                         "url": {
@@ -2399,12 +3059,12 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 },
                                                 {
-                                                    "id": "368042c4-700d-46e7-9948-4f92e3faef05",
+                                                    "id": "6ecb1d77-d912-4698-8d36-13125e5a3c7c",
                                                     "name": "Not Found",
                                                     "originalRequest": {
                                                         "url": {
@@ -2456,7 +3116,73 @@
                                                             "value": "application/json"
                                                         }
                                                     ],
-                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"rate_limited\"\n  }\n}",
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
+                                                    "cookie": [],
+                                                    "_postman_previewlanguage": "json"
+                                                },
+                                                {
+                                                    "id": "3b1c86f2-df49-4efd-bacd-753966a5e0f0",
+                                                    "name": "rate_limited",
+                                                    "originalRequest": {
+                                                        "url": {
+                                                            "path": [
+                                                                "api",
+                                                                "v1",
+                                                                "locations",
+                                                                ":identifier"
+                                                            ],
+                                                            "host": [
+                                                                "{{baseUrl}}"
+                                                            ],
+                                                            "query": [],
+                                                            "variable": [
+                                                                {
+                                                                    "disabled": false,
+                                                                    "description": {
+                                                                        "content": "(Required) Location identifier (natural key)",
+                                                                        "type": "text/plain"
+                                                                    },
+                                                                    "type": "any",
+                                                                    "value": "<string>",
+                                                                    "key": "identifier"
+                                                                }
+                                                            ]
+                                                        },
+                                                        "header": [
+                                                            {
+                                                                "key": "Accept",
+                                                                "value": "application/json"
+                                                            },
+                                                            {
+                                                                "description": {
+                                                                    "content": "Added as a part of security scheme: apikey",
+                                                                    "type": "text/plain"
+                                                                },
+                                                                "key": "Authorization",
+                                                                "value": "<API Key>"
+                                                            }
+                                                        ],
+                                                        "method": "GET",
+                                                        "body": {}
+                                                    },
+                                                    "status": "Too Many Requests",
+                                                    "code": 429,
+                                                    "header": [
+                                                        {
+                                                            "key": "Content-Type",
+                                                            "value": "application/json"
+                                                        },
+                                                        {
+                                                            "disabled": false,
+                                                            "description": {
+                                                                "content": "Seconds to wait before retrying",
+                                                                "type": "text/plain"
+                                                            },
+                                                            "key": "Retry-After",
+                                                            "value": "<integer>"
+                                                        }
+                                                    ],
+                                                    "body": "{\n  \"error\": {\n    \"detail\": \"<string>\",\n    \"instance\": \"<string>\",\n    \"request_id\": \"<string>\",\n    \"status\": \"<integer>\",\n    \"title\": \"<string>\",\n    \"type\": \"conflict\"\n  }\n}",
                                                     "cookie": [],
                                                     "_postman_previewlanguage": "json"
                                                 }
@@ -2483,7 +3209,7 @@
         }
     ],
     "info": {
-        "_postman_id": "17b57a31-b987-4b74-93bd-6eea3d3d6c7e",
+        "_postman_id": "c3768269-2866-4ffd-a0cf-8a0dc3b287e0",
         "name": "TrakRF API",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "description": {
