@@ -35,6 +35,7 @@ const sidebars: SidebarsConfig = {
       items: [
         "api/authentication",
         "api/rest-api-reference",
+        "api/resource-identifiers",
         "api/webhooks",
         "api/rate-limits",
         "api/error-codes",
