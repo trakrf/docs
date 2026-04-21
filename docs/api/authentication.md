@@ -10,13 +10,13 @@ The TrakRF API uses **API keys** to authenticate every request. API keys are JSO
 
 API keys are created by an organization administrator in the TrakRF web app:
 
-1. Sign in at [app.trakrf.id](https://app.trakrf.id) with an admin account.
-2. In the left nav, go to **Settings** → **API Keys**.
-3. Click **Create Key**. Give it a descriptive name (e.g. `"prod-integration"` or `"local-dev"`) and pick the scopes the integration needs — only the scopes required for the endpoints you'll call. See the [Scopes](#scopes) table below.
+1. Sign in at [app.trakrf.id](https://app.trakrf.id) with an admin account. (Preview accounts: use [app.preview.trakrf.id](https://app.preview.trakrf.id) — same UI, same flow.)
+2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — signal power, session, worker log level — not key management.)
+3. Click **New key**. Give it a descriptive name (e.g. `"prod-integration"` or `"local-dev"`) and pick the scopes the integration needs — only the scopes required for the endpoints you'll call. See the [Scopes](#scopes) table below.
 4. Submit. The full JWT is displayed **once** at creation. Copy it to your secrets store immediately; it cannot be shown again.
 5. Use it as the `Authorization: Bearer <key>` header on every API request. See [Request header](#request-header) for the exact format.
 
-<!-- TODO: screenshot of Settings → API Keys create-key flow; capture via scripts/refresh-screenshots.sh pattern. Tracked as a follow-up to TRA-408. -->
+<!-- TODO: screenshot of avatar menu → API Keys → New key dialog; capture via scripts/refresh-screenshots.sh pattern. Tracked as a follow-up to TRA-408. -->
 
 ## Request header
 
@@ -30,15 +30,20 @@ The header name is `Authorization`; the scheme is `Bearer`. A JWT directly follo
 
 ## Scopes
 
-Each key is issued with one or more scopes. The API rejects requests whose key lacks the scope required by the endpoint (`403 forbidden`). Current scopes:
+Each key is issued with one or more scopes. The API rejects requests whose key lacks the scope required by the endpoint (`403 forbidden` with `"Missing required scope: <scope>"`). Current scopes and the endpoints they gate:
 
-| Scope             | Grants                                                           |
-| ----------------- | ---------------------------------------------------------------- |
-| `assets:read`     | List and retrieve assets; read asset history                     |
-| `assets:write`    | Create, update, delete assets                                    |
-| `locations:read`  | List and retrieve locations; read the current-locations snapshot |
-| `locations:write` | Create, update, delete locations                                 |
-| `scans:read`      | Read logical scan events and reports                             |
+| Scope             | Access | Endpoints (representative)                                                         |
+| ----------------- | ------ | ---------------------------------------------------------------------------------- |
+| `assets:read`     | Read   | `GET /assets`, `GET /assets/{identifier}`                                          |
+| `assets:write`    | Write  | `POST /assets`, `PUT /assets/{identifier}`, `DELETE /assets/{identifier}`          |
+| `locations:read`  | Read   | `GET /locations`, `GET /locations/{identifier}`                                    |
+| `locations:write` | Write  | `POST /locations`, `PUT /locations/{identifier}`, `DELETE /locations/{identifier}` |
+| `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{identifier}/history`, scan-event endpoints |
+
+A few non-obvious pairings worth calling out:
+
+- **`/locations/current`** is gated by **`scans:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the scans scope.
+- **`/assets/{identifier}/history`** is gated by **`scans:read`** for the same reason — it's a projection of scan events, not a property of the asset.
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).
 
@@ -86,7 +91,11 @@ const data = await res.json();
 - **Production:** `https://app.trakrf.id`
 - **Preview (per-PR test deploys):** `https://app.preview.trakrf.id`
 
-All API endpoints live under the `/api/v1/` prefix. The interactive reference at [`/api`](/api) lists the complete endpoint catalog.
+All API endpoints live under the `/api/v1/` prefix. The interactive reference at [`/api`](/api) lists the complete endpoint catalog. Every example in these docs uses the production host — swap in the preview host if your account lives there.
+
+## Server-to-server design {#server-to-server}
+
+The TrakRF API is intended for **server-to-server** integration. Responses do not include `Access-Control-Allow-Origin` headers, so browser-based JavaScript calls are blocked by the browser's CORS policy. Call the API from a backend service and never ship API keys in client-side code — the CORS block is also a guardrail against leaking keys to end-user devices.
 
 ## Environment variables
 

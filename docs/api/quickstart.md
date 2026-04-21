@@ -7,13 +7,17 @@ title: Quickstart
 
 Goes from "I just signed up" to "I called the TrakRF API and got a `200` back" in about ten minutes, with nothing but an HTTP client.
 
-If you're already familiar with API-key-authenticated REST APIs, the TL;DR is: mint a JWT at **Settings → API Keys**, send it as `Authorization: Bearer <jwt>`, and hit `https://app.trakrf.id/api/v1/...`. The full walkthrough follows.
+If you're already familiar with API-key-authenticated REST APIs, the TL;DR is: mint a JWT from the **avatar menu → API Keys**, send it as `Authorization: Bearer <jwt>`, and hit `https://app.trakrf.id/api/v1/...`. The full walkthrough follows.
+
+:::note Preview environment
+If your account lives on the preview stack (per-PR test deploys, sales demos, every current test account), replace `app.trakrf.id` with `app.preview.trakrf.id` in every URL below. The API surface is identical; only the host differs.
+:::
 
 ## 1. Mint an API key
 
 1. Sign in at [app.trakrf.id](https://app.trakrf.id) with an admin account.
-2. Go to **Settings** → **API Keys** in the left nav.
-3. Click **Create Key**. Give it a descriptive name (e.g. `"local-dev"`). For this quickstart, `assets:read` and `locations:read` are enough; see [Authentication → Scopes](./authentication#scopes) for the full list.
+2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — not key management.)
+3. Click **New key**. Give it a descriptive name (e.g. `"local-dev"`). For this quickstart, `locations:read` and `scans:read` are enough — the `/locations/current` endpoint you'll call below is gated by `scans:read`. See [Authentication → Scopes](./authentication#scopes) for the full matrix.
 4. Submit. The full JWT is displayed **once**. Copy it immediately — it cannot be shown again.
 5. Save it to an environment variable:
 
@@ -25,7 +29,7 @@ Full detail: [Authentication → Mint your first API key](./authentication#mint-
 
 ## 2. First read call
 
-`GET /api/v1/locations/current` returns a snapshot of where TrakRF last saw each asset. It's cheap, needs only `locations:read`, and tells you end-to-end that your key works:
+`GET /api/v1/locations/current` returns a snapshot of where TrakRF last saw each asset. It's cheap, needs `scans:read`, and tells you end-to-end that your key works:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
@@ -52,8 +56,9 @@ A successful response looks like:
 Troubleshooting the first call:
 
 - `401 unauthorized` — the key is missing, malformed, or revoked. Re-check the `Authorization` header.
-- `403 forbidden` — the key lacks `locations:read`. Create a new key with the right scope.
+- `403 forbidden` — the key lacks `scans:read`. The body will name the missing scope (`"Missing required scope: scans:read"`). Create a new key with the right scope.
 - `429 rate_limited` — you're over budget; wait the `Retry-After` seconds. See [Rate limits](./rate-limits).
+- **Browser console error with no response body** — CORS. The API is server-to-server only; call it from a backend. See [Server-to-server design](./authentication#server-to-server).
 
 ## 3. Round-trip: create, read, update, delete
 

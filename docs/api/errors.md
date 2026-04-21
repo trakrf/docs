@@ -95,6 +95,72 @@ Current `code` values (extensible):
 
 The `code` enum is extensible — TrakRF may add new validation codes in any v1 release. Treat unknown codes as generic invalid-value errors and surface the `message` field.
 
+### Query-parameter validation errors
+
+List endpoints validate their query string the same way. The `field` value in the `fields` array is the query-parameter name, and `detail` summarizes the first problem. A few you'll see in practice:
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "title": "Invalid request",
+    "status": 400,
+    "detail": "limit must be ≤ 200",
+    "instance": "/api/v1/assets",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
+    "fields": [
+      {
+        "field": "limit",
+        "code": "too_large",
+        "message": "limit must be ≤ 200"
+      }
+    ]
+  }
+}
+```
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "title": "Invalid request",
+    "status": 400,
+    "detail": "unknown sort field: bogus",
+    "instance": "/api/v1/assets",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
+    "fields": [
+      {
+        "field": "sort",
+        "code": "invalid_value",
+        "message": "unknown sort field: bogus"
+      }
+    ]
+  }
+}
+```
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "title": "Invalid request",
+    "status": 400,
+    "detail": "Invalid 'from' timestamp; RFC3339 required",
+    "instance": "/api/v1/assets/ASSET-0001/history",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
+    "fields": [
+      {
+        "field": "from",
+        "code": "invalid_value",
+        "message": "Invalid 'from' timestamp; RFC3339 required"
+      }
+    ]
+  }
+}
+```
+
+The `detail` and `message` strings are stable enough to surface to an end user, but for programmatic handling branch on `type` and `fields[].code` — those are the contract.
+
 ## Retry guidance
 
 Use the retry column in the catalog above as the default, but these patterns apply more broadly:
