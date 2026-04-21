@@ -2,7 +2,7 @@
 sidebar_position: 5
 ---
 
-# Error codes
+# Errors
 
 Every non-2xx response from the TrakRF API returns a JSON body in a consistent error envelope. This page catalogs the error types you'll see and recommends retry behavior for each.
 
@@ -23,27 +23,27 @@ The envelope follows [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) (
 }
 ```
 
-| Field | Purpose |
-|---|---|
-| `type` | A machine-readable identifier — your code should branch on this. Extensible enum. |
-| `title` | A short human-readable summary safe to log. |
-| `status` | The HTTP status code. Always matches the response's status line. |
-| `detail` | A longer human-readable explanation. Safe to log; may name the offending field or value. |
-| `instance` | The request path that produced the error. Useful when the same error appears across multiple logs. |
+| Field        | Purpose                                                                                                                       |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `type`       | A machine-readable identifier — your code should branch on this. Extensible enum.                                             |
+| `title`      | A short human-readable summary safe to log.                                                                                   |
+| `status`     | The HTTP status code. Always matches the response's status line.                                                              |
+| `detail`     | A longer human-readable explanation. Safe to log; may name the offending field or value.                                      |
+| `instance`   | The request path that produced the error. Useful when the same error appears across multiple logs.                            |
 | `request_id` | A [ULID](https://github.com/ulid/spec) matching the `X-Request-ID` response header. Include this when filing support tickets. |
 
 ## Error type catalog
 
-| `type` | HTTP status | When you'll see it | Retry? |
-|---|---|---|---|
-| `validation_error` | 400 | Request body failed schema validation (see [validation errors](#validation-errors) below) | No — fix the request |
-| `bad_request` | 400 | Malformed request — bad JSON, unknown query param, invalid sort field | No — fix the request |
-| `unauthorized` | 401 | Missing, malformed, revoked, or expired API key | No — re-auth |
-| `forbidden` | 403 | Valid key but insufficient scope for this endpoint | No — needs a key with the right scope |
-| `not_found` | 404 | Natural-key lookup failed | No — check the identifier |
-| `conflict` | 409 | Unique-constraint violation (typically a duplicate `identifier`) | No — reconcile with `GET` then `PUT` |
-| `rate_limited` | 429 | You've hit the rate limit — see [Rate limits](./rate-limits) | Yes, after `Retry-After` seconds |
-| `internal_error` | 500 | Unhandled server failure | Yes, with exponential backoff |
+| `type`             | HTTP status | When you'll see it                                                                        | Retry?                                |
+| ------------------ | ----------- | ----------------------------------------------------------------------------------------- | ------------------------------------- |
+| `validation_error` | 400         | Request body failed schema validation (see [validation errors](#validation-errors) below) | No — fix the request                  |
+| `bad_request`      | 400         | Malformed request — bad JSON, unknown query param, invalid sort field                     | No — fix the request                  |
+| `unauthorized`     | 401         | Missing, malformed, revoked, or expired API key                                           | No — re-auth                          |
+| `forbidden`        | 403         | Valid key but insufficient scope for this endpoint                                        | No — needs a key with the right scope |
+| `not_found`        | 404         | Natural-key lookup failed                                                                 | No — check the identifier             |
+| `conflict`         | 409         | Unique-constraint violation (typically a duplicate `identifier`)                          | No — reconcile with `GET` then `PUT`  |
+| `rate_limited`     | 429         | You've hit the rate limit — see [Rate limits](./rate-limits)                              | Yes, after `Retry-After` seconds      |
+| `internal_error`   | 500         | Unhandled server failure                                                                  | Yes, with exponential backoff         |
 
 The `type` enum is **extensible** — TrakRF may add new error types in any v1 release. Clients should handle unknown `type` values gracefully (fall through to a generic error handler based on HTTP status code, which is a closed enum).
 
@@ -61,8 +61,16 @@ When `type` is `validation_error`, the envelope carries an additional `fields` a
     "instance": "/api/v1/assets",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
-      { "field": "identifier", "code": "too_long",      "message": "identifier must be at most 255 characters" },
-      { "field": "type",       "code": "invalid_value", "message": "type is not a valid value" }
+      {
+        "field": "identifier",
+        "code": "too_long",
+        "message": "identifier must be at most 255 characters"
+      },
+      {
+        "field": "type",
+        "code": "invalid_value",
+        "message": "type is not a valid value"
+      }
     ]
   }
 }
@@ -70,11 +78,11 @@ When `type` is `validation_error`, the envelope carries an additional `fields` a
 
 Field entries:
 
-| Field | Purpose |
-|---|---|
-| `field` | The JSON field name of the offending request attribute (e.g. `identifier`, `org_name`). Values are the snake_case JSON keys defined by the endpoint's request schema, not Go struct names or JSON-pointer paths. |
-| `code` | A machine-readable code — your validation UI can branch on this. Extensible enum. |
-| `message` | A human-readable message safe to show the end user. |
+| Field     | Purpose                                                                                                                                                                                                          |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field`   | The JSON field name of the offending request attribute (e.g. `identifier`, `org_name`). Values are the snake_case JSON keys defined by the endpoint's request schema, not Go struct names or JSON-pointer paths. |
+| `code`    | A machine-readable code — your validation UI can branch on this. Extensible enum.                                                                                                                                |
+| `message` | A human-readable message safe to show the end user.                                                                                                                                                              |
 
 Current `code` values (extensible):
 

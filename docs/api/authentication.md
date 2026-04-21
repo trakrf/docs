@@ -32,15 +32,15 @@ The header name is `Authorization`; the scheme is `Bearer`. A JWT directly follo
 
 Each key is issued with one or more scopes. The API rejects requests whose key lacks the scope required by the endpoint (`403 forbidden`). Current scopes:
 
-| Scope | Grants |
-|---|---|
-| `assets:read` | List and retrieve assets; read asset history |
-| `assets:write` | Create, update, delete assets |
-| `locations:read` | List and retrieve locations; read the current-locations snapshot |
-| `locations:write` | Create, update, delete locations |
-| `scans:read` | Read logical scan events and reports |
+| Scope             | Grants                                                           |
+| ----------------- | ---------------------------------------------------------------- |
+| `assets:read`     | List and retrieve assets; read asset history                     |
+| `assets:write`    | Create, update, delete assets                                    |
+| `locations:read`  | List and retrieve locations; read the current-locations snapshot |
+| `locations:write` | Create, update, delete locations                                 |
+| `scans:read`      | Read logical scan events and reports                             |
 
-Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning policy](#)).
+Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).
 
 ## Example requests
 
