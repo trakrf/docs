@@ -19,10 +19,10 @@ Tokens replenish continuously at the refill rate. A request costs one token. Whe
 
 All keys start with this allowance unless your organization's subscription specifies otherwise:
 
-| Limit | Value |
-|---|---|
+| Limit        | Value                |
+| ------------ | -------------------- |
 | Steady-state | 60 requests / minute |
-| Burst | 120 requests |
+| Burst        | 120 requests         |
 
 Tier-specific allowances keyed to subscription plans are on the roadmap. If your integration needs more throughput than the default tier, [contact support](mailto:support@trakrf.id).
 
@@ -30,11 +30,11 @@ Tier-specific allowances keyed to subscription plans are on the roadmap. If your
 
 Every API response — successful or throttled — includes three headers describing the current state of your bucket:
 
-| Header | Meaning |
-|---|---|
-| `X-RateLimit-Limit` | Your steady-state limit (e.g. `60`) |
+| Header                  | Meaning                                                             |
+| ----------------------- | ------------------------------------------------------------------- |
+| `X-RateLimit-Limit`     | Your steady-state limit (e.g. `60`)                                 |
 | `X-RateLimit-Remaining` | Tokens left in the bucket at the moment this response was generated |
-| `X-RateLimit-Reset` | Unix timestamp when the bucket will be fully refilled |
+| `X-RateLimit-Reset`     | Unix timestamp when the bucket will be fully refilled               |
 
 You can watch `X-RateLimit-Remaining` to pace requests preemptively rather than waiting to hit `429`.
 
@@ -67,7 +67,7 @@ The `Retry-After` value is the number of seconds to wait before the next request
 
 - **Back off on 429.** Wait at least `Retry-After` seconds before retrying. Exponential backoff with jitter on repeated 429s is ideal.
 - **Read `X-RateLimit-Remaining` proactively.** If it's approaching zero and your workload can wait, pause briefly rather than letting the server enforce the pause.
-- **Don't treat 429 as a server error.** It's a client-side signal — retry policy should differ from retry-on-500. See [Error codes](./error-codes) for the full retry guidance.
+- **Don't treat 429 as a server error.** It's a client-side signal — retry policy should differ from retry-on-500. See [Errors](./errors) for the full retry guidance.
 
 ## Exclusions
 

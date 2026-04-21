@@ -47,7 +47,9 @@ A successful response looks like:
       "last_seen": "2026-04-20T14:32:18Z"
     }
   ],
-  "limit": 100
+  "limit": 50,
+  "offset": 0,
+  "total_count": 1
 }
 ```
 
@@ -60,12 +62,13 @@ If you get a `401`, the key is malformed or not being sent in the header. If you
 The two key concepts integrators trip on:
 
 - **`identifier` vs `surrogate_id`** — every resource has a human-meaningful string identifier (what you see in URLs and as `asset` / `location` values above) and an integer surrogate_id (returned in full resource objects). Always key on `identifier`. Full convention: [Resource identifiers](../api/resource-identifiers).
-- **Response envelope** — most endpoints wrap payloads in `{ "data": ..., ... }`. List endpoints add pagination metadata (`limit`, `next_cursor`). The exception is `GET /api/v1/orgs/me` (see [Private endpoints: /orgs/me](../api/private-endpoints#orgs-me)).
+- **Response envelope** — most endpoints wrap payloads in `{ "data": ..., ... }`. List endpoints add pagination metadata (`limit`, `offset`, `total_count`) — see [Pagination, filtering, sorting](../api/pagination-filtering-sorting). The exception is `GET /api/v1/orgs/me` (see [Private endpoints: /orgs/me](../api/private-endpoints#orgs-me)).
 
 ## 4. Next steps
 
+- **[API docs landing](../api/)** — concept-guide map and starting points.
 - **[Interactive reference](/api)** — every endpoint, request/response shape, try-it-now widget.
+- **[Pagination, filtering, sorting](../api/pagination-filtering-sorting)** — how to shape list queries.
 - **[Postman collection](../api/postman)** — ready-to-import JSON.
-- **[REST API Reference](../api/rest-api-reference)** — what's in the reference and how to use it.
 - **[Rate limits](../api/rate-limits)** — request budgets, retry-after semantics.
-- **[Error codes](../api/error-codes)** — the common error envelope and how to handle each status.
+- **[Errors](../api/errors)** — the common error envelope and how to handle each status.
