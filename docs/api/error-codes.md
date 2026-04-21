@@ -55,14 +55,14 @@ When `type` is `validation_error`, the envelope carries an additional `fields` a
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
-    "detail": "Request validation failed",
+    "detail": "Request did not pass validation",
     "instance": "/api/v1/assets",
-    "request_id": "01J...",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
-      { "field": "identifier", "code": "too_long",      "message": "must be ≤255 characters" },
-      { "field": "type",       "code": "invalid_value", "message": "must be one of: asset" }
+      { "field": "identifier", "code": "too_long",      "message": "identifier must be at most 255 characters" },
+      { "field": "type",       "code": "invalid_value", "message": "type is not a valid value" }
     ]
   }
 }
@@ -72,18 +72,18 @@ Field entries:
 
 | Field | Purpose |
 |---|---|
-| `field` | JSON-pointer path to the invalid field (e.g. `identifier`, `metadata.foo.bar`). |
+| `field` | The JSON field name of the offending request attribute (e.g. `identifier`, `org_name`). Values are the snake_case JSON keys defined by the endpoint's request schema, not Go struct names or JSON-pointer paths. |
 | `code` | A machine-readable code — your validation UI can branch on this. Extensible enum. |
 | `message` | A human-readable message safe to show the end user. |
 
 Current `code` values (extensible):
 
 - `required` — the field is missing and mandatory
-- `invalid_value` — not one of the allowed values
-- `too_short` — below the minimum length
-- `too_long` — above the maximum length
-- `invalid_format` — didn't match a pattern (e.g. identifier character set)
-- `out_of_range` — numeric value outside the allowed range
+- `invalid_value` — the value is not one of the allowed values, fails a format check (email, URL, UUID), or fails a validation TrakRF has not mapped to a more specific code
+- `too_short` — string or collection length below the minimum
+- `too_long` — string or collection length above the maximum
+- `too_small` — numeric value below the minimum
+- `too_large` — numeric value above the maximum
 
 The `code` enum is extensible — TrakRF may add new validation codes in any v1 release. Treat unknown codes as generic invalid-value errors and surface the `message` field.
 
@@ -110,7 +110,7 @@ Explicit `Idempotency-Key` header support is on the v1.x roadmap if customer pai
 
 Every response includes an `X-Request-ID` header with a ULID. The same ULID appears in the `request_id` field of any error envelope. When filing a support ticket, include this ID — it lets TrakRF staff find the exact request in logs without grepping.
 
-If your client supplies an inbound `X-Request-ID` header, it's accepted and echoed back. Otherwise a new ULID is generated server-side.
+If your client supplies an inbound `X-Request-ID` header, it is echoed back unchanged — TrakRF does not validate its format. Clients that supply their own IDs are encouraged to use ULIDs so log tooling remains consistent. When no inbound header is supplied, TrakRF generates a ULID server-side.
 
 ## Deprecation notices
 
