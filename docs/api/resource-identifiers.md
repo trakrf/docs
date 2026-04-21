@@ -20,7 +20,7 @@ Single-resource read endpoints take the `identifier` (string) as the URL path pa
 ```bash
 # Correct — takes the business identifier
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     https://app.trakrf.id/api/v1/assets/ASSET-0001
+     "$BASE_URL/api/v1/assets/ASSET-0001"
 ```
 
 The integer `surrogate_id` is **not** accepted on reads:
@@ -28,7 +28,7 @@ The integer `surrogate_id` is **not** accepted on reads:
 ```bash
 # Wrong — returns 404 not_found
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     https://app.trakrf.id/api/v1/assets/27545709
+     "$BASE_URL/api/v1/assets/27545709"
 ```
 
 This applies to every GET endpoint with a path param:

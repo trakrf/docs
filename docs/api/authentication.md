@@ -49,11 +49,13 @@ Additional scopes may be added in any v1 release. Clients should tolerate unknow
 
 ## Example requests
 
+Examples use `$BASE_URL` — set it to `https://app.trakrf.id` for production or `https://app.preview.trakrf.id` for preview accounts. See [Base URL](#base-url).
+
 ### curl
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     https://app.trakrf.id/api/v1/assets
+     "$BASE_URL/api/v1/assets"
 ```
 
 ### Python (requests)
@@ -62,8 +64,9 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 import os
 import requests
 
+base_url = os.environ["TRAKRF_BASE_URL"]
 headers = {"Authorization": f"Bearer {os.environ['TRAKRF_API_KEY']}"}
-response = requests.get("https://app.trakrf.id/api/v1/assets", headers=headers)
+response = requests.get(f"{base_url}/api/v1/assets", headers=headers)
 response.raise_for_status()
 print(response.json())
 ```
@@ -71,7 +74,8 @@ print(response.json())
 ### JavaScript (fetch)
 
 ```javascript
-const res = await fetch("https://app.trakrf.id/api/v1/assets", {
+const baseUrl = process.env.TRAKRF_BASE_URL;
+const res = await fetch(`${baseUrl}/api/v1/assets`, {
   headers: { Authorization: `Bearer ${process.env.TRAKRF_API_KEY}` },
 });
 if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -91,7 +95,17 @@ const data = await res.json();
 - **Production:** `https://app.trakrf.id`
 - **Preview (per-PR test deploys):** `https://app.preview.trakrf.id`
 
-All API endpoints live under the `/api/v1/` prefix. The interactive reference at [`/api`](/api) lists the complete endpoint catalog. Every example in these docs uses the production host — swap in the preview host if your account lives there.
+All API endpoints live under the `/api/v1/` prefix. The interactive reference at [`/api`](/api) lists the complete endpoint catalog. Shell examples in these docs use a `$BASE_URL` env var so the same commands work against either environment:
+
+```bash
+# Production
+export BASE_URL=https://app.trakrf.id
+
+# Preview
+export BASE_URL=https://app.preview.trakrf.id
+```
+
+Preview-scoped keys will not authenticate against production and vice versa — make sure `BASE_URL` matches the environment your key was minted on.
 
 ## Server-to-server design {#server-to-server}
 
@@ -111,7 +125,7 @@ Once you have a key, verify it with the interactive reference at [`/api`](/api) 
 
 ```bash
 curl -i -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     https://app.trakrf.id/api/v1/assets?limit=1
+     "$BASE_URL/api/v1/assets?limit=1"
 ```
 
 A `200 OK` with a JSON body confirms the key and scope are correct. A `401 unauthorized` indicates a missing, malformed, or revoked key; `403 forbidden` indicates the key lacks the scope required for that endpoint.
