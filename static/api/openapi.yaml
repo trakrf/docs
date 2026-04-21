@@ -1,6 +1,6 @@
 components:
     schemas:
-        github_com_trakrf_platform_backend_internal_models_asset.CreateAssetWithIdentifiersRequest:
+        asset.CreateAssetWithIdentifiersRequest:
             properties:
                 current_location_id:
                     minimum: 1
@@ -13,7 +13,7 @@ components:
                     type: string
                 identifiers:
                     items:
-                        $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest'
+                        $ref: '#/components/schemas/shared.TagIdentifierRequest'
                     type: array
                 is_active:
                     type: boolean
@@ -35,7 +35,37 @@ components:
             required:
                 - name
             type: object
-        github_com_trakrf_platform_backend_internal_models_asset.UpdateAssetRequest:
+        asset.PublicAssetView:
+            properties:
+                created_at:
+                    type: string
+                current_location:
+                    type: string
+                description:
+                    type: string
+                identifier:
+                    type: string
+                identifiers:
+                    items:
+                        $ref: '#/components/schemas/shared.TagIdentifier'
+                    type: array
+                is_active:
+                    type: boolean
+                metadata: {}
+                name:
+                    type: string
+                surrogate_id:
+                    type: integer
+                type:
+                    type: string
+                updated_at:
+                    type: string
+                valid_from:
+                    type: string
+                valid_to:
+                    type: string
+            type: object
+        asset.UpdateAssetRequest:
             properties:
                 current_location_id:
                     type: integer
@@ -64,7 +94,28 @@ components:
                     example: "2026-01-01"
                     type: string
             type: object
-        github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse:
+        assets.GetAssetResponse:
+            properties:
+                data:
+                    $ref: '#/components/schemas/asset.PublicAssetView'
+            type: object
+        assets.ListAssetsResponse:
+            properties:
+                data:
+                    items:
+                        $ref: '#/components/schemas/asset.PublicAssetView'
+                    type: array
+                limit:
+                    example: 50
+                    type: integer
+                offset:
+                    example: 0
+                    type: integer
+                total_count:
+                    example: 100
+                    type: integer
+            type: object
+        errors.ErrorResponse:
             properties:
                 error:
                     properties:
@@ -72,7 +123,7 @@ components:
                             type: string
                         fields:
                             items:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.FieldError'
+                                $ref: '#/components/schemas/errors.FieldError'
                             type: array
                         instance:
                             type: string
@@ -97,7 +148,7 @@ components:
                             x-extensible-enum: "true"
                     type: object
             type: object
-        github_com_trakrf_platform_backend_internal_models_errors.FieldError:
+        errors.FieldError:
             properties:
                 code:
                     type: string
@@ -106,7 +157,25 @@ components:
                 message:
                     type: string
             type: object
-        github_com_trakrf_platform_backend_internal_models_location.CreateLocationWithIdentifiersRequest:
+        inventory.SaveRequest:
+            properties:
+                asset_ids:
+                    items:
+                        type: integer
+                    minItems: 1
+                    type: array
+                location_id:
+                    type: integer
+            required:
+                - asset_ids
+                - location_id
+            type: object
+        inventory.SaveResponse:
+            properties:
+                data:
+                    $ref: '#/components/schemas/storage.SaveInventoryResult'
+            type: object
+        location.CreateLocationWithIdentifiersRequest:
             properties:
                 description:
                     example: Main warehouse location
@@ -119,7 +188,7 @@ components:
                     type: string
                 identifiers:
                     items:
-                        $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest'
+                        $ref: '#/components/schemas/shared.TagIdentifierRequest'
                     type: array
                 is_active:
                     example: true
@@ -143,7 +212,38 @@ components:
                 - identifier
                 - name
             type: object
-        github_com_trakrf_platform_backend_internal_models_location.UpdateLocationRequest:
+        location.PublicLocationView:
+            properties:
+                created_at:
+                    type: string
+                depth:
+                    type: integer
+                description:
+                    type: string
+                identifier:
+                    type: string
+                identifiers:
+                    items:
+                        $ref: '#/components/schemas/shared.TagIdentifier'
+                    type: array
+                is_active:
+                    type: boolean
+                name:
+                    type: string
+                parent:
+                    type: string
+                path:
+                    type: string
+                surrogate_id:
+                    type: integer
+                updated_at:
+                    type: string
+                valid_from:
+                    type: string
+                valid_to:
+                    type: string
+            type: object
+        location.UpdateLocationRequest:
             properties:
                 description:
                     example: Updated description
@@ -173,7 +273,50 @@ components:
                     example: "2026-12-14"
                     type: string
             type: object
-        github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest:
+        locations.GetLocationResponse:
+            properties:
+                data:
+                    $ref: '#/components/schemas/location.PublicLocationView'
+            type: object
+        locations.ListLocationsResponse:
+            properties:
+                data:
+                    items:
+                        $ref: '#/components/schemas/location.PublicLocationView'
+                    type: array
+                limit:
+                    example: 50
+                    type: integer
+                offset:
+                    example: 0
+                    type: integer
+                total_count:
+                    example: 100
+                    type: integer
+            type: object
+        shared.TagIdentifier:
+            properties:
+                id:
+                    type: integer
+                is_active:
+                    type: boolean
+                type:
+                    enum:
+                        - rfid
+                        - ble
+                        - barcode
+                    example: rfid
+                    type: string
+                    x-extensible-enum: "true"
+                value:
+                    maxLength: 255
+                    minLength: 1
+                    type: string
+            required:
+                - type
+                - value
+            type: object
+        shared.TagIdentifierRequest:
             properties:
                 type:
                     enum:
@@ -190,23 +333,21 @@ components:
             required:
                 - value
             type: object
-        internal_handlers_inventory.SaveRequest:
+        storage.SaveInventoryResult:
             properties:
-                asset_ids:
-                    items:
-                        type: integer
-                    minItems: 1
-                    type: array
+                count:
+                    type: integer
                 location_id:
                     type: integer
-            required:
-                - asset_ids
-                - location_id
+                location_name:
+                    type: string
+                timestamp:
+                    type: string
             type: object
     securitySchemes:
         APIKey:
             bearerFormat: JWT
-            description: 'TrakRF API key (JWT). Format: "Bearer <jwt>". Mint keys from the API Keys section of your TrakRF account (key-management UI is tracked by TRA-393).'
+            description: 'TrakRF API key (JWT). Format: "Bearer <jwt>". Mint keys from the API Keys section of your TrakRF account.'
             scheme: bearer
             type: http
         BearerAuth:
@@ -273,9 +414,8 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties: true
-                                type: object
-                    description: envelope with data / limit / offset / total_count
+                                $ref: '#/components/schemas/assets.ListAssetsResponse'
+                    description: OK
                     headers:
                         X-RateLimit-Limit:
                             description: Steady-state requests/min for this API key
@@ -293,25 +433,25 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Bad Request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Forbidden
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                     headers:
                         Retry-After:
@@ -322,7 +462,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Internal Server Error
             security:
                 - APIKey:
@@ -339,7 +479,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_asset.CreateAssetWithIdentifiersRequest'
+                            $ref: '#/components/schemas/asset.CreateAssetWithIdentifiersRequest'
                 description: Asset to create with optional identifiers
                 required: true
                 x-originalParamName: request
@@ -355,37 +495,37 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "409":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: conflict
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -411,31 +551,31 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: not_found
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -457,8 +597,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties: true
-                                type: object
+                                $ref: '#/components/schemas/assets.GetAssetResponse'
                     description: OK
                     headers:
                         X-RateLimit-Limit:
@@ -477,31 +616,31 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Bad Request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Not Found
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                     headers:
                         Retry-After:
@@ -528,7 +667,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_asset.UpdateAssetRequest'
+                            $ref: '#/components/schemas/asset.UpdateAssetRequest'
                 description: Fields to update
                 required: true
                 x-originalParamName: request
@@ -544,43 +683,43 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: not_found
                 "409":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: conflict
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -644,25 +783,25 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Bad Request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Unauthorized
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Not Found
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                     headers:
                         Retry-After:
@@ -692,7 +831,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest'
+                            $ref: '#/components/schemas/shared.TagIdentifierRequest'
                 description: Tag identifier to attach
                 required: true
                 x-originalParamName: request
@@ -708,37 +847,37 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: not_found
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -770,37 +909,37 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: not_found
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -815,7 +954,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/internal_handlers_inventory.SaveRequest'
+                            $ref: '#/components/schemas/inventory.SaveRequest'
                 description: Save request with location and asset IDs
                 required: true
                 x-originalParamName: request
@@ -824,32 +963,31 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties: true
-                                type: object
-                    description: 'data: SaveInventoryResult'
+                                $ref: '#/components/schemas/inventory.SaveResponse'
+                    description: Created
                 "400":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Invalid request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Location or assets not owned by org
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Internal server error
             security:
                 - APIKey:
@@ -896,8 +1034,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties: true
-                                type: object
+                                $ref: '#/components/schemas/locations.ListLocationsResponse'
                     description: OK
                     headers:
                         X-RateLimit-Limit:
@@ -916,7 +1053,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                     headers:
                         Retry-After:
@@ -938,7 +1075,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.CreateLocationWithIdentifiersRequest'
+                            $ref: '#/components/schemas/location.CreateLocationWithIdentifiersRequest'
                 description: Location to create with optional identifiers
                 required: true
                 x-originalParamName: request
@@ -954,37 +1091,37 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "409":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: conflict
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -1010,37 +1147,37 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: not_found
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -1062,8 +1199,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                additionalProperties: true
-                                type: object
+                                $ref: '#/components/schemas/locations.GetLocationResponse'
                     description: OK
                     headers:
                         X-RateLimit-Limit:
@@ -1082,31 +1218,31 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Bad Request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Not Found
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                     headers:
                         Retry-After:
@@ -1133,7 +1269,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.UpdateLocationRequest'
+                            $ref: '#/components/schemas/location.UpdateLocationRequest'
                 description: Fields to update
                 required: true
                 x-originalParamName: request
@@ -1149,43 +1285,43 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: not_found
                 "409":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: conflict
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -1216,31 +1352,31 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -1271,31 +1407,31 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -1326,31 +1462,31 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -1375,7 +1511,7 @@ paths:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest'
+                            $ref: '#/components/schemas/shared.TagIdentifierRequest'
                 description: Tag identifier to attach
                 required: true
                 x-originalParamName: request
@@ -1391,37 +1527,37 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: not_found
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -1453,37 +1589,37 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: bad_request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: unauthorized
                 "403":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: forbidden
                 "404":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: not_found
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                 "500":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: internal_error
             security:
                 - APIKey:
@@ -1545,19 +1681,19 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Bad Request
                 "401":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: Unauthorized
                 "429":
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse'
+                                $ref: '#/components/schemas/errors.ErrorResponse'
                     description: rate_limited
                     headers:
                         Retry-After:
