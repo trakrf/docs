@@ -28,6 +28,6 @@ The rendered interactive reference lives at [`/api`](/api).
 2. Click **Import** → **File**.
 3. Select the downloaded `trakrf-api.postman_collection.json`.
 4. In the collection variables, set:
-   - `baseUrl` to `https://app.trakrf.id/api/v1` — the API is served from the `app.` subdomain, not the marketing site.
+   - `baseUrl` to `https://app.trakrf.id/api/v1` for production, or `https://app.preview.trakrf.id/api/v1` for preview accounts. The API is served from the `app.` subdomain, not the marketing site.
    - `apiKey` to your API key. See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for how to create one.
 5. The collection's **Authorization** is preconfigured as a Bearer token referencing `{{apiKey}}`.

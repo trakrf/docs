@@ -7,21 +7,31 @@ title: Using the API
 
 This page takes you from "I just signed up" to "I called the TrakRF API and got a `200` back" in about 10 minutes, using only standard HTTP tools. It mirrors the [UI quickstart](./ui) — pick whichever track matches your integration plan.
 
-:::note Preview environment
-If your account lives on the preview stack, replace `app.trakrf.id` with `app.preview.trakrf.id` everywhere on this page. The API surface is identical; only the host differs.
-:::
-
 ## What you'll need
 
 - A TrakRF account. Sign up at [app.trakrf.id](https://app.trakrf.id) if you don't have one yet.
 - An API client of your choice — `curl`, Postman, HTTPie, or your language's standard HTTP library. This guide uses `curl` in examples.
 - 10 minutes.
 
-## 1. Mint your first API key
+## 1. Set your base URL
 
-1. Sign in at [app.trakrf.id](https://app.trakrf.id).
+Every curl example on this page uses a `$BASE_URL` env var so the same commands work on both environments. Pick the one that matches your account:
+
+```bash
+# Production
+export BASE_URL=https://app.trakrf.id
+
+# Preview (per-PR test deploys, sales demos, every current test account)
+export BASE_URL=https://app.preview.trakrf.id
+```
+
+If you were given preview credentials (typical for evaluation accounts), make sure you export the preview URL — a preview-scoped key will not authenticate against production.
+
+## 2. Mint your first API key
+
+1. Sign in at the web app (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)).
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page configures devices — not keys.)
-3. Click **New key**. Give it a descriptive name (e.g. "local dev"), choose scopes (`locations:read` and `scans:read` are enough for this quickstart — the endpoint you'll call is gated by `scans:read`), and submit.
+3. Click **New key**. Give it a descriptive name (e.g. "local dev"), choose scopes (`scans:read` alone is enough for this quickstart — the `/locations/current` endpoint is gated by `scans:read`; grant `assets:read` and `locations:read` if you plan to hit the other read endpoints), and submit.
 4. **Copy the JWT immediately.** It's shown once at creation time and can't be recovered later.
 5. Save it to an environment variable for the next steps:
 
@@ -31,13 +41,13 @@ If your account lives on the preview stack, replace `app.trakrf.id` with `app.pr
 
 Full detail: [Authentication → Mint your first API key](../api/authentication#mint-your-first-api-key).
 
-## 2. Make your first call
+## 3. Make your first call
 
 The `/api/v1/locations/current` endpoint returns a snapshot of where TrakRF last saw each asset. It's cheap, requires `scans:read`, and gives you a live signal that your key works:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     https://app.trakrf.id/api/v1/locations/current
+     "$BASE_URL/api/v1/locations/current"
 ```
 
 A successful response looks like:
@@ -59,16 +69,33 @@ A successful response looks like:
 
 The `data` array holds one item per asset that has ever been scanned. Each item is `{ asset, location, last_seen }` where `asset` and `location` are the business **identifiers** (not integer surrogate IDs — see [Resource identifiers](../api/resource-identifiers) for why).
 
-If you get a `401`, the key is malformed or not being sent in the header. If you get a `403`, the body will name the missing scope — for this endpoint it'll be `"Missing required scope: scans:read"`. If you get a `429`, you're being rate-limited — see [Rate limits](../api/rate-limits). If you're calling from browser JavaScript and getting a CORS error with no body, the API is server-to-server only ([details](../api/authentication#server-to-server)).
+If you get a `401`, the key is malformed or not being sent in the header. If you get a `403`, the body names the missing scope — for this endpoint it'll be `"Missing required scope: scans:read"`. If you get a `429`, you're being rate-limited — see [Rate limits](../api/rate-limits). If you're calling from browser JavaScript and getting a CORS error with no body, the API is server-to-server only ([details](../api/authentication#server-to-server)).
 
-## 3. Interpret the response
+All error bodies are wrapped in an `error` key — a `403` looks like:
+
+```json
+{
+  "error": {
+    "type": "forbidden",
+    "title": "Forbidden",
+    "status": 403,
+    "detail": "Missing required scope: scans:read",
+    "instance": "/api/v1/locations/current",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
+  }
+}
+```
+
+Write handlers against `body.error.type` and `body.error.detail`, not top-level fields. Full catalog: [Errors](../api/errors).
+
+## 4. Interpret the response
 
 The two key concepts integrators trip on:
 
 - **`identifier` vs `surrogate_id`** — every resource has a human-meaningful string identifier (what you see in URLs and as `asset` / `location` values above) and an integer surrogate_id (returned in full resource objects). Always key on `identifier`. Full convention: [Resource identifiers](../api/resource-identifiers).
 - **Response envelope** — most endpoints wrap payloads in `{ "data": ..., ... }`. List endpoints add pagination metadata (`limit`, `offset`, `total_count`) — see [Pagination, filtering, sorting](../api/pagination-filtering-sorting). The exception is `GET /api/v1/orgs/me` (see [Private endpoints: /orgs/me](../api/private-endpoints#orgs-me)).
 
-## 4. Next steps
+## 5. Next steps
 
 - **[API docs landing](../api/)** — concept-guide map and starting points.
 - **[Interactive reference](/api)** — every endpoint, request/response shape, try-it-now widget.

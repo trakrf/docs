@@ -33,19 +33,21 @@ Every list endpoint returns the same envelope:
 
 Offset-based. Two query params control the page:
 
-| Param    | Default | Max   | Notes                                                    |
-| -------- | ------- | ----- | -------------------------------------------------------- |
-| `limit`  | `50`    | `200` | Page size. Values over 200 are clamped to 200.           |
-| `offset` | `0`     | —     | Rows to skip. `offset=50&limit=50` gets the second page. |
+| Param    | Default | Max   | Notes                                                                   |
+| -------- | ------- | ----- | ----------------------------------------------------------------------- |
+| `limit`  | `50`    | `200` | Page size. Values over 200 are rejected with `400 bad_request`.         |
+| `offset` | `0`     | —     | Rows to skip. `offset=50&limit=50` gets the second page.                |
+
+Shell examples below use a `$BASE_URL` env var — set it to `https://app.trakrf.id` for production or `https://app.preview.trakrf.id` for preview. See [Authentication → Base URL](./authentication#base-url).
 
 ```bash
 # First page (default limit)
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/assets"
+     "$BASE_URL/api/v1/assets"
 
 # Second page of 100
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/assets?limit=100&offset=100"
+     "$BASE_URL/api/v1/assets?limit=100&offset=100"
 ```
 
 **Iterating a large result set:** loop until `offset + len(data) >= total_count`:
@@ -76,7 +78,7 @@ Filter parameters are specific to each resource. All filters are query parameter
 | `GET /api/v1/assets`                      | `location` (repeatable), `is_active`, `type`, `q` |
 | `GET /api/v1/locations`                   | `parent` (repeatable), `is_active`, `q`           |
 | `GET /api/v1/locations/current`           | `location` (repeatable), `q`                      |
-| `GET /api/v1/assets/{identifier}/history` | `from`, `to` (ISO 8601 timestamps)                |
+| `GET /api/v1/assets/{identifier}/history` | `from`, `to` (RFC 3339 timestamps)                |
 
 ### Repeatable filters
 
@@ -85,7 +87,7 @@ Repeat the parameter to express "any of":
 ```bash
 # Assets currently at LOC-A OR LOC-B
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/assets?location=LOC-A&location=LOC-B"
+     "$BASE_URL/api/v1/assets?location=LOC-A&location=LOC-B"
 ```
 
 Comma-separated values in a single `location=LOC-A,LOC-B` parameter are **not** parsed as multiple filters — the server sees a single value with a literal comma.
@@ -96,7 +98,7 @@ Pass `true` or `false`. Omitting the filter returns all values (active and inact
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/assets?is_active=true"
+     "$BASE_URL/api/v1/assets?is_active=true"
 ```
 
 ### Fuzzy search
@@ -112,19 +114,19 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 ```bash
 # Find assets whose name, identifier, or description matches "forklift"
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/assets?q=forklift"
+     "$BASE_URL/api/v1/assets?q=forklift"
 ```
 
 `q` is case-insensitive and matches substrings.
 
 ### Time range (history)
 
-`GET /api/v1/assets/{identifier}/history` accepts `from` and `to` as ISO 8601 timestamps. Either bound may be omitted:
+`GET /api/v1/assets/{identifier}/history` accepts `from` and `to` as [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) timestamps (a subset of ISO 8601). The server validates the RFC 3339 profile — e.g. `2026-04-01T00:00:00Z` or `2026-04-01T09:00:00-04:00`. Either bound may be omitted:
 
 ```bash
 # Since the start of 2026-04
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/assets/ASSET-0001/history?from=2026-04-01T00:00:00Z"
+     "$BASE_URL/api/v1/assets/ASSET-0001/history?from=2026-04-01T00:00:00Z"
 ```
 
 ## Sorting
@@ -152,7 +154,7 @@ List active forklifts currently at one of two locations, sorted by most-recently
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/assets?is_active=true&type=forklift&location=LOC-A&location=LOC-B&sort=-last_seen&limit=100"
+     "$BASE_URL/api/v1/assets?is_active=true&type=forklift&location=LOC-A&location=LOC-B&sort=-last_seen&limit=100"
 ```
 
 ### Locations
@@ -161,7 +163,7 @@ List all descendants of a parent location (via filter), sorted by identifier:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/locations?parent=WAREHOUSE-A&sort=identifier&limit=200"
+     "$BASE_URL/api/v1/locations?parent=WAREHOUSE-A&sort=identifier&limit=200"
 ```
 
 For explicit ancestor/descendant traversal, use the dedicated endpoints: `GET /api/v1/locations/{identifier}/ancestors`, `/children`, `/descendants`.
@@ -172,7 +174,7 @@ Where each asset was last seen — one row per asset. Filter by the location(s) 
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/locations/current?location=DOCK-1&sort=-last_seen"
+     "$BASE_URL/api/v1/locations/current?location=DOCK-1&sort=-last_seen"
 ```
 
 ### History
@@ -181,7 +183,7 @@ Asset movement history over a window:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "https://app.trakrf.id/api/v1/assets/ASSET-0001/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&limit=200"
+     "$BASE_URL/api/v1/assets/ASSET-0001/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&limit=200"
 ```
 
 ## Related
