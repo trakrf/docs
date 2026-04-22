@@ -30,13 +30,22 @@ Tier-specific allowances keyed to subscription plans are on the roadmap. If your
 
 Every API response — successful or throttled — includes three headers describing the current state of your bucket:
 
-| Header                  | Meaning                                                             |
-| ----------------------- | ------------------------------------------------------------------- |
-| `X-RateLimit-Limit`     | Your steady-state limit (e.g. `60`)                                 |
-| `X-RateLimit-Remaining` | Tokens left in the bucket at the moment this response was generated |
-| `X-RateLimit-Reset`     | Unix timestamp when the bucket will be fully refilled               |
+| Header                  | Units                | Meaning                                                                                                                  |
+| ----------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `X-RateLimit-Limit`     | integer requests     | Your steady-state budget per 60-second window (e.g. `60`).                                                                |
+| `X-RateLimit-Remaining` | integer requests     | Requests you can make before throttling, bounded by `Limit`. Stays at `Limit` while you're inside the burst safety margin.|
+| `X-RateLimit-Reset`     | Unix epoch seconds   | Wall-clock time at which `Remaining` will next equal `Limit`. Equal to "now" when you already have full quota.            |
 
-You can watch `X-RateLimit-Remaining` to pace requests preemptively rather than waiting to hit `429`.
+You can watch `X-RateLimit-Remaining` to pace requests preemptively rather than waiting to hit `429`. A well-behaved client pattern is:
+
+```python
+if remaining < some_threshold:
+    time.sleep(max(0, reset - now))
+```
+
+The `max(0, …)` is important: when you're not throttled, `reset - now` is zero and the sleep is a no-op.
+
+**Burst safety margin.** Under the hood, the bucket holds up to 2× `Limit` tokens so short spikes don't throttle well-paced clients. That extra headroom is deliberately hidden from the headers — `Remaining` never exceeds `Limit` — so clients pace against the steady-state rate they were sold, not against burst capacity.
 
 ## When you hit the limit
 
@@ -61,7 +70,7 @@ Throttled requests get a `429` with the standard error envelope:
 Retry-After: 30
 ```
 
-The `Retry-After` value is the number of seconds to wait before the next request will succeed (assuming no other throttled requests in the meantime). Respect it — retrying immediately will cost another token and may extend the throttle window.
+The `Retry-After` value is an integer number of **seconds** to wait before the next request will succeed (assuming no other throttled requests in the meantime). Respect it — retrying immediately will cost another token and may extend the throttle window.
 
 ## Recommended client behavior
 
