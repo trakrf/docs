@@ -20,9 +20,18 @@ Each entry covers:
 
 Tracked but not yet in a release tag. Merged changes land here first, then move to a dated section on each platform release.
 
+### Added
+
+- `POST /api/v1/locations` now accepts `parent_identifier` (natural key) to create a child location in one call. Previously the only parent field (`parent_location_id`, an internal numeric FK) was not exposed to API consumers, and parent-related payload keys were silently ignored. See the updated request schema in the [API reference](/api).
+- `POST /api/v1/inventory/save` now accepts `location_identifier` (string) and `asset_identifiers` (string array), matching the identifier convention used everywhere else in the v1 surface. The numeric `location_id` / `asset_ids` fields still work for backward compatibility but are no longer shown in the published spec.
+- The `type` field on assets enumerates its allowed values (`asset`, `person`, `inventory`) in the OpenAPI spec, and validation errors on unknown values return the allowed set in the `fields[].params` object.
+
 ### Fixed
 
 - `GET /api/v1/locations/{identifier}/ancestors`, `/children`, and `/descendants` now populate the `parent` field with the parent's natural key (omitted on root nodes), matching `GET /api/v1/locations/{identifier}` and `GET /api/v1/locations`. Previously every node returned `parent: null` regardless of depth.
+- `GET /api/v1/locations/{identifier}/ancestors`, `/children`, and `/descendants` now accept API-key auth with `locations:read` scope, matching the other location reads. Previously these sub-routes were registered on the session-auth router only, so valid API keys returned `401` with a misleading "Bearer token is invalid or expired" message.
+- `POST /api/v1/assets` now defaults `is_active` to `true` when the field is omitted, so API-created assets appear in the default `GET /api/v1/assets` list view without an extra round-trip. Previously omitted fields hit the Go zero value (`false`) and the newly created asset was hidden.
+- `POST /api/v1/assets` and `POST /api/v1/locations` now default `valid_from` to the current time when the field is omitted. Previously omitted fields hit the Go zero value (`0001-01-01T00:00:00Z`), which surfaced as an invalid-looking date in responses.
 
 ## v1.0.0 — 2026-04-20
 

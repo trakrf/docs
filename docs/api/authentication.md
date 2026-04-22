@@ -28,6 +28,10 @@ Authorization: Bearer <your-api-key-jwt>
 
 The header name is `Authorization`; the scheme is `Bearer`. A JWT directly follows the scheme with a single space separator.
 
+:::caution `X-API-Key` is not accepted
+Despite the credential being called an "API key," the server only honors the `Authorization: Bearer` form. Sending the JWT as `X-API-Key: <jwt>` (or any other header) returns `401 unauthorized` with `"Missing authorization header"`. If you see that message, check the header name and scheme before rotating the key.
+:::
+
 ## Scopes
 
 Each key is issued with one or more scopes. The API rejects requests whose key lacks the scope required by the endpoint (`403 forbidden` with `"Missing required scope: <scope>"`). Current scopes and the endpoints they gate:
@@ -88,7 +92,7 @@ const data = await res.json();
 - **Listing:** the key's prefix and metadata (name, scopes, created / last-used timestamps) remain visible to administrators; the full JWT is never shown again.
 - **Rotation:** create a new key, update your integration, then revoke the old one. TrakRF does not support in-place key rotation; create-new-revoke-old keeps both keys valid during the cutover.
 - **Revocation:** an administrator can revoke a key at any time. Revoked keys produce `401 unauthorized` on every subsequent request.
-- **Expiration:** keys do not expire by default. Administrators can optionally set an expiration date at creation time.
+- **Expiration:** keys do not expire by default — leaving the field blank at creation mints a permanent credential with no `exp` claim. For any key beyond a throwaway local-dev credential, set an explicit expiration (e.g. 90 days) and schedule the rotation. Expired keys return `401 unauthorized`.
 
 ## Base URL
 

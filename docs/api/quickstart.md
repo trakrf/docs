@@ -28,8 +28,9 @@ If you were given preview credentials (typical for evaluation accounts), export 
 1. Sign in with an admin account (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)).
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — not key management.)
 3. Click **New key**. Give it a descriptive name (e.g. `"local-dev"`). For this quickstart, `scans:read` alone is enough — the `/locations/current` endpoint you'll call below is gated by `scans:read`. Grant `assets:read` and `locations:read` if you plan to hit the other read endpoints, and `assets:write` for the create/update/delete walkthrough in step 4. See [Authentication → Scopes](./authentication#scopes) for the full matrix.
-4. Submit. The full JWT is displayed **once**. Copy it immediately — it cannot be shown again.
-5. Save it to an environment variable:
+4. **Set an expiration.** Leaving the expiry field blank mints a permanent credential — fine for a throwaway local-dev key, but for anything shared or long-lived, pick a date (e.g. 90 days) and put a rotation reminder on the calendar. See [Authentication → Key lifecycle](./authentication#key-lifecycle).
+5. Submit. The full JWT is displayed **once**. Copy it immediately — it cannot be shown again.
+6. Save it to an environment variable:
 
    ```bash
    export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
@@ -99,7 +100,7 @@ curl -X POST "$BASE_URL/api/v1/assets" \
   -d '{
         "identifier": "ASSET-QUICKSTART",
         "name": "Quickstart test asset",
-        "type": "generic"
+        "type": "asset"
       }'
 
 # Read it back

@@ -22,6 +22,7 @@
             "type": "array"
           },
           "is_active": {
+            "example": true,
             "type": "boolean"
           },
           "metadata": {},
@@ -32,8 +33,11 @@
           },
           "type": {
             "enum": [
-              "asset"
+              "asset",
+              "person",
+              "inventory"
             ],
+            "example": "asset",
             "type": "string"
           },
           "valid_from": {
@@ -120,7 +124,9 @@
           },
           "type": {
             "enum": [
-              "asset"
+              "asset",
+              "person",
+              "inventory"
             ],
             "type": "string"
           },
@@ -191,6 +197,10 @@
           },
           "message": {
             "type": "string"
+          },
+          "params": {
+            "additionalProperties": {},
+            "type": "object"
           }
         },
         "type": "object"
@@ -224,10 +234,11 @@
             "minLength": 1,
             "type": "string"
           },
-          "parent_location_id": {
-            "example": 1,
-            "minimum": 1,
-            "type": "integer"
+          "parent_identifier": {
+            "example": "wh1",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
           },
           "valid_from": {
             "example": "2025-12-14",
@@ -314,10 +325,11 @@
             "minLength": 1,
             "type": "string"
           },
-          "parent_location_id": {
-            "example": 1,
-            "minimum": 1,
-            "type": "integer"
+          "parent_identifier": {
+            "example": "wh1",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
           },
           "valid_from": {
             "example": "2025-12-14",
@@ -449,21 +461,23 @@
       },
       "internal_handlers_inventory.SaveRequest": {
         "properties": {
-          "asset_ids": {
+          "asset_identifiers": {
+            "example": [
+              "ASSET-0001"
+            ],
             "items": {
-              "type": "integer"
+              "type": "string"
             },
             "minItems": 1,
             "type": "array"
           },
-          "location_id": {
-            "type": "integer"
+          "location_identifier": {
+            "example": "WH-01",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
           }
         },
-        "required": [
-          "asset_ids",
-          "location_id"
-        ],
         "type": "object"
       },
       "internal_handlers_inventory.SaveResponse": {
