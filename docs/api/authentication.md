@@ -10,7 +10,7 @@ The TrakRF API uses **API keys** to authenticate every request. API keys are JSO
 
 API keys are created by an organization administrator in the TrakRF web app:
 
-1. Sign in at [app.trakrf.id](https://app.trakrf.id) with an admin account. (Preview accounts: use [app.preview.trakrf.id](https://app.preview.trakrf.id) — same UI, same flow.)
+1. Sign in with an admin account (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)). Both hosts run the same UI and flow — use the one that matches your account. See [Base URL](#base-url) for the matching API host.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — signal power, session, worker log level — not key management.)
 3. Click **New key**. Give it a descriptive name (e.g. `"prod-integration"` or `"local-dev"`) and pick the scopes the integration needs — only the scopes required for the endpoints you'll call. See the [Scopes](#scopes) table below.
 4. Submit. The full JWT is displayed **once** at creation. Copy it to your secrets store immediately; it cannot be shown again.
@@ -43,11 +43,13 @@ Each key is issued with one or more scopes. The API rejects requests whose key l
 | `locations:read`  | Read   | `GET /locations`, `GET /locations/{identifier}`                                    |
 | `locations:write` | Write  | `POST /locations`, `PUT /locations/{identifier}`, `DELETE /locations/{identifier}` |
 | `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{identifier}/history`, scan-event endpoints |
+| `scans:write`     | Write  | `POST /inventory/save`                                                             |
 
 A few non-obvious pairings worth calling out:
 
 - **`/locations/current`** is gated by **`scans:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the scans scope.
 - **`/assets/{identifier}/history`** is gated by **`scans:read`** for the same reason — it's a projection of scan events, not a property of the asset.
+- **`/inventory/save`** is gated by **`scans:write`**, not `assets:write`. It ingests scan events, so writes land under the scans scope.
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).
 

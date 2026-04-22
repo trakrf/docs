@@ -29,6 +29,24 @@ Every list endpoint returns the same envelope:
 | `offset`      | The offset the server honored.                                                                                   |
 | `total_count` | Total matching rows across the full filtered result set. Use this to compute page counts or show "N of M" in UI. |
 
+### Non-paginated list exceptions {#non-paginated-exceptions}
+
+The location-hierarchy traversal endpoints return a list envelope **without** `limit`, `offset`, or `total_count`:
+
+- `GET /api/v1/locations/{identifier}/ancestors`
+- `GET /api/v1/locations/{identifier}/children`
+- `GET /api/v1/locations/{identifier}/descendants`
+
+```json
+{
+  "data": [
+    /* location objects */
+  ]
+}
+```
+
+Each response is a full tree segment (a path to the root, the direct children, or the entire subtree), not a page of a larger result set. Pagination doesn't apply — don't expect `total_count` to appear, and don't retry with `offset` to get more. If you need to paginate descendants of a large subtree, use `GET /api/v1/locations?parent={identifier}` (the filtered list form, which is paginated) instead.
+
 ## Pagination
 
 Offset-based. Two query params control the page:

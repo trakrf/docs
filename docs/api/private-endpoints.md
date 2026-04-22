@@ -41,9 +41,11 @@ Unlike other endpoints — which wrap payloads in a `{ "data": ... }` envelope �
 
 If you're using `/orgs/me` as a health check, prefer to also verify the standard envelope on a "real" endpoint (e.g. `GET /api/v1/assets?limit=1`) so your checks aren't tied to the current shape.
 
-## API-key management: session-auth-only today {#api-key-management}
+## API-key management: session-JWT-only today {#api-key-management}
 
-The `/api/v1/orgs/{id}/api-keys` endpoints back the Settings → API Keys UI and accept **session-cookie auth only** — a JWT API key cannot mint or revoke other API keys. The intended flow is administrator → web UI; there is no supported server-to-server primitive for key rotation in v1.
+The `/api/v1/orgs/{id}/api-keys` endpoints back the Settings → API Keys UI and accept a **session-scoped JWT only** — an API-key JWT cannot mint or revoke other API keys.
+
+The auth mechanics are the standard Bearer form, not a cookie: `POST /api/v1/auth/login` returns a session JWT in the response body (no `Set-Cookie`), and clients send it as `Authorization: Bearer <session-jwt>` on subsequent requests. The rule that matters is the **token type**, not the transport — the server checks a claim on the JWT and rejects API-key-scoped tokens on these endpoints with `401 unauthorized`. The intended flow is administrator → web UI; there is no supported server-to-server primitive for key rotation in v1.
 
 That rules out CI-scripted key rotation against this endpoint today. Either:
 
