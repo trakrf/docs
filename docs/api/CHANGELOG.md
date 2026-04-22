@@ -20,6 +20,10 @@ Each entry covers:
 
 Tracked but not yet in a release tag. Merged changes land here first, then move to a dated section on each platform release.
 
+### Fixed
+
+- `GET /api/v1/locations/{identifier}/ancestors`, `/children`, and `/descendants` now populate the `parent` field with the parent's natural key (omitted on root nodes), matching `GET /api/v1/locations/{identifier}` and `GET /api/v1/locations`. Previously every node returned `parent: null` regardless of depth.
+
 ## v1.0.0 — 2026-04-20
 
 Initial public availability. The `/api/v1/` surface launches with API-key authentication, per-key rate limiting, read and write endpoints for assets and locations, and the generated OpenAPI reference.
