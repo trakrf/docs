@@ -16,6 +16,7 @@ components:
                         $ref: '#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest'
                     type: array
                 is_active:
+                    example: true
                     type: boolean
                 metadata: {}
                 name:
@@ -25,6 +26,9 @@ components:
                 type:
                     enum:
                         - asset
+                        - person
+                        - inventory
+                    example: asset
                     type: string
                 valid_from:
                     example: "2025-01-01"
@@ -86,6 +90,8 @@ components:
                 type:
                     enum:
                         - asset
+                        - person
+                        - inventory
                     type: string
                 valid_from:
                     example: "2025-01-01"
@@ -135,6 +141,9 @@ components:
                     type: string
                 message:
                     type: string
+                params:
+                    additionalProperties: {}
+                    type: object
             type: object
         github_com_trakrf_platform_backend_internal_models_location.CreateLocationWithIdentifiersRequest:
             properties:
@@ -159,10 +168,11 @@ components:
                     maxLength: 255
                     minLength: 1
                     type: string
-                parent_location_id:
-                    example: 1
-                    minimum: 1
-                    type: integer
+                parent_identifier:
+                    example: wh1
+                    maxLength: 255
+                    minLength: 1
+                    type: string
                 valid_from:
                     example: "2025-12-14"
                     type: string
@@ -223,10 +233,11 @@ components:
                     maxLength: 255
                     minLength: 1
                     type: string
-                parent_location_id:
-                    example: 1
-                    minimum: 1
-                    type: integer
+                parent_identifier:
+                    example: wh1
+                    maxLength: 255
+                    minLength: 1
+                    type: string
                 valid_from:
                     example: "2025-12-14"
                     type: string
@@ -317,16 +328,18 @@ components:
             type: object
         internal_handlers_inventory.SaveRequest:
             properties:
-                asset_ids:
+                asset_identifiers:
+                    example:
+                        - ASSET-0001
                     items:
-                        type: integer
+                        type: string
                     minItems: 1
                     type: array
-                location_id:
-                    type: integer
-            required:
-                - asset_ids
-                - location_id
+                location_identifier:
+                    example: WH-01
+                    maxLength: 255
+                    minLength: 1
+                    type: string
             type: object
         internal_handlers_inventory.SaveResponse:
             properties:
