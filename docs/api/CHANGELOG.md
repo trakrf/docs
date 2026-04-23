@@ -54,7 +54,7 @@ Initial public availability. The `/api/v1/` surface launches with API-key authen
   - `POST /api/v1/locations/{identifier}/identifiers`, `DELETE /api/v1/locations/{identifier}/identifiers/{identifierId}`
   - `POST /api/v1/inventory/save` — bulk scan ingest
 - **Shared response envelope** — list responses return `{ "data": [...], "limit", "offset", "total_count" }`; single-resource responses return `{ "data": {...} }`. See [Pagination, filtering, sorting](./pagination-filtering-sorting).
-- **Shared error envelope** — RFC 7807 `{ "error": { "type", "title", "status", "detail", "instance", "request_id" } }` on every non-2xx response, plus `fields[]` on `validation_error`. See [Errors](./errors).
+- **Shared error envelope** — `{ "error": { "type", "title", "status", "detail", "instance", "request_id" } }` on every non-2xx response, plus `fields[]` on `validation_error`. Field names are modeled on RFC 7807 but the envelope is JSON-wrapped, not `application/problem+json`. See [Errors](./errors).
 - **Per-key rate limiting** — token bucket, default 60/min steady-state with 120-burst, surfaced via `X-RateLimit-Limit` / `X-RateLimit-Remaining` / `X-RateLimit-Reset` on every response and `Retry-After` on 429. See [Rate limits](./rate-limits).
 - **Request IDs** — every response includes `X-Request-ID` (ULID). Inbound `X-Request-ID` is echoed back for client-supplied correlation IDs.
 - **Interactive reference** — the OpenAPI 3.0 spec is generated from the Go handlers and rendered at [`/api`](/api) (Redoc). Raw spec available at [`/api/openapi.json`](/api/openapi.json) and [`/api/openapi.yaml`](/api/openapi.yaml).

@@ -18,7 +18,7 @@ Within `/api/v1/`, TrakRF commits to the following:
 - Required request parameters (names, types, shape)
 - Response field names and types for fields currently returned
 - HTTP status codes used for success and well-known error classes (see [Errors](./errors))
-- The response envelope shape (`{ "data": ..., "limit": ..., "offset": ..., "total_count": ... }` on list endpoints; `{ "data": ... }` on single-resource endpoints; error envelope per RFC 7807 on non-2xx)
+- The response envelope shape (`{ "data": ..., "limit": ..., "offset": ..., "total_count": ... }` on list endpoints; `{ "data": ... }` on single-resource endpoints; `{ "error": { ... } }` on non-2xx — see [Errors](./errors))
 
 **May change additively within v1:**
 

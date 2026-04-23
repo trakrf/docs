@@ -8,7 +8,7 @@ Every non-2xx response from the TrakRF API returns a JSON body in a consistent e
 
 ## Envelope shape
 
-The envelope follows [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) (Problem Details for HTTP APIs) with TrakRF-specific additions:
+Non-2xx responses return `Content-Type: application/json` with the error object nested under a top-level `error` key:
 
 ```json
 {
@@ -22,6 +22,8 @@ The envelope follows [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) (
   }
 }
 ```
+
+The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) (Problem Details for HTTP APIs), but the envelope is **not** 7807-compliant: TrakRF serves `application/json` (not `application/problem+json`) and nests the fields under `error` rather than placing them at the top level. Clients wiring directly to a 7807 library should parse this shape themselves.
 
 | Field        | Purpose                                                                                                                       |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
