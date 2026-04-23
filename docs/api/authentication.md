@@ -44,7 +44,7 @@ Each key is issued with one or more scopes. The API rejects requests whose key l
 | `locations:write` | Write  | `POST /locations`, `PUT /locations/{identifier}`, `DELETE /locations/{identifier}` |
 | `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{identifier}/history`, scan-event endpoints |
 | `scans:write`     | Write  | `POST /inventory/save`                                                             |
-| `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyId}` |
+| `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyID}` |
 
 A few non-obvious pairings worth calling out:
 
@@ -107,7 +107,7 @@ The workflow is **create-new → cut-over → revoke-old**, which keeps the inte
 1. **List existing keys** — `GET /api/v1/orgs/{id}/api-keys` returns the key metadata (name, scopes, created / last-used, expiration). The JWT itself is never included.
 2. **Mint a replacement** — `POST /api/v1/orgs/{id}/api-keys` with `{"name": "<integration>-rotated-<YYYY-MM-DD>", "scopes": [...], "expires_at": "<future>"}`. The response body carries the full JWT **once**; persist it to your secrets store immediately.
 3. **Cut over** — deploy the new JWT to the integration. Both keys are valid during the overlap.
-4. **Revoke the old key** — `DELETE /api/v1/orgs/{id}/api-keys/{keyId}`. Any subsequent request with the old JWT returns `401 unauthorized`.
+4. **Revoke the old key** — `DELETE /api/v1/orgs/{id}/api-keys/{keyID}`. Any subsequent request with the old JWT returns `401 unauthorized`.
 
 ### Self-rotation
 
