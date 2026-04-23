@@ -44,12 +44,14 @@ Each key is issued with one or more scopes. The API rejects requests whose key l
 | `locations:write` | Write  | `POST /locations`, `PUT /locations/{identifier}`, `DELETE /locations/{identifier}` |
 | `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{identifier}/history`, scan-event endpoints |
 | `scans:write`     | Write  | `POST /inventory/save`                                                             |
+| `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyID}` |
 
 A few non-obvious pairings worth calling out:
 
 - **`/locations/current`** is gated by **`scans:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the scans scope.
 - **`/assets/{identifier}/history`** is gated by **`scans:read`** for the same reason — it's a projection of scan events, not a property of the asset.
 - **`/inventory/save`** is gated by **`scans:write`**, not `assets:write`. It ingests scan events, so writes land under the scans scope.
+- **`keys:admin`** is the only "admin" scope in v1 — it gates key creation, listing, and revocation on the caller's own org. A `keys:admin` key may mint another key with `keys:admin`, enabling unattended self-rotation. See [Programmatic key rotation](#programmatic-key-rotation).
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).
 
@@ -96,6 +98,50 @@ const data = await res.json();
 - **Revocation:** an administrator can revoke a key at any time. Revoked keys produce `401 unauthorized` on every subsequent request.
 - **Expiration:** keys do not expire by default — leaving the field blank at creation mints a permanent credential with no `exp` claim. For any key beyond a throwaway local-dev credential, set an explicit expiration (e.g. 90 days) and schedule the rotation. Expired keys return `401 unauthorized`.
 
+## Programmatic key rotation {#programmatic-key-rotation}
+
+Production integrations (iPaaS connectors, CI/CD, Terraform/Pulumi) should rotate their API keys on a schedule rather than relying on administrator web-UI action. TrakRF supports unattended rotation via the `keys:admin` scope.
+
+The workflow is **create-new → cut-over → revoke-old**, which keeps the integration valid throughout:
+
+1. **List existing keys** — `GET /api/v1/orgs/{id}/api-keys` returns the key metadata (name, scopes, created / last-used, expiration). The JWT itself is never included.
+2. **Mint a replacement** — `POST /api/v1/orgs/{id}/api-keys` with `{"name": "<integration>-rotated-<YYYY-MM-DD>", "scopes": [...], "expires_at": "<future>"}`. The response body carries the full JWT **once**; persist it to your secrets store immediately.
+3. **Cut over** — deploy the new JWT to the integration. Both keys are valid during the overlap.
+4. **Revoke the old key** — `DELETE /api/v1/orgs/{id}/api-keys/{keyID}`. Any subsequent request with the old JWT returns `401 unauthorized`.
+
+### Self-rotation
+
+A key with `keys:admin` can mint another key with `keys:admin`. That means an integration holding a `keys:admin` key can rotate itself on a schedule without an administrator in the loop — mint the replacement, cut over, revoke the old key, all from one integration process.
+
+Because a `keys:admin` key is effectively a rotation-capable credential, treat it like any other high-value secret: short expiry (90 days or less), store it in a secrets manager, and review the key-revocation audit trail during incident response.
+
+### Required scopes on `/api/v1/orgs/{id}/api-keys`
+
+These endpoints accept either:
+
+- An **API key** with the `keys:admin` scope, **or**
+- A **session JWT** from an organization administrator (the path the web UI uses).
+
+Requests authenticated with an API key that lacks `keys:admin` return `403 forbidden` with `"Missing required scope: keys:admin"`. Requests with a non-admin session JWT return `403 forbidden` via the org-admin check.
+
+### Example: rotate a key from a script
+
+```bash
+# 1. Mint the replacement
+NEW_KEY=$(curl -s -H "Authorization: Bearer $TRAKRF_API_KEY" \
+               -H "Content-Type: application/json" \
+               -d '{"name":"rotated-'"$(date -u +%Y-%m-%d)"'","scopes":["assets:read","keys:admin"],"expires_at":"2026-07-22T00:00:00Z"}' \
+               "$BASE_URL/api/v1/orgs/$ORG_ID/api-keys" \
+          | jq -r '.data.jwt')
+
+# 2. Deploy $NEW_KEY to the integration, then rotate $TRAKRF_API_KEY in your secrets manager.
+# 3. Revoke the old key once the cutover is confirmed:
+curl -X DELETE -H "Authorization: Bearer $NEW_KEY" \
+     "$BASE_URL/api/v1/orgs/$ORG_ID/api-keys/$OLD_KEY_ID"
+```
+
+The shapes of the response envelopes are shown in the [API reference](/api).
+
 ## Base URL
 
 - **Production:** `https://app.trakrf.id`
@@ -116,6 +162,8 @@ Preview-scoped keys will not authenticate against production and vice versa — 
 ## Server-to-server design {#server-to-server}
 
 The TrakRF API is intended for **server-to-server** integration. Responses do not include `Access-Control-Allow-Origin` headers, so browser-based JavaScript calls are blocked by the browser's CORS policy. Call the API from a backend service and never ship API keys in client-side code — the CORS block is also a guardrail against leaking keys to end-user devices.
+
+**Session JWTs are also accepted** on public endpoints (same `Authorization: Bearer <jwt>` form), because the web app and the API share a router. A session JWT is effectively unscoped for its 1-hour lifetime and is only convenient for ad-hoc UI-driven requests; integrators should use API keys so that auth is durable and scope-limited.
 
 ## Environment variables
 
