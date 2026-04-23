@@ -44,12 +44,14 @@ Each key is issued with one or more scopes. The API rejects requests whose key l
 | `locations:write` | Write  | `POST /locations`, `PUT /locations/{identifier}`, `DELETE /locations/{identifier}` |
 | `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{identifier}/history`, scan-event endpoints |
 | `scans:write`     | Write  | `POST /inventory/save`                                                             |
+| `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyId}` |
 
 A few non-obvious pairings worth calling out:
 
 - **`/locations/current`** is gated by **`scans:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the scans scope.
 - **`/assets/{identifier}/history`** is gated by **`scans:read`** for the same reason — it's a projection of scan events, not a property of the asset.
 - **`/inventory/save`** is gated by **`scans:write`**, not `assets:write`. It ingests scan events, so writes land under the scans scope.
+- **`keys:admin`** is the only "admin" scope in v1 — it gates key creation, listing, and revocation on the caller's own org. A `keys:admin` key may mint another key with `keys:admin`, enabling unattended self-rotation. See [Programmatic key rotation](#programmatic-key-rotation).
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).
 
