@@ -9,9 +9,9 @@ Every resource in the TrakRF API has **two** IDs:
 | ID | Type | Where you see it | How you use it |
 |---|---|---|---|
 | `identifier` | string | URL path params, response bodies | The business-meaningful ID (e.g. `ASSET-0001`, `LOC-0001`). This is the one clients key on. |
-| `surrogate_id` | integer | Response bodies only | Internal-use stable ID; visible so you can correlate across related responses, but not required on the wire. |
+| `surrogate_id` | integer | Response bodies only | Stable integer ID retained for backward compatibility with earlier TrakRF tooling. Visible so clients that already correlate on it keep working; `identifier` is the canonical key. |
 
-This page explains where each form appears and why integrators should key on `identifier`, not `surrogate_id`.
+This page explains where each form appears, why integrators should key on `identifier`, and what the additional hierarchy-helper fields on locations mean.
 
 ## URL path parameters — `identifier` only
 
@@ -37,6 +37,10 @@ This applies to every GET endpoint with a path param:
 - `GET /api/v1/assets/{identifier}/history`
 - `GET /api/v1/locations/{identifier}`
 
+### Identifiers are case-sensitive {#case-sensitivity}
+
+Identifiers on the path are matched exactly as stored. `GET /api/v1/assets/ASSET-0001` returns `200`; `GET /api/v1/assets/asset-0001` returns `404 not_found`. Pick a casing convention at the point you `POST` the resource (the request-body `identifier` is what subsequent reads must quote) and stick with it — the API does not normalize case on lookup.
+
 ## Response bodies
 
 Responses return both IDs so clients that need to correlate across related records (e.g. joining asset history back to a specific asset record) can use the stable `surrogate_id` as a foreign key:
@@ -52,7 +56,43 @@ Responses return both IDs so clients that need to correlate across related recor
 }
 ```
 
-**Clients should key on `identifier`.** `surrogate_id` is stable across updates to a given record but is opaque to integrators and not guaranteed stable across environments.
+**Clients should key on `identifier`.** `surrogate_id` is retained for backward compatibility with earlier TrakRF tooling — it's stable across updates to a given record, but opaque to integrators, not guaranteed stable across environments, and not accepted on any public URL path.
+
+## Location hierarchy fields (`path`, `depth`) {#location-hierarchy-fields}
+
+Location responses include two additional fields that describe where the node sits in the location tree:
+
+| Field   | Type    | Meaning                                                                                                                                                             |
+| ------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path`  | string  | The location's position in the tree as a dot-separated [`ltree`](https://www.postgresql.org/docs/current/ltree.html) label path, e.g. `warehouse_a.aisle_3.shelf_b`. |
+| `depth` | integer | The number of labels in `path` — `1` for a root location, `2` for its direct children, and so on.                                                                   |
+
+Example (abbreviated) from `GET /api/v1/locations`:
+
+```json
+{
+  "data": [
+    {
+      "identifier": "WAREHOUSE-A",
+      "name": "Warehouse A",
+      "path": "warehouse_a",
+      "depth": 1,
+      "parent": null
+    },
+    {
+      "identifier": "SHELF-B",
+      "name": "Shelf B",
+      "path": "warehouse_a.aisle_3.shelf_b",
+      "depth": 3,
+      "parent": "AISLE-3"
+    }
+  ]
+}
+```
+
+Because `ltree` labels only accept `[A-Za-z0-9_]`, the label form of each identifier is **lowercased with hyphens converted to underscores**. The original casing and any hyphens live in the `identifier` field; `path` is a derived helper, not a second identifier. Don't try to look up a location by its `path` — URL path params still take the `identifier` (see [URL path parameters](#url-path-parameters--identifier-only)).
+
+These fields are most useful for UI renderers that want to sort or indent a flat list by tree position without making follow-up calls. For explicit hierarchy traversal, prefer the dedicated endpoints (`GET /api/v1/locations/{identifier}/ancestors`, `/children`, `/descendants`) described in [Pagination, filtering, sorting → Non-paginated list exceptions](./pagination-filtering-sorting#non-paginated-exceptions).
 
 ## Writes (PUT, DELETE)
 
