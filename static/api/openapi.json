@@ -1,6 +1,30 @@
 {
   "components": {
     "schemas": {
+      "github_com_trakrf_platform_backend_internal_models_apikey.CreateAPIKeyRequest": {
+        "properties": {
+          "expires_at": {
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "scopes": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "scopes"
+        ],
+        "type": "object"
+      },
       "github_com_trakrf_platform_backend_internal_models_asset.CreateAssetWithIdentifiersRequest": {
         "properties": {
           "current_location_id": {
@@ -568,7 +592,7 @@
   "paths": {
     "/api/v1/assets": {
       "get": {
-        "description": "Paginated assets list with natural-key filters, sort, and fuzzy search",
+        "description": "Paginated assets list with natural-key filters, sort, and substring search",
         "operationId": "assets.list",
         "parameters": [
           {
@@ -614,7 +638,7 @@
             }
           },
           {
-            "description": "fuzzy search on name / identifier / description",
+            "description": "substring search (case-insensitive) on name, identifier, description, and active identifier values",
             "in": "query",
             "name": "q",
             "schema": {
@@ -648,13 +672,13 @@
                 }
               },
               "X-RateLimit-Remaining": {
-                "description": "Tokens left in bucket at response time",
+                "description": "Requests remaining before throttling; bounded by X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
               },
               "X-RateLimit-Reset": {
-                "description": "Unix timestamp when bucket fully refills",
+                "description": "Unix timestamp (seconds) when X-RateLimit-Remaining will next equal X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
@@ -945,13 +969,13 @@
                 }
               },
               "X-RateLimit-Remaining": {
-                "description": "Tokens left in bucket at response time",
+                "description": "Requests remaining before throttling; bounded by X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
               },
               "X-RateLimit-Reset": {
-                "description": "Unix timestamp when bucket fully refills",
+                "description": "Unix timestamp (seconds) when X-RateLimit-Remaining will next equal X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
@@ -1216,13 +1240,13 @@
                 }
               },
               "X-RateLimit-Remaining": {
-                "description": "Tokens left in bucket at response time",
+                "description": "Requests remaining before throttling; bounded by X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
               },
               "X-RateLimit-Reset": {
-                "description": "Unix timestamp when bucket fully refills",
+                "description": "Unix timestamp (seconds) when X-RateLimit-Remaining will next equal X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
@@ -1623,7 +1647,7 @@
             }
           },
           {
-            "description": "fuzzy search on name, identifier, description",
+            "description": "substring search (case-insensitive) on name, identifier, description, and active identifier values",
             "in": "query",
             "name": "q",
             "schema": {
@@ -1657,13 +1681,13 @@
                 }
               },
               "X-RateLimit-Remaining": {
-                "description": "Tokens left in bucket at response time",
+                "description": "Requests remaining before throttling; bounded by X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
               },
               "X-RateLimit-Reset": {
-                "description": "Unix timestamp when bucket fully refills",
+                "description": "Unix timestamp (seconds) when X-RateLimit-Remaining will next equal X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
@@ -1830,7 +1854,7 @@
             }
           },
           {
-            "description": "fuzzy search on asset name / identifier",
+            "description": "substring search (case-insensitive) on asset name, identifier, and active identifier values",
             "in": "query",
             "name": "q",
             "schema": {
@@ -1865,13 +1889,13 @@
                 }
               },
               "X-RateLimit-Remaining": {
-                "description": "Tokens left in bucket at response time",
+                "description": "Requests remaining before throttling; bounded by X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
               },
               "X-RateLimit-Reset": {
-                "description": "Unix timestamp when bucket fully refills",
+                "description": "Unix timestamp (seconds) when X-RateLimit-Remaining will next equal X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
@@ -2053,13 +2077,13 @@
                 }
               },
               "X-RateLimit-Remaining": {
-                "description": "Tokens left in bucket at response time",
+                "description": "Requests remaining before throttling; bounded by X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
               },
               "X-RateLimit-Reset": {
-                "description": "Unix timestamp when bucket fully refills",
+                "description": "Unix timestamp (seconds) when X-RateLimit-Remaining will next equal X-RateLimit-Limit",
                 "schema": {
                   "type": "integer"
                 }
@@ -2743,6 +2767,320 @@
         "summary": "Remove an identifier from a location",
         "tags": [
           "locations"
+        ]
+      }
+    },
+    "/api/v1/orgs/me": {
+      "get": {
+        "description": "Returns the organization scoped by the API key presented in Authorization. Intended as a lightweight health-check primitive for integrators verifying a key works end-to-end.",
+        "operationId": "orgs.me",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "data: {id, name}"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "APIKey": []
+          }
+        ],
+        "summary": "Get the org associated with the authenticated API key",
+        "tags": [
+          "orgs"
+        ]
+      }
+    },
+    "/api/v1/orgs/{id}/api-keys": {
+      "get": {
+        "operationId": "api_keys.list",
+        "parameters": [
+          {
+            "description": "Organization id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "data: []apikey.APIKeyListItem"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "List active API keys for an organization",
+        "tags": [
+          "api-keys"
+        ]
+      },
+      "post": {
+        "description": "Mints an API-key JWT scoped to the target org. Accepts either session-admin or an API key with the keys:admin scope.",
+        "operationId": "api_keys.create",
+        "parameters": [
+          {
+            "description": "Organization id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_apikey.CreateAPIKeyRequest"
+              }
+            }
+          },
+          "description": "Key creation payload",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object"
+                }
+              }
+            },
+            "description": "data: apikey.APIKeyCreateResponse"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Active-key cap reached"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create a new API key for an organization",
+        "tags": [
+          "api-keys"
+        ]
+      }
+    },
+    "/api/v1/orgs/{id}/api-keys/{keyID}": {
+      "delete": {
+        "operationId": "api_keys.revoke",
+        "parameters": [
+          {
+            "description": "Organization id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "API key id",
+            "in": "path",
+            "name": "keyID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Revoke an API key",
+        "tags": [
+          "api-keys"
         ]
       }
     }
