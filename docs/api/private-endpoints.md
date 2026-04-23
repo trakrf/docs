@@ -23,7 +23,6 @@ If you need functionality not available via the documented public API, [email su
 | `/api/v1/users/me/current-org` | POST              | SPA org switcher       | Internal                         | Internal                                  |
 | `/api/v1/orgs`                 | GET               | SPA org picker         | Internal                         | Internal                                  |
 | `/api/v1/orgs/{id}`            | GET               | SPA org detail         | Internal                         | Internal                                  |
-| `/api/v1/orgs/{id}/api-keys`   | GET, POST, DELETE | Settings → API Keys UI | Internal                         | Internal — see API-key note below         |
 | `/api/v1/orgs/me`              | GET               | API-key health check   | Public (see [`/api`](/api))      | Public                                    |
 
 ## Response shape: `/orgs/me` {#orgs-me}
@@ -40,15 +39,6 @@ If you need functionality not available via the documented public API, [email su
 ```
 
 If you're using `/orgs/me` as a health check, consider also probing a "real" endpoint (e.g. `GET /api/v1/assets?limit=1`) so your checks exercise the database path, not just the token verification path.
-
-## API-key management is Internal {#api-key-management}
-
-The `/api/v1/orgs/{id}/api-keys` endpoints back the Settings → API Keys UI and accept a **session-scoped JWT only** — an API-key JWT cannot mint or revoke other API keys. The auth mechanics are the standard `Authorization: Bearer <session-jwt>` form (no `Set-Cookie`); the server rejects API-key-scoped tokens on these endpoints with `401 unauthorized`. The intended flow is administrator → web UI.
-
-That rules out CI-scripted key rotation against this endpoint. Options:
-
-- **Rotate via the UI** — an admin mints a new key, updates the integration, and deletes the old key. This is the supported path end-to-end.
-- **Ask for a rotation primitive** — if you have a concrete CI-rotation requirement, [email support](mailto:support@trakrf.id) so we can prioritize an API-key-authenticated rotation endpoint. Flagging this keeps us honest rather than handing out an undocumented endpoint that might move.
 
 ## Classification policy {#policy}
 
