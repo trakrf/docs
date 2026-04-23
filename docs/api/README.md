@@ -20,7 +20,7 @@ This page is the map. The pages linked below are the territory.
 - **[Authentication](./authentication)** — API keys, Bearer headers, scopes, key lifecycle
 - **[Resource identifiers](./resource-identifiers)** — why you key on `identifier`, not `surrogate_id`
 - **[Pagination, filtering, sorting](./pagination-filtering-sorting)** — conventions that apply to every list endpoint
-- **[Errors](./errors)** — RFC 7807 envelope, error catalog, retry guidance
+- **[Errors](./errors)** — error envelope, error-type catalog, retry guidance
 - **[Rate limits](./rate-limits)** — per-key token bucket, `X-RateLimit-*` headers, `Retry-After`
 - **[Versioning](./versioning)** — v1 stability commitment, deprecation policy, open vs closed enums
 - **[Changelog](./CHANGELOG)** — release-by-release record of added / deprecated / removed
