@@ -12,18 +12,18 @@ If you need functionality not available via the documented public API, [email su
 
 ## Endpoint list
 
-| Endpoint                       | Method(s)         | Used by                | Status                           | Classification                            |
-| ------------------------------ | ----------------- | ---------------------- | -------------------------------- | ----------------------------------------- |
-| `/api/v1/auth/login`           | POST              | SPA login form         | Internal                         | Internal                                  |
-| `/api/v1/auth/signup`          | POST              | SPA signup form        | Internal                         | Internal                                  |
-| `/api/v1/auth/forgot-password` | POST              | SPA password recovery  | Internal                         | Internal                                  |
-| `/api/v1/auth/reset-password`  | POST              | SPA password recovery  | Internal                         | Internal                                  |
-| `/api/v1/auth/accept-invite`   | POST              | SPA invite acceptance  | Internal                         | Internal                                  |
-| `/api/v1/users/me`             | GET               | SPA user context       | Internal                         | Internal                                  |
-| `/api/v1/users/me/current-org` | POST              | SPA org switcher       | Internal                         | Internal                                  |
-| `/api/v1/orgs`                 | GET               | SPA org picker         | Internal                         | Internal                                  |
-| `/api/v1/orgs/{id}`            | GET               | SPA org detail         | Internal                         | Internal                                  |
-| `/api/v1/orgs/me`              | GET               | API-key health check   | Public (see [`/api`](/api))      | Public                                    |
+| Endpoint                       | Method(s) | Used by               | Status                      | Classification |
+| ------------------------------ | --------- | --------------------- | --------------------------- | -------------- |
+| `/api/v1/auth/login`           | POST      | SPA login form        | Internal                    | Internal       |
+| `/api/v1/auth/signup`          | POST      | SPA signup form       | Internal                    | Internal       |
+| `/api/v1/auth/forgot-password` | POST      | SPA password recovery | Internal                    | Internal       |
+| `/api/v1/auth/reset-password`  | POST      | SPA password recovery | Internal                    | Internal       |
+| `/api/v1/auth/accept-invite`   | POST      | SPA invite acceptance | Internal                    | Internal       |
+| `/api/v1/users/me`             | GET       | SPA user context      | Internal                    | Internal       |
+| `/api/v1/users/me/current-org` | POST      | SPA org switcher      | Internal                    | Internal       |
+| `/api/v1/orgs`                 | GET       | SPA org picker        | Internal                    | Internal       |
+| `/api/v1/orgs/{id}`            | GET       | SPA org detail        | Internal                    | Internal       |
+| `/api/v1/orgs/me`              | GET       | API-key health check  | Public (see [`/api`](/api)) | Public         |
 
 ## Response shape: `/orgs/me` {#orgs-me}
 
