@@ -27,8 +27,8 @@ The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/
 
 | Field        | Purpose                                                                                                                       |
 | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `type`       | A machine-readable identifier — your code should branch on this. Extensible enum.                                             |
-| `title`      | A short human-readable summary safe to log.                                                                                   |
+| `type`       | A machine-readable identifier — your code should branch on this, not on `title`. Extensible enum.                             |
+| `title`      | A short human-readable summary safe to log. May vary between instances of the same `type` (for example, 401 responses carry different titles for missing-header vs expired-token vs revoked-key). |
 | `status`     | The HTTP status code. Always matches the response's status line.                                                              |
 | `detail`     | A longer human-readable explanation. Safe to log; may name the offending field or value.                                      |
 | `instance`   | The request path that produced the error. Useful when the same error appears across multiple logs.                            |
@@ -40,7 +40,7 @@ The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/
 | ------------------ | ----------- | ----------------------------------------------------------------------------------------- | ------------------------------------- |
 | `validation_error` | 400         | Request body failed schema validation (see [validation errors](#validation-errors) below) | No — fix the request                  |
 | `bad_request`      | 400         | Malformed request — bad JSON, unknown query param, invalid sort field                     | No — fix the request                  |
-| `unauthorized`     | 401         | Missing, malformed, revoked, or expired API key                                           | No — re-auth                          |
+| `unauthorized`     | 401         | Missing, malformed, revoked, or expired API key. `title` varies by cause — match on `type`. | No — re-auth                          |
 | `forbidden`        | 403         | Valid key but insufficient scope for this endpoint                                        | No — needs a key with the right scope |
 | `not_found`        | 404         | Natural-key lookup failed                                                                 | No — check the identifier             |
 | `conflict`         | 409         | Unique-constraint violation (typically a duplicate `identifier`)                          | No — reconcile with `GET` then `PUT`  |

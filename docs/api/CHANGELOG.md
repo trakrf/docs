@@ -27,6 +27,13 @@ Tracked but not yet in a release tag. Merged changes land here first, then move 
 - The `type` field on assets enumerates its allowed values (`asset`, `person`, `inventory`) in the OpenAPI spec, and validation errors on unknown values return the allowed set in the `fields[].params` object.
 - `POST /api/v1/orgs/{id}/api-keys`, `GET /api/v1/orgs/{id}/api-keys`, and `DELETE /api/v1/orgs/{id}/api-keys/{keyId}` are now public, authenticated with the new **`keys:admin`** scope (or a session JWT from an org administrator). A `keys:admin` key may mint another `keys:admin` key, enabling unattended rotation for iPaaS, CI/CD, and IaC workflows. See [Authentication → Programmatic key rotation](./authentication#programmatic-key-rotation).
 
+### Changed
+
+- API quickstart and Getting-started → API pages now auto-detect environment from the docs hostname (`docs.trakrf.id` → production app, `docs.preview.trakrf.id` → preview app), with a switcher for cross-environment readers ([TRA-467](https://linear.app/trakrf/issue/TRA-467) — F4).
+- Added a multi-organization warning on the API-key minting steps: keys are scoped to whichever org is selected in the avatar menu at creation time ([TRA-467](https://linear.app/trakrf/issue/TRA-467) — F5).
+- Added a UI-form-to-scope-string mapping table on Authentication → Scopes ([TRA-467](https://linear.app/trakrf/issue/TRA-467) — F6).
+- Errors → Envelope clarified that `title` is descriptive and varies; clients should match on `type` ([TRA-467](https://linear.app/trakrf/issue/TRA-467) — F7).
+
 ### Fixed
 
 - `X-RateLimit-Remaining` now stays bounded by `X-RateLimit-Limit` (per IETF draft-ietf-httpapi-ratelimit-headers). Previously a fresh key could return `remaining=119` against `limit=60`, because the header surfaced the internal burst-bucket size instead of advertised quota. The burst safety margin still exists — it's just hidden from the header, where it only confused clients.

@@ -12,9 +12,10 @@ API keys are created by an organization administrator in the TrakRF web app:
 
 1. Sign in with an admin account (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)). Both hosts run the same UI and flow — use the one that matches your account. See [Base URL](#base-url) for the matching API host.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — signal power, session, worker log level — not key management.)
-3. Click **New key**. Give it a descriptive name (e.g. `"prod-integration"` or `"local-dev"`) and pick the scopes the integration needs — only the scopes required for the endpoints you'll call. See the [Scopes](#scopes) table below.
-4. Submit. The full JWT is displayed **once** at creation. Copy it to your secrets store immediately; it cannot be shown again.
-5. Use it as the `Authorization: Bearer <key>` header on every API request. See [Request header](#request-header) for the exact format.
+3. **If your account belongs to multiple organizations,** API keys are scoped to whichever org is currently selected in the avatar menu. Check the org switcher before clicking **New key** — a key minted under the wrong org cannot be reassigned.
+4. Click **New key**. Give it a descriptive name (e.g. `"prod-integration"` or `"local-dev"`) and pick the scopes the integration needs — only the scopes required for the endpoints you'll call. See the [Scopes](#scopes) table below.
+5. Submit. The full JWT is displayed **once** at creation. Copy it to your secrets store immediately; it cannot be shown again.
+6. Use it as the `Authorization: Bearer <key>` header on every API request. See [Request header](#request-header) for the exact format.
 
 <!-- TODO: screenshot of avatar menu → API Keys → New key dialog; capture via scripts/refresh-screenshots.sh pattern. Tracked as a follow-up to TRA-408. -->
 
@@ -35,6 +36,21 @@ Despite the credential being called an "API key," the server only honors the `Au
 ## Scopes
 
 Each key is issued with one or more scopes. The API rejects requests whose key lacks the scope required by the endpoint (`403 forbidden` with `"Missing required scope: <scope>"`). Current scopes and the endpoints they gate:
+
+### UI labels vs scope strings {#ui-labels}
+
+The **New key** form in the web app lets you pick a resource (Assets / Locations / Scans) and an access level (None / Read / Read+Write). Each combination maps to one or two of the scope strings used throughout these docs and in API responses. `keys:admin` is not exposed in the form — admin-tier keys are minted via API, see [Programmatic key rotation](#programmatic-key-rotation).
+
+| UI form (resource × level) | Scopes granted                      |
+| -------------------------- | ----------------------------------- |
+| Assets → Read              | `assets:read`                       |
+| Assets → Read+Write        | `assets:read`, `assets:write`       |
+| Locations → Read           | `locations:read`                    |
+| Locations → Read+Write     | `locations:read`, `locations:write` |
+| Scans → Read               | `scans:read`                        |
+| Scans → Read+Write         | `scans:read`, `scans:write`         |
+
+Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
 
 | Scope             | Access | Endpoints (representative)                                                         |
 | ----------------- | ------ | ---------------------------------------------------------------------------------- |
