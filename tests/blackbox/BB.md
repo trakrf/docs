@@ -25,9 +25,26 @@ Use whichever HTTP client / language you'd naturally reach for. The variation be
 
 Verify every claim in the docs against the live service. When the docs and the service disagree, that is a primary finding.
 
+## OpenAPI spec contract check
+
+After your exploratory evaluation, run a mechanical pass against the published OpenAPI spec. An integration partner will auto-generate a connector from this spec — if the spec and the service disagree, the connector breaks.
+
+1. **Fetch the spec.** Find the OpenAPI JSON/YAML URL from the docs site. If the docs don't link to it, that's a finding.
+
+2. **Walk every path.** For each endpoint in the spec, make a real call (with your API key) and verify:
+   - Does the endpoint respond at all? (404 = spec lies about the route)
+   - Does the response status code match one of the declared responses?
+   - Does the response body shape match the declared schema? Look for: undocumented fields in the response, fields declared in the schema but missing from the response, type mismatches (string vs number vs null).
+
+3. **CRUD lifecycle.** For resources that support create/read/update/delete: create a resource, read it back, update it, read again, delete it, confirm deletion. Verify each step's response matches the spec. Clean up anything you create.
+
+4. **Pagination boundaries.** Page through at least one collection endpoint fully. Verify `total_count` matches the actual number of items returned across all pages. Test: `limit=1` (minimum page), `limit=200` (documented max), `limit=201` (should reject).
+
+Report spec-vs-service mismatches separately from the doc-vs-service findings in the exploratory pass. These are two different source-of-truth documents that can disagree with each other and with the live service.
+
 ## Report findings
 
-Write up findings at the end of the session. Lead with documentation and workflow gaps; treat API bugs as supporting evidence tied to the workflow step that surfaced them.
+Write up findings to FINDINGS.md at the end of the session. Lead with documentation and workflow gaps; treat API bugs as supporting evidence tied to the workflow step that surfaced them. Report spec contract mismatches in their own section.
 
 ## Cleanup
 
