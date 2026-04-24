@@ -43,21 +43,17 @@ function readOverride(): DeployEnvLabel | null {
 function detectFromHostname(): DeployEnvLabel {
   if (typeof window === "undefined") return "production";
   const host = window.location.hostname;
-  // docs.preview.trakrf.id → preview; docs.trakrf.id → production
-  // localhost / any non-matching host → production (sensible dev default)
-  if (host.startsWith("docs.preview.") || host.startsWith("app.preview.")) {
-    return "preview";
-  }
+  // docs.preview.trakrf.id → preview; docs.trakrf.id → production.
+  // localhost or any non-matching host → production (sensible dev default).
+  if (host.startsWith("docs.preview.")) return "preview";
   return "production";
 }
 
-function getSnapshot(): string {
-  const override = readOverride();
-  const env = override ?? detectFromHostname();
-  return env;
+function getSnapshot(): DeployEnvLabel {
+  return readOverride() ?? detectFromHostname();
 }
 
-function getServerSnapshot(): string {
+function getServerSnapshot(): DeployEnvLabel {
   return "production";
 }
 
@@ -79,10 +75,10 @@ export function useDeployEnv(): DeployEnv {
     subscribe,
     getSnapshot,
     getServerSnapshot,
-  ) as DeployEnvLabel;
+  );
 
   const appHost = envLabel === "preview" ? PREVIEW_HOST : PROD_HOST;
-  const override = readOverrideSafe();
+  const override = readOverride();
 
   const setOverride = (env: DeployEnvLabel) => {
     if (typeof window === "undefined") return;
@@ -97,11 +93,4 @@ export function useDeployEnv(): DeployEnv {
   };
 
   return { appHost, envLabel, override, setOverride, clearOverride };
-}
-
-// Reads override safely on both server and client; used to populate the
-// `override` field in the returned object without another store subscription.
-function readOverrideSafe(): DeployEnvLabel | null {
-  if (typeof window === "undefined") return null;
-  return readOverride();
 }
