@@ -35,9 +35,10 @@ Preview-scoped keys will not authenticate against production and vice versa; the
 
 1. Sign in at the <EnvSignInLink><EnvLabel /> web app</EnvSignInLink>.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page configures devices — not keys.)
-3. Click **New key**. Give it a descriptive name (e.g. "local dev"), choose scopes (`scans:read` alone is enough for this quickstart — the `/locations/current` endpoint is gated by `scans:read`; grant `assets:read` and `locations:read` if you plan to hit the other read endpoints), and submit.
-4. **Copy the JWT immediately.** It's shown once at creation time and can't be recovered later.
-5. Save it to an environment variable for the next steps:
+3. Keys are scoped to the org selected in the avatar menu. If you admin multiple orgs, check the switcher first. ([details](../api/authentication#mint-your-first-api-key))
+4. Click **New key**. Give it a descriptive name (e.g. "local dev"), choose scopes (`scans:read` alone is enough for this quickstart — the `/locations/current` endpoint is gated by `scans:read`; grant `assets:read` and `locations:read` if you plan to hit the other read endpoints), and submit.
+5. **Copy the JWT immediately.** It's shown once at creation time and can't be recovered later.
+6. Save it to an environment variable for the next steps:
 
    ```bash
    export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
