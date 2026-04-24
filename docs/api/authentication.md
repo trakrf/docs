@@ -37,6 +37,21 @@ Despite the credential being called an "API key," the server only honors the `Au
 
 Each key is issued with one or more scopes. The API rejects requests whose key lacks the scope required by the endpoint (`403 forbidden` with `"Missing required scope: <scope>"`). Current scopes and the endpoints they gate:
 
+### UI labels vs scope strings {#ui-labels}
+
+The **New key** form in the web app lets you pick a resource (Assets / Locations / Scans) and an access level (None / Read / Read+Write). Each combination maps to one or two of the scope strings used throughout these docs and in API responses. `keys:admin` is not exposed in the form — admin-tier keys are minted via API, see [Programmatic key rotation](#programmatic-key-rotation).
+
+| UI form (resource × level) | Scopes granted                      |
+| -------------------------- | ----------------------------------- |
+| Assets → Read              | `assets:read`                       |
+| Assets → Read+Write        | `assets:read`, `assets:write`       |
+| Locations → Read           | `locations:read`                    |
+| Locations → Read+Write     | `locations:read`, `locations:write` |
+| Scans → Read               | `scans:read`                        |
+| Scans → Read+Write         | `scans:read`, `scans:write`         |
+
+Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
+
 | Scope             | Access | Endpoints (representative)                                                         |
 | ----------------- | ------ | ---------------------------------------------------------------------------------- |
 | `assets:read`     | Read   | `GET /assets`, `GET /assets/{identifier}`                                          |
