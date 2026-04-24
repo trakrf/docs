@@ -30,11 +30,11 @@ Tier-specific allowances keyed to subscription plans are on the roadmap. If your
 
 Every API response — successful or throttled — includes three headers describing the current state of your bucket:
 
-| Header                  | Units                | Meaning                                                                                                                  |
-| ----------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `X-RateLimit-Limit`     | integer requests     | Your steady-state budget per 60-second window (e.g. `60`).                                                                |
-| `X-RateLimit-Remaining` | integer requests     | Requests you can make before throttling, bounded by `Limit`. Stays at `Limit` while you're inside the burst safety margin.|
-| `X-RateLimit-Reset`     | Unix epoch seconds   | Wall-clock time at which `Remaining` will next equal `Limit`. Equal to "now" when you already have full quota.            |
+| Header                  | Units              | Meaning                                                                                                                    |
+| ----------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `X-RateLimit-Limit`     | integer requests   | Your steady-state budget per 60-second window (e.g. `60`).                                                                 |
+| `X-RateLimit-Remaining` | integer requests   | Requests you can make before throttling, bounded by `Limit`. Stays at `Limit` while you're inside the burst safety margin. |
+| `X-RateLimit-Reset`     | Unix epoch seconds | Wall-clock time at which `Remaining` will next equal `Limit`. Equal to "now" when you already have full quota.             |
 
 You can watch `X-RateLimit-Remaining` to pace requests preemptively rather than waiting to hit `429`. A well-behaved client pattern is:
 

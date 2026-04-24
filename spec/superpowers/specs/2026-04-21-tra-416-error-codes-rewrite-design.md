@@ -16,10 +16,12 @@ One PR, one branch, one file (`docs/api/error-codes.md`). Every change lands as 
 **Branch:** `docs/tra-416-error-codes-rewrite` (already created off `main`).
 
 **In scope:**
+
 - `## Validation errors` section (current lines 50–88) — example envelope, field-entry description, code enum list.
 - `## Request IDs` section (current lines 109–113) — one clarification sentence on inbound echo behavior.
 
 **Out of scope:**
+
 - `## Envelope shape` section — already matches the service. No edits.
 - Every other section (`## Error type catalog`, `## Retry guidance`, `## Idempotency`, `## Deprecation notices`) — not in TRA-416 scope.
 - Any other `docs/api/*.md{,x}` file. Rest-of-docs sweeps already happened under TRA-408.
@@ -42,14 +44,14 @@ Verified against the landed TRA-407 code in `trakrf/platform`.
 
 From `tagToCode` + `codeForTag` in `validation.go`:
 
-| code | When emitted |
-|---|---|
-| `required` | tags `required`, `required_without`, `required_with` |
+| code            | When emitted                                                         |
+| --------------- | -------------------------------------------------------------------- |
+| `required`      | tags `required`, `required_without`, `required_with`                 |
 | `invalid_value` | tags `email`, `oneof`, `url`, `uuid`, and any unknown tag (fallback) |
-| `too_short` | tag `min` on string/slice kinds |
-| `too_long` | tag `max` on string/slice kinds |
-| `too_small` | tags `min` (numeric), `gte`, `gt` |
-| `too_large` | tags `max` (numeric), `lte`, `lt` |
+| `too_short`     | tag `min` on string/slice kinds                                      |
+| `too_long`      | tag `max` on string/slice kinds                                      |
+| `too_small`     | tags `min` (numeric), `gte`, `gt`                                    |
+| `too_large`     | tags `max` (numeric), `lte`, `lt`                                    |
 
 **Codes the current docs list but the service never emits:** `invalid_format`, `out_of_range`. Remove.
 **Codes the service emits but the current docs don't list:** `too_small`, `too_large`. Add.
@@ -91,8 +93,16 @@ No unicode symbols (`≤` / `≥`), no copy like `"must be one of: asset"`. Docs
     "instance": "/api/v1/assets",
     "request_id": "01J...",
     "fields": [
-      { "field": "identifier", "code": "too_long",      "message": "must be ≤255 characters" },
-      { "field": "type",       "code": "invalid_value", "message": "must be one of: asset" }
+      {
+        "field": "identifier",
+        "code": "too_long",
+        "message": "must be ≤255 characters"
+      },
+      {
+        "field": "type",
+        "code": "invalid_value",
+        "message": "must be one of: asset"
+      }
     ]
   }
 }
@@ -110,14 +120,23 @@ No unicode symbols (`≤` / `≥`), no copy like `"must be one of: asset"`. Docs
     "instance": "/api/v1/assets",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
-      { "field": "identifier", "code": "too_long",      "message": "identifier must be at most 255 characters" },
-      { "field": "type",       "code": "invalid_value", "message": "type is not a valid value" }
+      {
+        "field": "identifier",
+        "code": "too_long",
+        "message": "identifier must be at most 255 characters"
+      },
+      {
+        "field": "type",
+        "code": "invalid_value",
+        "message": "type is not a valid value"
+      }
     ]
   }
 }
 ```
 
 Why each edit:
+
 - `title` / `detail` strings match `RespondValidationError` exactly.
 - `request_id` uses the same 26-char Crockford-base32 placeholder shape as the `Envelope shape` section (keeps the page internally consistent).
 - `message` strings use the ASCII wording `messageForField` actually emits, including the leading field name.
@@ -178,6 +197,7 @@ Single-sentence clarification. No table or structural change.
 ## Verification
 
 **Pre-commit (local):**
+
 - `pnpm build` passes in `trakrf-docs/`.
 - `pnpm dev` — visually inspect `/docs/api/error-codes`:
   - JSON blocks highlight cleanly.
@@ -185,6 +205,7 @@ Single-sentence clarification. No table or structural change.
   - Code list includes `too_small` and `too_large`, omits `invalid_format` and `out_of_range`.
 
 **Pre-ship (against preview deployment):**
+
 - Deploy the PR preview; confirm `docs.preview.trakrf.id/docs/api/error-codes` matches.
 - Hit the **platform** preview (`app.preview.trakrf.id`) with a deliberately-invalid `POST /api/v1/auth/signup` body; confirm the returned `error` payload matches the rewritten example in every field the docs now promise:
   - `error.title == "Validation failed"`
@@ -194,6 +215,7 @@ Single-sentence clarification. No table or structural change.
 - Send a request with `X-Request-ID: client-supplied-abc123`; confirm it is echoed back verbatim in the response header.
 
 **Ship gate (TRA-416 + TRA-400):**
+
 - Re-run the black-box harness (`tests/blackbox/` in `trakrf-docs`) and confirm a clean run. This is the channel-partner readiness signal, not `pnpm build` alone.
 
 ## Rollout

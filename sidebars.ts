@@ -42,6 +42,7 @@ const sidebars: SidebarsConfig = {
         "api/quickstart",
         "api/authentication",
         "api/resource-identifiers",
+        "api/date-fields",
         "api/pagination-filtering-sorting",
         "api/errors",
         "api/rate-limits",

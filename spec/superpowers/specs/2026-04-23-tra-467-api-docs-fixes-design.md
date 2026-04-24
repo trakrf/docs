@@ -65,9 +65,9 @@ React hook, single source of truth. Returns:
 
 ```ts
 type DeployEnv = {
-  appHost: string;         // e.g. "https://app.preview.trakrf.id"
+  appHost: string; // e.g. "https://app.preview.trakrf.id"
   envLabel: "production" | "preview" | "unknown";
-  override: "production" | "preview" | null;  // from localStorage
+  override: "production" | "preview" | null; // from localStorage
   setOverride: (env: "production" | "preview") => void;
   clearOverride: () => void;
 };
@@ -94,6 +94,7 @@ All four are thin wrappers over the hook:
   Replaces the current two-block "pick one of these" pattern.
 - **`<EnvSignInLink>children</EnvSignInLink>`** — anchor to `{appHost}` with the children as link text.
 - **`<EnvSwitcher />`** — small pill control, rendered inside the step-1 callout on each quickstart page:
+
   > `Environment: Preview ▾` → dropdown `Production / Preview / Reset to auto-detect`.
 
   Styling uses existing Infima / Docusaurus tokens — no new CSS file required beyond a small module.
@@ -151,14 +152,14 @@ Insert a new subsection in `docs/api/authentication.md#scopes` **before** the ex
 
 The **New key** form in the web app lets you pick a resource (Assets / Locations / Scans) and an access level (None / Read / Read+Write). Each combination maps to one or two of the scope strings used throughout these docs and in API responses. `keys:admin` is not exposed in the form — admin-tier keys are minted via API, see [Programmatic key rotation](#programmatic-key-rotation).
 
-| UI form (resource × level)   | Scopes granted                      |
-| ---------------------------- | ----------------------------------- |
-| Assets → Read                | `assets:read`                       |
-| Assets → Read+Write          | `assets:read`, `assets:write`       |
-| Locations → Read             | `locations:read`                    |
-| Locations → Read+Write       | `locations:read`, `locations:write` |
-| Scans → Read                 | `scans:read`                        |
-| Scans → Read+Write           | `scans:read`, `scans:write`         |
+| UI form (resource × level) | Scopes granted                      |
+| -------------------------- | ----------------------------------- |
+| Assets → Read              | `assets:read`                       |
+| Assets → Read+Write        | `assets:read`, `assets:write`       |
+| Locations → Read           | `locations:read`                    |
+| Locations → Read+Write     | `locations:read`, `locations:write` |
+| Scans → Read               | `scans:read`                        |
+| Scans → Read+Write         | `scans:read`, `scans:write`         |
 
 Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
 ```

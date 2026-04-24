@@ -26,6 +26,7 @@
 
 Run: `git branch --show-current && git log -1 --oneline`
 Expected:
+
 ```
 miks2u/tra-467-api-docs-fixes
 af7315d docs(tra-467): design spec for API docs fixes (F4-F7 + BB.md harness bump)
@@ -48,6 +49,7 @@ Expected: build completes; no "Broken link" errors; produces `build/` directory.
 ### Task 1: Create the `useDeployEnv` hook
 
 **Files:**
+
 - Create: `src/hooks/useDeployEnv.ts`
 
 The hook is the single source of truth for environment detection. It uses React 19's `useSyncExternalStore` so components re-render consistently when the override changes, and so SSR has a deterministic server snapshot.
@@ -192,6 +194,7 @@ EOF
 ### Task 2: Create the five env-aware components
 
 **Files:**
+
 - Create: `src/components/EnvLabel.tsx`
 - Create: `src/components/EnvBaseURL.tsx`
 - Create: `src/components/EnvBaseURLBlock.tsx`
@@ -303,7 +306,10 @@ export default function EnvSignInLink({ children }: Props): JSX.Element {
 - [ ] **Step 6: Create `src/components/EnvSwitcher.tsx`**
 
 ```tsx
-import { useDeployEnv, type DeployEnvLabel } from "@site/src/hooks/useDeployEnv";
+import {
+  useDeployEnv,
+  type DeployEnvLabel,
+} from "@site/src/hooks/useDeployEnv";
 import styles from "./EnvSwitcher.module.css";
 
 type SwitcherValue = DeployEnvLabel | "auto";
@@ -372,6 +378,7 @@ EOF
 ### Task 3: F4 — convert `docs/api/quickstart.md` to `.mdx` and wire env detection
 
 **Files:**
+
 - Rename: `docs/api/quickstart.md` → `docs/api/quickstart.mdx`
 - Modify: `docs/api/quickstart.mdx`
 
@@ -380,6 +387,7 @@ The rename uses `git mv` so history is preserved. After the rename, the only edi
 - [ ] **Step 1: Rename file**
 
 Run:
+
 ```bash
 git mv docs/api/quickstart.md docs/api/quickstart.mdx
 ```
@@ -462,6 +470,7 @@ Note: `git mv` stages both the deletion and addition; the `git add` above is def
 ### Task 4: F4 — convert `docs/getting-started/api.md` to `.mdx` and wire env detection
 
 **Files:**
+
 - Rename: `docs/getting-started/api.md` → `docs/getting-started/api.mdx`
 - Modify: `docs/getting-started/api.mdx`
 
@@ -470,6 +479,7 @@ Same shape as Task 3 with one difference: this page's "What you'll need" prelude
 - [ ] **Step 1: Rename file**
 
 Run:
+
 ```bash
 git mv docs/getting-started/api.md docs/getting-started/api.mdx
 ```
@@ -559,6 +569,7 @@ EOF
 ### Task 5: F5 — multi-org key-minting warning
 
 **Files:**
+
 - Modify: `docs/api/authentication.md`
 - Modify: `docs/api/quickstart.mdx`
 - Modify: `docs/getting-started/api.mdx`
@@ -631,6 +642,7 @@ EOF
 ### Task 6: F6 — UI-to-scope mapping table in `docs/api/authentication.md`
 
 **Files:**
+
 - Modify: `docs/api/authentication.md`
 
 Insert a new `### UI labels vs scope strings` subsection immediately **before** the existing scopes table in `## Scopes`. The existing table is not modified.
@@ -696,6 +708,7 @@ EOF
 ### Task 7: F7 — 401 `title`-variance notes in `docs/api/errors.md`
 
 **Files:**
+
 - Modify: `docs/api/errors.md`
 
 Three small in-place edits: tighten the `type` and `title` rows in the envelope-shape table, and append a note to the `unauthorized` row in the catalog.
@@ -768,6 +781,7 @@ EOF
 ### Task 8: Changelog entry
 
 **Files:**
+
 - Modify: `docs/api/CHANGELOG.md`
 
 One entry under `Unreleased → Changed`.
@@ -815,6 +829,7 @@ EOF
 ### Task 9: Blackbox harness enhancement (piggyback commit)
 
 **Files:**
+
 - Modify: `tests/blackbox/BB.md`
 
 The BB.md enhancement lives as an **uncommitted modification in the main working tree** at `/home/mike/trakrf-docs/tests/blackbox/BB.md` (the user's other checkout). Worktrees have independent working trees, so this diff is NOT visible from inside `.worktrees/tra-467`. We bring the content in by copying the file, then commit it here.
@@ -878,6 +893,7 @@ Expected: dev server starts on `http://localhost:3000`.
 - [ ] **Step 2: Open `/docs/api/quickstart`**
 
 Visit `http://localhost:3000/docs/api/quickstart`. Verify:
+
 - Step 1 reads "Pick your environment" and shows "You're reading production docs" (localhost falls back to production).
 - The `<EnvBaseURL />` span inside the prose renders `https://app.trakrf.id`.
 - The `<EnvBaseURLBlock />` renders a single shell block: `export BASE_URL=https://app.trakrf.id`.
@@ -887,6 +903,7 @@ Visit `http://localhost:3000/docs/api/quickstart`. Verify:
 - [ ] **Step 3: Toggle the switcher**
 
 In the `<EnvSwitcher />` dropdown, pick **Preview**. Verify (without reloading):
+
 - The switcher label updates to "Environment: preview".
 - The `<EnvBaseURL />`, `<EnvBaseURLBlock />`, and `<EnvSignInLink />` on the page all update in sync to the preview host.
 - `localStorage.trakrf-env` is `"preview"` (check DevTools Application → Local Storage).
@@ -898,6 +915,7 @@ Reload the page. Verify the switcher still shows "preview" and all components st
 - [ ] **Step 5: Clear override**
 
 Pick **Auto-detect** in the switcher. Verify:
+
 - Label flips back to "Environment: production".
 - All components revert to prod values.
 - `localStorage.trakrf-env` is removed.
@@ -909,6 +927,7 @@ On the same page, confirm step 3 of the "Mint an API key" section reads the mult
 - [ ] **Step 7: Open `/docs/getting-started/api` and repeat the spot-checks**
 
 Verify:
+
 - "What you'll need" list mentions "If you were given preview credentials, you already have one".
 - Step 1 "Pick your environment" with switcher works identically.
 - Signup link in "What you'll need" still points to `https://app.trakrf.id` regardless of switcher state.
@@ -916,6 +935,7 @@ Verify:
 - [ ] **Step 8: Open `/docs/api/authentication`**
 
 Verify:
+
 - New `### UI labels vs scope strings` subsection appears before the scopes table.
 - Scopes table itself is unchanged (the TRA-466-added `keys:admin` row still present).
 - `## Mint your first API key` shows the multi-org warning as a new step.
@@ -923,6 +943,7 @@ Verify:
 - [ ] **Step 9: Open `/docs/api/errors`**
 
 Verify:
+
 - `type` row of the envelope-shape table mentions "not on `title`".
 - `title` row mentions "may vary between instances of the same `type`".
 - `unauthorized` row in the catalog ends with "match on `type`".
@@ -947,6 +968,7 @@ If any step fails, fix the underlying issue in the relevant task's files, re-run
 
 Run: `git log --oneline main..HEAD`
 Expected: ten commits in this order (newest first):
+
 ```
 <hash> test(tra-467): document OpenAPI contract-check pass in blackbox harness
 <hash> docs(tra-467): changelog entries for API docs fixes
@@ -975,6 +997,7 @@ Expected: push succeeds.
 - [ ] **Step 4: Open the PR**
 
 Run:
+
 ```bash
 gh pr create --title "docs(tra-467): API docs fixes — env auto-detect, multi-org warning, scope labels, 401 title variance" --body "$(cat <<'EOF'
 ## Summary

@@ -52,14 +52,14 @@ The **New key** form in the web app lets you pick a resource (Assets / Locations
 
 Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
 
-| Scope             | Access | Endpoints (representative)                                                         |
-| ----------------- | ------ | ---------------------------------------------------------------------------------- |
-| `assets:read`     | Read   | `GET /assets`, `GET /assets/{identifier}`                                          |
-| `assets:write`    | Write  | `POST /assets`, `PUT /assets/{identifier}`, `DELETE /assets/{identifier}`          |
-| `locations:read`  | Read   | `GET /locations`, `GET /locations/{identifier}`                                    |
-| `locations:write` | Write  | `POST /locations`, `PUT /locations/{identifier}`, `DELETE /locations/{identifier}` |
-| `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{identifier}/history`, scan-event endpoints |
-| `scans:write`     | Write  | `POST /inventory/save`                                                             |
+| Scope             | Access | Endpoints (representative)                                                                  |
+| ----------------- | ------ | ------------------------------------------------------------------------------------------- |
+| `assets:read`     | Read   | `GET /assets`, `GET /assets/{identifier}`                                                   |
+| `assets:write`    | Write  | `POST /assets`, `PUT /assets/{identifier}`, `DELETE /assets/{identifier}`                   |
+| `locations:read`  | Read   | `GET /locations`, `GET /locations/{identifier}`                                             |
+| `locations:write` | Write  | `POST /locations`, `PUT /locations/{identifier}`, `DELETE /locations/{identifier}`          |
+| `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{identifier}/history`, scan-event endpoints          |
+| `scans:write`     | Write  | `POST /inventory/save`                                                                      |
 | `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyID}` |
 
 A few non-obvious pairings worth calling out:

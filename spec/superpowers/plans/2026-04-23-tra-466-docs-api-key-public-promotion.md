@@ -24,6 +24,7 @@
 
 Run: `git branch --show-current && git log -1 --oneline`
 Expected:
+
 ```
 miks2u/tra-466-docs-promote-api-key-management
 cfe36c4 docs(tra-466): design spec for promoting api-key management to public
@@ -46,6 +47,7 @@ Expected: build completes; no "Broken link" errors; produces `build/` directory.
 ### Task 1: Add `keys:admin` to the Scopes table in `docs/api/authentication.md`
 
 **Files:**
+
 - Modify: `docs/api/authentication.md`
 
 - [ ] **Step 1: Insert the new row at the bottom of the Scopes table**
@@ -53,14 +55,14 @@ Expected: build completes; no "Broken link" errors; produces `build/` directory.
 Find the table rows (currently lines 39–46) and append a new row after `scans:write`. The edit target is:
 
 ```markdown
-| `scans:write`     | Write  | `POST /inventory/save`                                                             |
+| `scans:write` | Write | `POST /inventory/save` |
 ```
 
 Replace with:
 
 ```markdown
-| `scans:write`     | Write  | `POST /inventory/save`                                                             |
-| `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyId}` |
+| `scans:write` | Write | `POST /inventory/save` |
+| `keys:admin` | Admin | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyId}` |
 ```
 
 - [ ] **Step 2: Extend the "non-obvious pairings" bullet list**
@@ -74,7 +76,7 @@ The existing list (currently lines 48–52) has three bullets ending with `/inve
 - [ ] **Step 3: Verify build still passes (broken-link check)**
 
 Run: `pnpm build`
-Expected: build completes with no broken-link errors. The new `#programmatic-key-rotation` anchor doesn't exist yet but Docusaurus only resolves hash-anchors on the current page lazily at runtime; the `onBrokenLinks` config checks inter-page links and the existence of target pages, not every in-page anchor. If the build *does* fail on the anchor, skip to Task 2 first, then come back to this build check — the anchor will exist after Task 2's edit lands.
+Expected: build completes with no broken-link errors. The new `#programmatic-key-rotation` anchor doesn't exist yet but Docusaurus only resolves hash-anchors on the current page lazily at runtime; the `onBrokenLinks` config checks inter-page links and the existence of target pages, not every in-page anchor. If the build _does_ fail on the anchor, skip to Task 2 first, then come back to this build check — the anchor will exist after Task 2's edit lands.
 
 - [ ] **Step 4: Commit**
 
@@ -98,6 +100,7 @@ EOF
 ### Task 2: Add the `## Programmatic key rotation` section to `authentication.md`
 
 **Files:**
+
 - Modify: `docs/api/authentication.md`
 
 - [ ] **Step 1: Insert the new section between `## Key lifecycle` and `## Base URL`**
@@ -154,7 +157,6 @@ curl -X DELETE -H "Authorization: Bearer $NEW_KEY" \
 ```
 
 The shapes of the response envelopes are shown in the [API reference](/api).
-
 ````
 
 - [ ] **Step 2: Verify build passes (including the new anchor)**
@@ -186,6 +188,7 @@ EOF
 ### Task 3: Add session-JWT caveat paragraph to `## Server-to-server design`
 
 **Files:**
+
 - Modify: `docs/api/authentication.md`
 
 - [ ] **Step 1: Append one paragraph to the end of `## Server-to-server design`**
@@ -222,6 +225,7 @@ EOF
 ### Task 4: Remove api-keys content from `docs/api/private-endpoints.md`
 
 **Files:**
+
 - Modify: `docs/api/private-endpoints.md`
 
 - [ ] **Step 1: Remove the `/orgs/{id}/api-keys` row from the table**
@@ -229,7 +233,7 @@ EOF
 Find the row (currently line 26):
 
 ```markdown
-| `/api/v1/orgs/{id}/api-keys`   | GET, POST, DELETE | Settings → API Keys UI | Internal                         | Internal — see API-key note below         |
+| `/api/v1/orgs/{id}/api-keys` | GET, POST, DELETE | Settings → API Keys UI | Internal | Internal — see API-key note below |
 ```
 
 Delete the entire row. No replacement.
@@ -277,6 +281,7 @@ EOF
 ### Task 5: Add CHANGELOG entry under Unreleased → Added
 
 **Files:**
+
 - Modify: `docs/api/CHANGELOG.md`
 
 - [ ] **Step 1: Append a new bullet to Unreleased → Added**
@@ -324,6 +329,7 @@ Expected: dev server starts on `http://localhost:3000` with no compilation error
 - [ ] **Step 2: Inspect `/docs/api/authentication`**
 
 In a browser, open `http://localhost:3000/docs/api/authentication` and verify:
+
 - The Scopes table has a `keys:admin` row at the bottom with Access = `Admin` and the three api-keys endpoints in the Endpoints column.
 - The "non-obvious pairings" list has a `keys:admin` bullet with a link to `Programmatic key rotation`. Click it — page scrolls to the new section.
 - The `## Programmatic key rotation` section renders: numbered workflow list, `### Self-rotation`, `### Required scopes`, `### Example: rotate a key from a script` with a syntax-highlighted bash block.
@@ -332,6 +338,7 @@ In a browser, open `http://localhost:3000/docs/api/authentication` and verify:
 - [ ] **Step 3: Inspect `/docs/api/private-endpoints`**
 
 Open `http://localhost:3000/docs/api/private-endpoints` and verify:
+
 - The table no longer contains a `/api/v1/orgs/{id}/api-keys` row.
 - There is no `## API-key management is Internal` heading on the page.
 - The `:::caution Internal endpoints` admonition at top still renders.
@@ -340,6 +347,7 @@ Open `http://localhost:3000/docs/api/private-endpoints` and verify:
 - [ ] **Step 4: Inspect `/docs/api/changelog`**
 
 Open `http://localhost:3000/docs/api/changelog` and verify:
+
 - Under `Unreleased → Added`, the new bullet is present.
 - Click the `Authentication → Programmatic key rotation` link — browser navigates to `/docs/api/authentication#programmatic-key-rotation` and scrolls to the right section.
 
@@ -352,6 +360,7 @@ In the terminal running `pnpm dev`, press `Ctrl+C`. No commit — this is inspec
 ### Task 7: Refresh the OpenAPI spec from preview (gated on platform PR merge)
 
 **Files:**
+
 - Modify: `static/api/openapi.json`
 - Modify: `static/api/openapi.yaml`
 
@@ -366,9 +375,11 @@ Expected: `"state":"MERGED"` and a non-null `mergedAt` timestamp.
 
 Run: `curl -s https://app.preview.trakrf.id/api/v1/openapi.json | jq -r '.paths | keys[] | select(contains("api-keys"))'`
 Expected output contains at least:
+
 ```
 /api/v1/orgs/{id}/api-keys
 ```
+
 (And likely `/api/v1/orgs/{id}/api-keys/{keyId}` for DELETE.)
 
 If the output is empty, **stop** — wait for the preview to rebuild, then retry. Do not run the refresh against a stale spec.
@@ -414,6 +425,7 @@ EOF
 ### Task 8: Reconcile the example in `authentication.md` against the refreshed spec
 
 **Files:**
+
 - Potentially modify: `docs/api/authentication.md` (only if discrepancies are found)
 
 The spec (from the platform PR body) described the POST/DELETE shapes well enough to sketch the example in Task 2. Now that the real spec is on disk, verify — and fix the example only if the real spec disagrees.
@@ -421,6 +433,7 @@ The spec (from the platform PR body) described the POST/DELETE shapes well enoug
 - [ ] **Step 1: Extract the real POST request body shape**
 
 Run:
+
 ```bash
 jq '.paths["/api/v1/orgs/{id}/api-keys"].post.requestBody.content["application/json"].schema' static/api/openapi.json
 ```
@@ -430,6 +443,7 @@ Expected: a schema describing the request body. Note the required/optional field
 - [ ] **Step 2: Extract the real POST response body shape**
 
 Run:
+
 ```bash
 jq '.paths["/api/v1/orgs/{id}/api-keys"].post.responses["201"].content["application/json"].schema // .paths["/api/v1/orgs/{id}/api-keys"].post.responses["200"].content["application/json"].schema' static/api/openapi.json
 ```
@@ -439,6 +453,7 @@ Expected: a schema describing the response. Note where the JWT is exposed — `d
 - [ ] **Step 3: Identify the DELETE path**
 
 Run:
+
 ```bash
 jq -r '.paths | keys[] | select(contains("api-keys"))' static/api/openapi.json
 ```
@@ -492,6 +507,7 @@ Expected: dev server starts on `http://localhost:3000`.
 - [ ] **Step 2: Inspect the Redoc-rendered `/api` reference**
 
 Open `http://localhost:3000/api` and verify:
+
 - The left sidebar includes an "api-keys" section (or similar tag grouping) listing the three operations: create, list, delete.
 - Opening the **POST /api/v1/orgs/{id}/api-keys** operation shows the request body schema with the fields referenced in the prose (`name`, `scopes`, and whatever expiry field the spec actually uses).
 - The **DELETE** operation shows the correct path parameter name.
@@ -529,6 +545,7 @@ Expected: push succeeds.
 - [ ] **Step 4: Open the PR**
 
 Run:
+
 ```bash
 gh pr create --title "docs(tra-466): promote api-key management endpoints to public API" --body "$(cat <<'EOF'
 ## Summary

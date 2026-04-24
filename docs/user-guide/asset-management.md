@@ -39,7 +39,6 @@ Assets are the records TrakRF checks scans against. Each asset has at least one 
 3. Fill in the **Create New Asset** modal:
 
    ![Create New Asset modal — Asset ID, Name, Description, Location, Active, Valid From/To, RFID Tags](/img/user-guide/create-asset-modal.png)
-
    - **Asset ID** — leave blank to auto-generate as `ASSET-XXXX`, or type your own (e.g. a part number).
    - **Name** — required. This is what you'll see in scan results and reports.
    - **Description** — optional free text.
@@ -47,6 +46,7 @@ Assets are the records TrakRF checks scans against. Each asset has at least one 
    - **Active** — checked by default. Uncheck to hide the asset from live scan comparisons without deleting it.
    - **Valid From / Valid To** — defaults to today / blank. Use these if the asset is only in circulation for a known window.
    - **RFID Tags** — click **Add Tag** and paste or type the tag's EPC (hex string). You can attach more than one tag to the same asset.
+
 4. Click **Create Asset**.
 
 The asset now appears in the list. The footer cards (**Total Assets**, **Active**, **Inactive**) update immediately. After a few assets, the list looks like this:
@@ -75,7 +75,7 @@ With an asset registered and a reader paired (see [Reader Setup](./reader-setup)
    - **Not Listed** — tags seen that don't match anything expected.
    - **Total Scanned** — unique EPCs seen this session.
    - **Saveable** — of those, how many match a registered asset.
-   ![Inventory mid-scan — 12 tags captured at Bay 7 Shelf 1 via location tag, per-row signal and count](/img/user-guide/inventory-scanning.png)
+     ![Inventory mid-scan — 12 tags captured at Bay 7 Shelf 1 via location tag, per-row signal and count](/img/user-guide/inventory-scanning.png)
 
 5. Release the trigger when you've covered the area. The list stays on screen; you can resume by pressing the trigger again.
 6. Use the top toolbar as needed:

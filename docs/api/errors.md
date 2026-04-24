@@ -25,27 +25,27 @@ Non-2xx responses return `Content-Type: application/json` with the error object 
 
 The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) (Problem Details for HTTP APIs), but the envelope is **not** 7807-compliant: TrakRF serves `application/json` (not `application/problem+json`) and nests the fields under `error` rather than placing them at the top level. Clients wiring directly to a 7807 library should parse this shape themselves.
 
-| Field        | Purpose                                                                                                                       |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `type`       | A machine-readable identifier — your code should branch on this, not on `title`. Extensible enum.                             |
+| Field        | Purpose                                                                                                                                                                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`       | A machine-readable identifier — your code should branch on this, not on `title`. Extensible enum.                                                                                                 |
 | `title`      | A short human-readable summary safe to log. May vary between instances of the same `type` (for example, 401 responses carry different titles for missing-header vs expired-token vs revoked-key). |
-| `status`     | The HTTP status code. Always matches the response's status line.                                                              |
-| `detail`     | A longer human-readable explanation. Safe to log; may name the offending field or value.                                      |
-| `instance`   | The request path that produced the error. Useful when the same error appears across multiple logs.                            |
-| `request_id` | A [ULID](https://github.com/ulid/spec) matching the `X-Request-ID` response header. Include this when filing support tickets. |
+| `status`     | The HTTP status code. Always matches the response's status line.                                                                                                                                  |
+| `detail`     | A longer human-readable explanation. Safe to log; may name the offending field or value.                                                                                                          |
+| `instance`   | The request path that produced the error. Useful when the same error appears across multiple logs.                                                                                                |
+| `request_id` | A [ULID](https://github.com/ulid/spec) matching the `X-Request-ID` response header. Include this when filing support tickets.                                                                     |
 
 ## Error type catalog
 
-| `type`             | HTTP status | When you'll see it                                                                        | Retry?                                |
-| ------------------ | ----------- | ----------------------------------------------------------------------------------------- | ------------------------------------- |
-| `validation_error` | 400         | Request body failed schema validation (see [validation errors](#validation-errors) below) | No — fix the request                  |
-| `bad_request`      | 400         | Malformed request — bad JSON, unknown query param, invalid sort field                     | No — fix the request                  |
+| `type`             | HTTP status | When you'll see it                                                                          | Retry?                                |
+| ------------------ | ----------- | ------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `validation_error` | 400         | Request body failed schema validation (see [validation errors](#validation-errors) below)   | No — fix the request                  |
+| `bad_request`      | 400         | Malformed request — bad JSON, unknown query param, invalid sort field                       | No — fix the request                  |
 | `unauthorized`     | 401         | Missing, malformed, revoked, or expired API key. `title` varies by cause — match on `type`. | No — re-auth                          |
-| `forbidden`        | 403         | Valid key but insufficient scope for this endpoint                                        | No — needs a key with the right scope |
-| `not_found`        | 404         | Natural-key lookup failed                                                                 | No — check the identifier             |
-| `conflict`         | 409         | Unique-constraint violation (typically a duplicate `identifier`)                          | No — reconcile with `GET` then `PUT`  |
-| `rate_limited`     | 429         | You've hit the rate limit — see [Rate limits](./rate-limits)                              | Yes, after `Retry-After` seconds      |
-| `internal_error`   | 500         | Unhandled server failure                                                                  | Yes, with exponential backoff         |
+| `forbidden`        | 403         | Valid key but insufficient scope for this endpoint                                          | No — needs a key with the right scope |
+| `not_found`        | 404         | Natural-key lookup failed                                                                   | No — check the identifier             |
+| `conflict`         | 409         | Unique-constraint violation (typically a duplicate `identifier`)                            | No — reconcile with `GET` then `PUT`  |
+| `rate_limited`     | 429         | You've hit the rate limit — see [Rate limits](./rate-limits)                                | Yes, after `Retry-After` seconds      |
+| `internal_error`   | 500         | Unhandled server failure                                                                    | Yes, with exponential backoff         |
 
 The `type` enum is **extensible** — TrakRF may add new error types in any v1 release. Clients should handle unknown `type` values gracefully (fall through to a generic error handler based on HTTP status code, which is a closed enum).
 
