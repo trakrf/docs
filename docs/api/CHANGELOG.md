@@ -33,6 +33,7 @@ Tracked but not yet in a release tag. Merged changes land here first, then move 
 - Added a multi-organization warning on the API-key minting steps: keys are scoped to whichever org is selected in the avatar menu at creation time ([TRA-467](https://linear.app/trakrf/issue/TRA-467) — F5).
 - Added a UI-form-to-scope-string mapping table on Authentication → Scopes ([TRA-467](https://linear.app/trakrf/issue/TRA-467) — F6).
 - Errors → Envelope clarified that `title` is descriptive and varies; clients should match on `type` ([TRA-467](https://linear.app/trakrf/issue/TRA-467) — F7).
+- Added **[Date fields](./date-fields)** — a new API-reference page documenting the `valid_from` / `valid_to` convention: `valid_from` always present as RFC3339, `valid_to` omitted when unset, inbound `FlexibleDate` parsing with US-first slash-date ambiguity warning ([TRA-472](https://linear.app/trakrf/issue/TRA-472)).
 
 ### Fixed
 
@@ -42,6 +43,7 @@ Tracked but not yet in a release tag. Merged changes land here first, then move 
 - `GET /api/v1/locations/{identifier}/ancestors`, `/children`, and `/descendants` now accept API-key auth with `locations:read` scope, matching the other location reads. Previously these sub-routes were registered on the session-auth router only, so valid API keys returned `401` with a misleading "Bearer token is invalid or expired" message.
 - `POST /api/v1/assets` now defaults `is_active` to `true` when the field is omitted, so API-created assets appear in the default `GET /api/v1/assets` list view without an extra round-trip. Previously omitted fields hit the Go zero value (`false`) and the newly created asset was hidden.
 - `POST /api/v1/assets` and `POST /api/v1/locations` now default `valid_from` to the current time when the field is omitted. Previously omitted fields hit the Go zero value (`0001-01-01T00:00:00Z`), which surfaced as an invalid-looking date in responses.
+- `valid_from` and `valid_to` now follow a single convention across every resource: `valid_from` is always present as RFC3339 UTC, `valid_to` is omitted from responses when the record has no expiry. Zero-time (`0001-01-01T00:00:00Z`) and far-future sentinels (`2099-12-31T...`) no longer appear on the wire, and no response returns `"valid_to": null`. Existing rows were backfilled by a one-way migration ([TRA-468](https://linear.app/trakrf/issue/TRA-468)).
 
 ## v1.0.0 — 2026-04-20
 
