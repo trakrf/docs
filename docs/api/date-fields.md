@@ -17,7 +17,7 @@ The API never returns `0001-01-01T00:00:00Z` zero-time, never returns a `2099-12
 
 ## Outbound: always RFC3339
 
-Every date on the response is RFC3339 in UTC — clients can parse with a single formatter without branching on shape. Two records from the same list endpoint, one with an expiry and one without:
+Every `valid_from` / `valid_to` on the response is RFC3339 in UTC — clients can parse with a single formatter without branching on shape. Two records from the same list endpoint, one with an expiry and one without:
 
 ```json
 {
@@ -49,7 +49,7 @@ For clarity, send `valid_from` / `valid_to` as **RFC3339 in UTC**. The API also 
 | ISO 8601 date-only    | `2026-04-24`           |
 | US `MM/DD/YYYY`       | `04/24/2026`           |
 
-A handful of other regional variants (`DD/MM/YYYY`, `DD.MM.YYYY`, `YYYY/MM/DD`) also parse for tolerance, but the three formats above are the ones you should rely on.
+A handful of other date formats also parse for tolerance, but the three above are the ones you should rely on.
 
 :::warning Slash dates are parsed US-first
 
@@ -92,7 +92,3 @@ Response:
 ```
 
 The response **omits `valid_to`** because the asset has no expiry. If a later `PUT` sets `valid_to`, subsequent reads will return it as RFC3339.
-
-## What changed
-
-See the [Changelog](./CHANGELOG) entry for the backend cleanup ([TRA-468](https://linear.app/trakrf/issue/TRA-468)) that made this convention uniform across every resource.
