@@ -3,33 +3,37 @@ sidebar_position: 3
 title: Using the API
 ---
 
+import EnvLabel from "@site/src/components/EnvLabel";
+import EnvBaseURL from "@site/src/components/EnvBaseURL";
+import EnvBaseURLBlock from "@site/src/components/EnvBaseURLBlock";
+import EnvSignInLink from "@site/src/components/EnvSignInLink";
+import EnvSwitcher from "@site/src/components/EnvSwitcher";
+
 # Getting started — using the API
 
 This page takes you from "I just signed up" to "I called the TrakRF API and got a `200` back" in about 10 minutes, using only standard HTTP tools. It mirrors the [UI quickstart](./ui) — pick whichever track matches your integration plan.
 
 ## What you'll need
 
-- A TrakRF account. Sign up at [app.trakrf.id](https://app.trakrf.id) if you don't have one yet.
+- A TrakRF account. If you were given preview credentials, you already have one — skip to step 1. Otherwise [sign up at app.trakrf.id](https://app.trakrf.id).
 - An API client of your choice — `curl`, Postman, HTTPie, or your language's standard HTTP library. This guide uses `curl` in examples.
 - 10 minutes.
 
-## 1. Set your base URL
+## 1. Pick your environment
 
-Every curl example on this page uses a `$BASE_URL` env var so the same commands work on both environments. Pick the one that matches your account:
+You're reading <EnvLabel /> docs. Examples on this page target <EnvBaseURL /> — the app host that matches this docs site.
 
-```bash
-# Production
-export BASE_URL=https://app.trakrf.id
+<EnvSwitcher />
 
-# Preview (per-PR test deploys, sales demos, every current test account)
-export BASE_URL=https://app.preview.trakrf.id
-```
+If your account lives on the other environment, use the switcher above — the examples and links below will update.
 
-If you were given preview credentials (typical for evaluation accounts), make sure you export the preview URL — a preview-scoped key will not authenticate against production.
+<EnvBaseURLBlock />
+
+Preview-scoped keys will not authenticate against production and vice versa; the switcher above keeps the curl snippets aligned with whichever world your key was minted on.
 
 ## 2. Mint your first API key
 
-1. Sign in at the web app (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)).
+1. Sign in at the <EnvSignInLink><EnvLabel /> web app</EnvSignInLink>.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page configures devices — not keys.)
 3. Click **New key**. Give it a descriptive name (e.g. "local dev"), choose scopes (`scans:read` alone is enough for this quickstart — the `/locations/current` endpoint is gated by `scans:read`; grant `assets:read` and `locations:read` if you plan to hit the other read endpoints), and submit.
 4. **Copy the JWT immediately.** It's shown once at creation time and can't be recovered later.
