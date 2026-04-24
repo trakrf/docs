@@ -30,6 +30,7 @@ No tests to write — this repo has no automated docs-test harness. The "test" i
 ## Task 1: Create the Date fields page and wire it into the sidebar
 
 **Files:**
+
 - Create: `docs/api/date-fields.md`
 - Modify: `sidebars.ts` (one-line insertion into `apiSidebar → API Documentation → items`)
 
@@ -38,6 +39,7 @@ One commit: page + sidebar entry together, so the page is never orphaned.
 - [ ] **Step 1: Confirm branch and worktree**
 
 Run:
+
 ```bash
 pwd
 git branch --show-current
@@ -63,10 +65,10 @@ Every timestamped resource in the TrakRF v1 API uses the same two effective-date
 
 ## The two fields at a glance
 
-| Field        | Always present?            | Type on response | Meaning                                                                    |
-|--------------|----------------------------|------------------|----------------------------------------------------------------------------|
-| `valid_from` | Yes                        | RFC3339 UTC      | When the record became effective. Defaults to the creation time on insert. |
-| `valid_to`   | No — omitted when unset    | RFC3339 UTC      | When the record expires. **Absent key = no expiry.**                       |
+| Field        | Always present?         | Type on response | Meaning                                                                    |
+| ------------ | ----------------------- | ---------------- | -------------------------------------------------------------------------- |
+| `valid_from` | Yes                     | RFC3339 UTC      | When the record became effective. Defaults to the creation time on insert. |
+| `valid_to`   | No — omitted when unset | RFC3339 UTC      | When the record expires. **Absent key = no expiry.**                       |
 
 The API never returns `0001-01-01T00:00:00Z` zero-time, never returns a `2099-12-31` far-future sentinel, and never returns `"valid_to": null`. If a client sees any of these, it's a bug — see the [Changelog](./CHANGELOG) entry for the normalization cleanup ([TRA-468](https://linear.app/trakrf/issue/TRA-468)).
 
@@ -98,11 +100,11 @@ Note that the second record has **no `valid_to` key at all** — not `"valid_to"
 
 For clarity, send `valid_from` / `valid_to` as **RFC3339 in UTC**. The API also accepts a couple of other common shapes for convenience:
 
-| Format                | Example                    |
-|-----------------------|----------------------------|
-| RFC3339 (recommended) | `2026-04-24T15:30:00Z`     |
-| ISO 8601 date-only    | `2026-04-24`               |
-| US `MM/DD/YYYY`       | `04/24/2026`               |
+| Format                | Example                |
+| --------------------- | ---------------------- |
+| RFC3339 (recommended) | `2026-04-24T15:30:00Z` |
+| ISO 8601 date-only    | `2026-04-24`           |
+| US `MM/DD/YYYY`       | `04/24/2026`           |
 
 A handful of other regional variants (`DD/MM/YYYY`, `DD.MM.YYYY`, `YYYY/MM/DD`) also parse for tolerance, but the three formats above are the ones you should rely on.
 
@@ -205,6 +207,7 @@ pnpm build
 ```
 
 Expected:
+
 - `pnpm typecheck` — no errors.
 - `pnpm lint` — `All matched files use Prettier code style!` (if it reports formatting drift on `docs/api/date-fields.md` or `sidebars.ts`, run `pnpm lint:fix` and re-run lint).
 - `pnpm build` — ends with a line like `[SUCCESS] Generated static files in "build".` No `[ERROR]` lines, no broken-internal-link warnings that mention `date-fields` or `CHANGELOG`.
@@ -214,6 +217,7 @@ If `pnpm build` reports a broken link to `./CHANGELOG` from the new page, confir
 - [ ] **Step 5: Visual check with `pnpm dev`**
 
 Run:
+
 ```bash
 pnpm dev &
 DEV_PID=$!
@@ -229,6 +233,7 @@ Open a browser to `http://localhost:3000/docs/api/date-fields` and verify:
 5. Browse to `/docs/api` (the API README) and confirm the sidebar order matches expectation.
 
 Stop the dev server:
+
 ```bash
 kill $DEV_PID 2>/dev/null
 ```
@@ -267,6 +272,7 @@ Expected: one commit created on `miks2u/tra-472-date-fields-docs`.
 ## Task 2: Add changelog entries
 
 **Files:**
+
 - Modify: `docs/api/CHANGELOG.md` (append one bullet to `Unreleased → Changed`, append one bullet to `Unreleased → Fixed`)
 
 Both bullets in one commit — they describe the same integrator-visible change from the docs-vs-reality perspective.
@@ -274,6 +280,7 @@ Both bullets in one commit — they describe the same integrator-visible change 
 - [ ] **Step 1: Read the current Unreleased section**
 
 Run:
+
 ```bash
 head -50 docs/api/CHANGELOG.md
 ```
@@ -304,6 +311,7 @@ pnpm build
 ```
 
 Expected:
+
 - `pnpm lint` clean (if drift, `pnpm lint:fix` then re-run).
 - `pnpm build` succeeds. Watch especially for an "unresolved link" warning on `./date-fields` — if present, Docusaurus can't find the file, which would mean Step 2 in Task 1 was wrong or never committed.
 
@@ -323,6 +331,7 @@ Open `http://localhost:3000/docs/api/CHANGELOG` and confirm:
 4. Both `[TRA-472]` and `[TRA-468]` anchor links go to their Linear URLs.
 
 Stop the dev server:
+
 ```bash
 kill $DEV_PID 2>/dev/null
 ```
@@ -462,6 +471,7 @@ git log --oneline main..HEAD
 ```
 
 Expected:
+
 - `git status`: `nothing to commit, working tree clean`.
 - `git log main..HEAD`: exactly four commits ahead of `main`:
   1. `docs(tra-472): design spec for valid_from/valid_to convention page`

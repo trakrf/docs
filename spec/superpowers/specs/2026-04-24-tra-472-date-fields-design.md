@@ -65,10 +65,10 @@ Target length: roughly the size of `docs/api/rate-limits.md`. Tone matches exist
 
 2. **The two fields at a glance** — one table:
 
-   | Field | Always present? | Type on response | Meaning |
-   | --- | --- | --- | --- |
-   | `valid_from` | Yes | RFC3339 UTC | When the record became effective. Defaults to the creation time on insert. |
-   | `valid_to` | No — omitted when unset | RFC3339 UTC | When the record expires. **Absent key = no expiry.** |
+   | Field        | Always present?         | Type on response | Meaning                                                                    |
+   | ------------ | ----------------------- | ---------------- | -------------------------------------------------------------------------- |
+   | `valid_from` | Yes                     | RFC3339 UTC      | When the record became effective. Defaults to the creation time on insert. |
+   | `valid_to`   | No — omitted when unset | RFC3339 UTC      | When the record expires. **Absent key = no expiry.**                       |
 
    Plus prose: the API never returns `0001-01-01T00:00:00Z` zero-time, never returns a `2099-12-31` far-future sentinel, never returns `"valid_to": null`. If a client sees any of those, it's a bug — report it. Reference [TRA-468](https://linear.app/trakrf/issue/TRA-468) via the Changelog.
 
@@ -76,11 +76,11 @@ Target length: roughly the size of `docs/api/rate-limits.md`. Tone matches exist
 
 4. **Inbound: `FlexibleDate` (writes)** — recommend RFC3339 as canonical. Short table listing the three formats the ticket calls out:
 
-   | Format | Example |
-   | --- | --- |
+   | Format                | Example                |
+   | --------------------- | ---------------------- |
    | RFC3339 (recommended) | `2026-04-24T15:30:00Z` |
-   | ISO 8601 date-only | `2026-04-24` |
-   | US `MM/DD/YYYY` | `04/24/2026` |
+   | ISO 8601 date-only    | `2026-04-24`           |
+   | US `MM/DD/YYYY`       | `04/24/2026`           |
 
    One sentence after the table: "A handful of other regional variants (`DD/MM/YYYY`, `DD.MM.YYYY`, etc.) also parse for convenience, but the three above are the formats you should rely on."
 
