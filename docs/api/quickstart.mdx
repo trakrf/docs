@@ -3,29 +3,33 @@ sidebar_position: 1
 title: Quickstart
 ---
 
+import EnvLabel from "@site/src/components/EnvLabel";
+import EnvBaseURL from "@site/src/components/EnvBaseURL";
+import EnvBaseURLBlock from "@site/src/components/EnvBaseURLBlock";
+import EnvSignInLink from "@site/src/components/EnvSignInLink";
+import EnvSwitcher from "@site/src/components/EnvSwitcher";
+
 # Quickstart
 
 Goes from "I just signed up" to "I called the TrakRF API and got a `200` back" in about ten minutes, with nothing but an HTTP client.
 
 If you're already familiar with API-key-authenticated REST APIs, the TL;DR is: mint a JWT from the **avatar menu → API Keys**, send it as `Authorization: Bearer <jwt>`, and hit `$BASE_URL/api/v1/...`. The full walkthrough follows.
 
-## 1. Set your base URL
+## 1. Pick your environment
 
-Every curl example on this page uses a `$BASE_URL` env var so the same commands work on both environments. Pick the one that matches your account:
+You're reading <EnvLabel /> docs. Examples on this page target <EnvBaseURL /> — the app host that matches this docs site.
 
-```bash
-# Production
-export BASE_URL=https://app.trakrf.id
+<EnvSwitcher />
 
-# Preview (per-PR test deploys, sales demos, every current test account)
-export BASE_URL=https://app.preview.trakrf.id
-```
+If your account lives on the other environment, use the switcher above — the examples and links below will update.
 
-If you were given preview credentials (typical for evaluation accounts), export the preview URL — a preview-scoped key will not authenticate against production.
+<EnvBaseURLBlock />
+
+Preview-scoped keys will not authenticate against production and vice versa; the switcher above keeps the curl snippets aligned with whichever world your key was minted on.
 
 ## 2. Mint an API key
 
-1. Sign in with an admin account (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)).
+1. Sign in with an admin account on the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — not key management.)
 3. Click **New key**. Give it a descriptive name (e.g. `"local-dev"`). For this quickstart, `scans:read` alone is enough — the `/locations/current` endpoint you'll call below is gated by `scans:read`. Grant `assets:read` and `locations:read` if you plan to hit the other read endpoints, and `assets:write` for the create/update/delete walkthrough in step 4. See [Authentication → Scopes](./authentication#scopes) for the full matrix.
 4. **Set an expiration.** Leaving the expiry field blank mints a permanent credential — fine for a throwaway local-dev key, but for anything shared or long-lived, pick a date (e.g. 90 days) and put a rotation reminder on the calendar. See [Authentication → Key lifecycle](./authentication#key-lifecycle).
