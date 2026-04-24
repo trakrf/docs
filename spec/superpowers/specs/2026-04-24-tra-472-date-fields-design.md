@@ -92,11 +92,19 @@ Target length: roughly the size of `docs/api/rate-limits.md`. Tone matches exist
 
 6. **What changed** — one line: "See the [Changelog](./CHANGELOG) entry for the backend cleanup ([TRA-468](https://linear.app/trakrf/issue/TRA-468)) that made this convention uniform across all resources."
 
-### Changelog entry
+### Changelog entries
 
-Under `Unreleased → Added` in `docs/api/CHANGELOG.md`:
+Two bullets in `docs/api/CHANGELOG.md` under `Unreleased`:
 
-> - Added **[Date fields](./date-fields)** — documents the `valid_from` / `valid_to` convention: `valid_from` always present as RFC3339, `valid_to` omitted when unset, inbound `FlexibleDate` parsing with US-first slash-date ambiguity warning ([TRA-472](https://linear.app/trakrf/issue/TRA-472)).
+**Changed:**
+
+> - Added **[Date fields](./date-fields)** — a new API-reference page documenting the `valid_from` / `valid_to` convention: `valid_from` always present as RFC3339, `valid_to` omitted when unset, inbound `FlexibleDate` parsing with US-first slash-date ambiguity warning ([TRA-472](https://linear.app/trakrf/issue/TRA-472)).
+
+**Fixed:**
+
+> - `valid_from` and `valid_to` now follow a single convention across every resource: `valid_from` is always present as RFC3339 UTC, `valid_to` is omitted from responses when the record has no expiry. Zero-time (`0001-01-01T00:00:00Z`) and far-future sentinels (`2099-12-31T...`) no longer appear on the wire, and no response returns `"valid_to": null`. Existing rows were backfilled by a one-way migration ([TRA-468](https://linear.app/trakrf/issue/TRA-468)).
+
+Rationale: per TRA-467 precedent, pure docs improvements land in `### Changed` (not `### Added`, which is reserved for new v1 surface — endpoints, fields, scopes). The backend normalization that made this convention uniform is a genuine v1 wire-behavior change, so it belongs in `### Fixed`. Both bullets land in the same commit since they describe the same integrator-visible change from the docs-vs-reality perspective.
 
 ## Verification
 
