@@ -1,0 +1,32 @@
+.switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 999px;
+  background: var(--ifm-background-surface-color);
+  font-size: 0.9rem;
+  line-height: 1;
+  margin: 0.75rem 0;
+}
+
+.label {
+  color: var(--ifm-color-emphasis-700);
+  font-weight: 500;
+}
+
+.select {
+  border: none;
+  background: transparent;
+  color: var(--ifm-color-primary);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--ifm-color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
