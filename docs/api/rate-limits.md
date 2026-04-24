@@ -80,13 +80,14 @@ The `Retry-After` value is an integer number of **seconds** to wait before the n
 
 ## Exclusions
 
-One endpoint bypasses rate limiting entirely:
+The following endpoints do **not** emit `X-RateLimit-*` headers and are not counted against the bucket:
 
-- `GET /api/v1/orgs/me` — returns the organization your key belongs to, used as a connectivity/health check by most clients. Excluded so that liveness probes never trip the limit.
+- `GET /api/v1/orgs/me` — used as a connectivity/health check; excluded so that liveness probes never trip the limit.
+- **All write endpoints** — `POST /api/v1/inventory/save`, and every `POST`/`PUT`/`DELETE` under `/api/v1/assets` and `/api/v1/locations`. Writes are audited rather than rate-limited; if you need backpressure on ingest, apply it client-side.
 
-**Response-shape note:** `GET /api/v1/orgs/me` returns a bare `{ "id": ..., "name": ... }` object — not the `{ "data": ... }` envelope used by the rest of the v1 API. Clients using this as a liveness probe should be aware the shape may change if the endpoint migrates to the standard envelope. Consider also verifying a "real" enveloped endpoint (e.g. `GET /api/v1/assets?limit=1`) in your health check if you want to detect envelope drift early. See [Private endpoints → /orgs/me](./private-endpoints#orgs-me) for the full catalog entry.
+**Response-shape note:** `GET /api/v1/orgs/me` returns the standard `{ "data": ... }` envelope, same as every other endpoint on the public surface. See [Private endpoints → /orgs/me](./private-endpoints#orgs-me) for the full catalog entry.
 
-All other endpoints participate in the bucket.
+All other endpoints (the public read surface) participate in the bucket.
 
 ## Per-key, not per-organization
 

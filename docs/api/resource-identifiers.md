@@ -64,7 +64,7 @@ Location responses include two additional fields that describe where the node si
 
 | Field   | Type    | Meaning                                                                                                                                                              |
 | ------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `path`  | string  | The location's position in the tree as a dot-separated [`ltree`](https://www.postgresql.org/docs/current/ltree.html) label path, e.g. `warehouse_a.aisle_3.shelf_b`. |
+| `path`  | string  | The location's position in the tree as a dot-separated [`ltree`](https://www.postgresql.org/docs/current/ltree.html) label path, e.g. `WAREHOUSE-A.AISLE-3.SHELF-B`. |
 | `depth` | integer | The number of labels in `path` — `1` for a root location, `2` for its direct children, and so on.                                                                    |
 
 Example (abbreviated) from `GET /api/v1/locations`:
@@ -75,14 +75,14 @@ Example (abbreviated) from `GET /api/v1/locations`:
     {
       "identifier": "WAREHOUSE-A",
       "name": "Warehouse A",
-      "path": "warehouse_a",
+      "path": "WAREHOUSE-A",
       "depth": 1,
       "parent": null
     },
     {
       "identifier": "SHELF-B",
       "name": "Shelf B",
-      "path": "warehouse_a.aisle_3.shelf_b",
+      "path": "WAREHOUSE-A.AISLE-3.SHELF-B",
       "depth": 3,
       "parent": "AISLE-3"
     }
@@ -90,7 +90,7 @@ Example (abbreviated) from `GET /api/v1/locations`:
 }
 ```
 
-Because `ltree` labels only accept `[A-Za-z0-9_]`, the label form of each identifier is **lowercased with hyphens converted to underscores**. The original casing and any hyphens live in the `identifier` field; `path` is a derived helper, not a second identifier. Don't try to look up a location by its `path` — URL path params still take the `identifier` (see [URL path parameters](#url-path-parameters--identifier-only)).
+Each label in `path` preserves the original casing and hyphens of the corresponding `identifier` — `WAREHOUSE-A` stays `WAREHOUSE-A`, not `warehouse_a`. `path` is a derived helper for tree traversal, not a second identifier. Don't try to look up a location by its `path` — URL path params still take the `identifier` (see [URL path parameters](#url-path-parameters--identifier-only)).
 
 These fields are most useful for UI renderers that want to sort or indent a flat list by tree position without making follow-up calls. For explicit hierarchy traversal, prefer the dedicated endpoints (`GET /api/v1/locations/{identifier}/ancestors`, `/children`, `/descendants`) described in [Pagination, filtering, sorting → Non-paginated list exceptions](./pagination-filtering-sorting#non-paginated-exceptions).
 
