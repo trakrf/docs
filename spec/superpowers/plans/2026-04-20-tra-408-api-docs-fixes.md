@@ -44,6 +44,7 @@ Expected: build completes; no "Broken link" errors. This validates the starting 
 ### Task A0b: Commit tests/blackbox harness (piggyback)
 
 **Files:**
+
 - Track: `tests/blackbox/BB.md`
 - Track: `tests/blackbox/.envrc`
 - **Never track:** `tests/blackbox/.env.local` (contains credentials; already excluded by the existing `.env.*` rule in `.gitignore` — verified via `git check-ignore`).
@@ -89,6 +90,7 @@ EOF
 - [ ] **Step 1: Find every `/reports/` reference in `docs/`**
 
 Use the Grep tool (do not run `rg` directly via Bash):
+
 - Pattern: `/api/v1/reports/`
 - Path: `docs/`
 - `output_mode`: `"content"` with `-n: true`
@@ -98,6 +100,7 @@ Record every file:line hit. Expected outcome: anywhere from 0 to ~6 hits across 
 - [ ] **Step 2: For each hit, plan the rewrite**
 
 For each hit, decide the replacement:
+
 - `/api/v1/reports/current-locations` → `/api/v1/locations/current`
 - `/api/v1/reports/assets/{id}/history` → `/api/v1/assets/{identifier}/history`
 - `/api/v1/reports/assets/*/history` → same rewrite
@@ -132,12 +135,14 @@ EOF
 ### Task A2: §3 — endpoint-reference fixes in webhooks.md and rate-limits.md
 
 **Files:**
+
 - Modify: `docs/api/webhooks.md` (lines ~50–51 based on brainstorming read; re-verify at edit time)
 - Modify: `docs/api/rate-limits.md` (line ~76 `/orgs/me` block)
 
 - [ ] **Step 1: Read current state of both files**
 
 Read `docs/api/webhooks.md` and `docs/api/rate-limits.md` in full. Locate:
+
 - In webhooks.md: the `GET /api/v1/scans?from=<last-high-water-mark>` polling bullet (brainstorming found this at line 50) and the `GET /api/v1/locations/current` bullet (line 51).
 - In rate-limits.md: the `/orgs/me` exclusion block (brainstorming found this at line 76) and any `/scans` references (brainstorming found none in rate-limits.md — the ticket's claim may have been stale).
 
@@ -162,11 +167,10 @@ Change the existing `/locations/current` bullet to include a parenthetical note 
 Immediately after the existing `/orgs/me` exclusion bullet (line ~76), add this paragraph:
 
 ```markdown
-
 **Response-shape note:** `GET /api/v1/orgs/me` returns a bare `{ "id": ..., "name": ... }` object — not the `{ "data": ... }` envelope used by the rest of the v1 API. Clients using this as a liveness probe should be aware the shape may change if the endpoint migrates to the standard envelope. Consider also verifying a "real" enveloped endpoint (e.g. `GET /api/v1/assets?limit=1`) in your health check if you want to detect envelope drift early.
 ```
 
-*No forward link to `private-endpoints.md` — that page doesn't exist until PR B and `onBrokenLinks: "throw"` would fail the build. PR B §6 will backfill the cross-link.*
+_No forward link to `private-endpoints.md` — that page doesn't exist until PR B and `onBrokenLinks: "throw"` would fail the build. PR B §6 will backfill the cross-link._
 
 - [ ] **Step 5: Also sweep rate-limits.md for any `/scans` references the ticket flagged**
 
@@ -180,6 +184,7 @@ Expected: both pass. No broken links.
 - [ ] **Step 7: Manual visual check**
 
 Run: `pnpm serve` (or `pnpm dev`). Open `/docs/api/webhooks` and `/docs/api/rate-limits` in a browser. Confirm:
+
 - The new `/assets/{identifier}/history` bullet renders cleanly.
 - The `/locations/current` rename note is present.
 - The `/orgs/me` response-shape paragraph is present and flows after the existing bullet.
@@ -205,6 +210,7 @@ EOF
 ### Task A3: §2 — `docs/api/postman.mdx` alignment
 
 **Files:**
+
 - Modify: `docs/api/postman.mdx:31` (baseUrl value) and `:32` (apiKey instruction)
 
 - [ ] **Step 1: Re-read postman.mdx to confirm line numbers**
@@ -212,23 +218,25 @@ EOF
 Read `docs/api/postman.mdx`. Locate the "In the collection variables, set:" list. The two lines are currently:
 
 ```markdown
-   - `baseUrl` to `https://trakrf.id/api/v1`.
-   - `apiKey` to your API key (create one in **Settings → API Keys** on trakrf.id).
+- `baseUrl` to `https://trakrf.id/api/v1`.
+- `apiKey` to your API key (create one in **Settings → API Keys** on trakrf.id).
 ```
 
 - [ ] **Step 2: Replace baseUrl value**
 
 Use Edit tool on `docs/api/postman.mdx`:
-- `old_string`: `` - `baseUrl` to `https://trakrf.id/api/v1`. ``
-- `new_string`: `` - `baseUrl` to `https://app.trakrf.id/api/v1` — the API is served from the `app.` subdomain, not the marketing site. ``
+
+- `old_string`: ``- `baseUrl` to `https://trakrf.id/api/v1`.``
+- `new_string`: ``- `baseUrl` to `https://app.trakrf.id/api/v1` — the API is served from the `app.` subdomain, not the marketing site.``
 
 - [ ] **Step 3: Replace apiKey instruction**
 
 Use Edit tool on `docs/api/postman.mdx`:
-- `old_string`: `` - `apiKey` to your API key (create one in **Settings → API Keys** on trakrf.id). ``
-- `new_string`: `` - `apiKey` to your API key. See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for how to create one. ``
 
-*Note: the forward link to `authentication#mint-your-first-api-key` depends on §1 (Task A4) adding that anchor. Order §1 **before** pushing PR A, or this build will fail. Plan ordering puts §1 last in commit order per the spec — verify A4 lands before `pnpm build` is re-run for the whole PR in Task A5.*
+- `old_string`: ``- `apiKey` to your API key (create one in **Settings → API Keys** on trakrf.id).``
+- `new_string`: ``- `apiKey` to your API key. See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for how to create one.``
+
+_Note: the forward link to `authentication#mint-your-first-api-key` depends on §1 (Task A4) adding that anchor. Order §1 **before** pushing PR A, or this build will fail. Plan ordering puts §1 last in commit order per the spec — verify A4 lands before `pnpm build` is re-run for the whole PR in Task A5._
 
 - [ ] **Step 4: Verify (deferred to Task A5 since §1 isn't written yet)**
 
@@ -252,11 +260,13 @@ EOF
 ### Task A4: §1 — remove UI-in-development banner, add "Mint your first API key" section
 
 **Files:**
+
 - Modify: `docs/api/authentication.md` (delete lines 9–11 banner, add new section after the existing intro paragraph)
 
 - [ ] **Step 1: Re-read authentication.md**
 
 Read `docs/api/authentication.md`. Confirm:
+
 - The banner at lines 9–11 contains:
 
   ```markdown
@@ -264,11 +274,13 @@ Read `docs/api/authentication.md`. Confirm:
   The key-management UI (mint, list, revoke) is in active development under [TRA-393](https://linear.app/trakrf/issue/TRA-393). Until it lands, contact [support@trakrf.id](mailto:support@trakrf.id) to request a key for integration testing.
   :::
   ```
+
 - The "## Request header" section follows at line 13.
 
 - [ ] **Step 2: Delete the banner**
 
 Use Edit tool:
+
 - `old_string`:
 
   ```markdown
@@ -297,7 +309,7 @@ Use Edit tool:
   ## Request header
   ```
 
-*The `{#mint-your-first-api-key}` syntax sets the explicit anchor. The §2 Postman link and the §4 API quickstart (in PR B) target this exact anchor.*
+_The `{#mint-your-first-api-key}` syntax sets the explicit anchor. The §2 Postman link and the §4 API quickstart (in PR B) target this exact anchor._
 
 - [ ] **Step 3: Verify**
 
@@ -307,6 +319,7 @@ Expected: both pass. The `authentication#mint-your-first-api-key` anchor now res
 - [ ] **Step 4: Manual visual check**
 
 Run: `pnpm serve`. Open `/docs/api/authentication` in the browser. Confirm:
+
 - No banner at the top of the page.
 - A new H2 "Mint your first API key" appears before "Request header" with the 5-step list and the HTML-comment screenshot placeholder.
 - The HTML comment doesn't render visibly.
@@ -349,17 +362,19 @@ Expected: 0 errors.
 
 Run: `git log origin/main..HEAD --oneline`
 Expected: 4 or 5 commits:
+
 1. `docs(tra-408): design for API docs fixes (PR A + PR B split)` (spec)
 2. Optionally: `docs(tra-408): update /reports/* prose references to new TRA-396 paths` (if §9 had hits)
 3. `docs(tra-408): fix endpoint references in webhooks + rate-limits (§3)`
 4. `docs(tra-408): align postman.mdx with authentication (§2)`
 5. `docs(tra-408): remove stale UI-in-development banner, add mint-key section (§1)`
 
-If the spec commit should *not* go out with PR A (user may prefer it in its own PR or to land it separately), confirm with the user before pushing. Default: include the spec commit; it documents why the series exists.
+If the spec commit should _not_ go out with PR A (user may prefer it in its own PR or to land it separately), confirm with the user before pushing. Default: include the spec commit; it documents why the series exists.
 
 - [ ] **Step 4: Manual browser walkthrough of all four touched pages**
 
 Run: `pnpm serve`. Visit:
+
 - `/docs/api/authentication` — banner gone, new Mint section present
 - `/docs/api/postman` — new baseUrl, new key-mint link
 - `/docs/api/webhooks` — new polling example, /locations/current rename note
@@ -421,9 +436,10 @@ The `.github/workflows/sync-preview.yml` workflow should fire on push. Wait for 
 
 ## 🛑 Gate: Merge PR A before proceeding to Part 2
 
-**Do not start Part 2 until PR A is merged to `main`.** PR B branches off *updated* main and backfills a cross-link that only makes sense once PR A's `rate-limits.md` note is already on main.
+**Do not start Part 2 until PR A is merged to `main`.** PR B branches off _updated_ main and backfills a cross-link that only makes sense once PR A's `rate-limits.md` note is already on main.
 
 After PR A merges:
+
 1. `git checkout main`
 2. `git pull origin main`
 3. `git branch -d fix/tra-408-api-docs-corrections` (local cleanup)
@@ -457,6 +473,7 @@ Expected: both pass. Confirms PR A is green on main.
 ### Task B1: §7 — create `docs/api/resource-identifiers.md`
 
 **Files:**
+
 - Create: `docs/api/resource-identifiers.md`
 - Modify: `sidebars.ts` (add `"api/resource-identifiers"` after `"api/rest-api-reference"`)
 
@@ -473,10 +490,10 @@ sidebar_position: 3
 
 Every resource in the TrakRF API has **two** IDs:
 
-| ID | Type | Where you see it | How you use it |
-|---|---|---|---|
-| `identifier` | string | URL path params, response bodies | The business-meaningful ID (e.g. `ASSET-0001`, `LOC-0001`). This is the one clients key on. |
-| `surrogate_id` | integer | Response bodies only | Internal-use stable ID; visible so you can correlate across related responses, but not required on the wire. |
+| ID             | Type    | Where you see it                 | How you use it                                                                                               |
+| -------------- | ------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `identifier`   | string  | URL path params, response bodies | The business-meaningful ID (e.g. `ASSET-0001`, `LOC-0001`). This is the one clients key on.                  |
+| `surrogate_id` | integer | Response bodies only             | Internal-use stable ID; visible so you can correlate across related responses, but not required on the wire. |
 
 This page explains where each form appears and why integrators should key on `identifier`, not `surrogate_id`.
 
@@ -534,11 +551,12 @@ There is one SPA-only path that takes the integer `surrogate_id`:
 This path is accessible **only** with session cookies (used by the first-party TrakRF web app). API-key requests receive `401 unauthorized`. Integrators using API keys should always use `GET /api/v1/assets/{identifier}/history` with the string identifier. See [Private endpoints](./private-endpoints) for the full list of SPA-only paths.
 ````
 
-*Note: the forward link to `./private-endpoints` at the bottom depends on B2 landing. Since B1 and B2 are both in PR B, the build check deferred to B2 verifies both simultaneously.*
+_Note: the forward link to `./private-endpoints` at the bottom depends on B2 landing. Since B1 and B2 are both in PR B, the build check deferred to B2 verifies both simultaneously._
 
 - [ ] **Step 2: Update `sidebars.ts`**
 
 Use Edit tool on `sidebars.ts`:
+
 - `old_string`:
 
   ```typescript
@@ -566,7 +584,7 @@ Use Edit tool on `sidebars.ts`:
         ],
   ```
 
-*`private-endpoints` is added to the sidebar in Task B2. Don't add it here or the build will fail — the file doesn't exist yet.*
+_`private-endpoints` is added to the sidebar in Task B2. Don't add it here or the build will fail — the file doesn't exist yet._
 
 - [ ] **Step 3: Verify (partial — `private-endpoints` link will fail)**
 
@@ -596,6 +614,7 @@ EOF
 ### Task B2: §6 — create `docs/api/private-endpoints.md` + cross-link backfill
 
 **Files:**
+
 - Create: `docs/api/private-endpoints.md`
 - Modify: `docs/api/rate-limits.md` (add one-line cross-link after the `/orgs/me` response-shape paragraph that PR A landed)
 - Modify: `sidebars.ts` (add `"api/private-endpoints"` between `"api/error-codes"` and `"api/postman"`)
@@ -619,19 +638,19 @@ Third-party integrations should not depend on these endpoints. If you need funct
 
 ## Endpoint list
 
-| Endpoint | Method(s) | Used by | Status | Classification |
-|---|---|---|---|---|
-| `/api/v1/auth/login` | POST | SPA login form | Undocumented | Pending |
-| `/api/v1/auth/signup` | POST | SPA signup form | Undocumented | Pending |
-| `/api/v1/auth/forgot-password` | POST | SPA password recovery | Undocumented | Pending |
-| `/api/v1/auth/reset-password` | POST | SPA password recovery | Undocumented | Pending |
-| `/api/v1/auth/accept-invite` | POST | SPA invite acceptance | Undocumented | Pending |
-| `/api/v1/users/me` | GET | SPA user context | Undocumented | Pending |
-| `/api/v1/users/me/current-org` | GET | SPA org context | Undocumented | Pending |
-| `/api/v1/orgs` | GET | SPA org picker | Undocumented | Pending |
-| `/api/v1/orgs/{id}` | GET | SPA org detail | Undocumented | Pending |
-| `/api/v1/orgs/{id}/api-keys` | GET, POST, DELETE | Settings → API Keys UI | Undocumented | Pending |
-| `/api/v1/orgs/me` | GET | API-key health check | Undocumented | Pending — see response-shape note below |
+| Endpoint                       | Method(s)         | Used by                | Status       | Classification                          |
+| ------------------------------ | ----------------- | ---------------------- | ------------ | --------------------------------------- |
+| `/api/v1/auth/login`           | POST              | SPA login form         | Undocumented | Pending                                 |
+| `/api/v1/auth/signup`          | POST              | SPA signup form        | Undocumented | Pending                                 |
+| `/api/v1/auth/forgot-password` | POST              | SPA password recovery  | Undocumented | Pending                                 |
+| `/api/v1/auth/reset-password`  | POST              | SPA password recovery  | Undocumented | Pending                                 |
+| `/api/v1/auth/accept-invite`   | POST              | SPA invite acceptance  | Undocumented | Pending                                 |
+| `/api/v1/users/me`             | GET               | SPA user context       | Undocumented | Pending                                 |
+| `/api/v1/users/me/current-org` | GET               | SPA org context        | Undocumented | Pending                                 |
+| `/api/v1/orgs`                 | GET               | SPA org picker         | Undocumented | Pending                                 |
+| `/api/v1/orgs/{id}`            | GET               | SPA org detail         | Undocumented | Pending                                 |
+| `/api/v1/orgs/{id}/api-keys`   | GET, POST, DELETE | Settings → API Keys UI | Undocumented | Pending                                 |
+| `/api/v1/orgs/me`              | GET               | API-key health check   | Undocumented | Pending — see response-shape note below |
 
 ## Response-shape note: `/orgs/me` {#orgs-me}
 
@@ -662,6 +681,7 @@ This page tracks the state until those decisions land.
 - [ ] **Step 2: Add the cross-link in `rate-limits.md`**
 
 Use Edit tool on `docs/api/rate-limits.md`:
+
 - `old_string` (the paragraph PR A added in Task A2 Step 4):
 
   ```markdown
@@ -677,6 +697,7 @@ Use Edit tool on `docs/api/rate-limits.md`:
 - [ ] **Step 3: Update `sidebars.ts`**
 
 Use Edit tool on `sidebars.ts`:
+
 - `old_string`:
 
   ```typescript
@@ -714,16 +735,19 @@ Expected: both pass. The cross-link from `resource-identifiers.md` to `./private
 - [ ] **Step 5: Manual visual check**
 
 Run: `pnpm serve`. Open `/docs/api/private-endpoints`:
+
 - Confirm the caution admonition renders at the top.
 - Confirm the table renders with all 11 rows.
 - Confirm the `{#orgs-me}` anchor works: `/docs/api/private-endpoints#orgs-me` scrolls to the response-shape section.
 - Click the "Rate limits → Exclusions" return link; confirm it scrolls to the rate-limits Exclusions H2.
 
 Open `/docs/api/rate-limits`:
+
 - Scroll to the Exclusions section.
 - Confirm the new "See [Private endpoints → /orgs/me]" forward link is present and routes to the right anchor.
 
 Open `/docs/api/resource-identifiers`:
+
 - Scroll to the bottom. Confirm the `./private-endpoints` link routes to the new page.
 
 - [ ] **Step 6: Commit**
@@ -769,6 +793,7 @@ Most of these were removed by TRA-396. Any hit in an inline-JSON example means t
 - [ ] **Step 2: Per-hit triage**
 
 For each hit:
+
 - Is the file prose or an auto-generated artifact? (All files under `docs/` are hand-maintained; `static/api/*` is platform-owned and off-limits. If a grep hit is in `static/api/*`, ignore it — that's a platform bug to file separately.)
 - Is the hit in an inline JSON example? If yes, rewrite the example to the post-TRA-396 shape:
   - `"id":` → `"surrogate_id":` (where the field was the integer internal ID)
@@ -812,11 +837,12 @@ EOF
 )"
 ```
 
-*If Step 1 returned zero hits across all patterns, §8 is a no-op. Skip the commit and note in the PR body that no prose examples had stale shapes.*
+_If Step 1 returned zero hits across all patterns, §8 is a no-op. Skip the commit and note in the PR body that no prose examples had stale shapes._
 
 ### Task B4: §5 — Integrations fill + index page + sidebar fix
 
 **Files:**
+
 - Rewrite: `docs/integrations/mqtt-message-format.md`
 - Rewrite: `docs/integrations/fixed-reader-setup.md`
 - Create: `docs/integrations/index.md`
@@ -826,7 +852,7 @@ EOF
 
 Use Write tool (full file replacement) with content:
 
-````markdown
+```markdown
 ---
 sidebar_position: 2
 ---
@@ -844,13 +870,13 @@ No committed timeline. This page will be rewritten with the message schema, topi
 ## If you need this today
 
 [Email support](mailto:support@trakrf.id) with your use case. Concrete early-adopter deployments inform the scope of the first-party docs and can accelerate scheduling.
-````
+```
 
 - [ ] **Step 2: Rewrite `docs/integrations/fixed-reader-setup.md`**
 
 Use Write tool with content:
 
-````markdown
+```markdown
 ---
 sidebar_position: 3
 ---
@@ -868,13 +894,13 @@ No committed timeline. This page will be replaced with step-by-step deployment a
 ## If you need this today
 
 [Email support](mailto:support@trakrf.id). Early fixed-reader deployments are handled as engagements for now; documented self-service comes after the handheld launch.
-````
+```
 
 - [ ] **Step 3: Create `docs/integrations/index.md`**
 
 Write the new file:
 
-````markdown
+```markdown
 ---
 sidebar_position: 1
 title: Integrations
@@ -894,13 +920,14 @@ None of the integration surfaces below are documented yet for self-service. Earl
 ## What's documented today
 
 For REST API integration (the primary customer-facing integration surface), start at **[Getting started → Using the API](/docs/getting-started/api)** and the **[interactive API reference](/api)**.
-````
+```
 
-*The link `/docs/getting-started/api` depends on Task B5. B4 runs before B5 per the commit order (spec says §5 before §4 because §4 is the biggest structural change, done last to avoid churn). That means this link will be broken until B5 lands. Strategy: skip the build check here and defer it to B5.*
+_The link `/docs/getting-started/api` depends on Task B5. B4 runs before B5 per the commit order (spec says §5 before §4 because §4 is the biggest structural change, done last to avoid churn). That means this link will be broken until B5 lands. Strategy: skip the build check here and defer it to B5._
 
 - [ ] **Step 4: Update `sidebars.ts` integrationsSidebar**
 
 Use Edit tool:
+
 - `old_string`:
 
   ```typescript
@@ -932,7 +959,7 @@ Use Edit tool:
     ],
   ```
 
-*Docusaurus's `type: "docSidebar"` navbar item auto-lands on the first sidebar entry. Putting `integrations/index` first makes clicking **Integrations** in the top nav route to the new index page without any `docusaurus.config.ts` change.*
+_Docusaurus's `type: "docSidebar"` navbar item auto-lands on the first sidebar entry. Putting `integrations/index` first makes clicking **Integrations** in the top nav route to the new index page without any `docusaurus.config.ts` change._
 
 - [ ] **Step 5: Partial verify**
 
@@ -964,6 +991,7 @@ EOF
 ### Task B5: §4 — Getting Started folder split (API quickstart track)
 
 **Files:**
+
 - Move: `docs/getting-started.md` → `docs/getting-started/ui.md`
 - Create: `docs/getting-started/index.md`
 - Create: `docs/getting-started/api.md`
@@ -983,6 +1011,7 @@ Use git's rename detection to preserve history.
 - [ ] **Step 2: Update the moved file's frontmatter**
 
 Use Edit tool on `docs/getting-started/ui.md`:
+
 - `old_string`:
 
   ```markdown
@@ -1004,13 +1033,13 @@ Use Edit tool on `docs/getting-started/ui.md`:
   # Getting started — using the app
   ```
 
-*The current H1 is "Getting Started." Retitling to "using the app" makes the parallel-tracks naming clear in every surface — sidebar, page title, breadcrumb.*
+_The current H1 is "Getting Started." Retitling to "using the app" makes the parallel-tracks naming clear in every surface — sidebar, page title, breadcrumb._
 
 - [ ] **Step 3: Create `docs/getting-started/index.md`**
 
 Write:
 
-````markdown
+```markdown
 ---
 sidebar_position: 1
 title: Getting started
@@ -1035,7 +1064,7 @@ End-to-end: mint an API key, call `/api/v1/locations/current`, see the current a
 ## Not sure which?
 
 If you're evaluating TrakRF for your team's operations, start with the UI quickstart — it's the fastest way to see what the platform does. If you're integrating TrakRF into existing systems (inventory, ERP, custom dashboards), start with the API quickstart.
-````
+```
 
 - [ ] **Step 4: Create `docs/getting-started/api.md`**
 
@@ -1118,6 +1147,7 @@ The two key concepts integrators trip on:
 - [ ] **Step 5: Update `sidebars.ts` userGuideSidebar**
 
 Use Edit tool:
+
 - `old_string`:
 
   ```typescript
@@ -1146,11 +1176,12 @@ Use Edit tool:
         label: "User Guide",
   ```
 
-*The `link: { type: "doc", id: "getting-started/index" }` makes the category label itself clickable and route to the index page. Children show nested. The **User Guide** navbar (`type: "docSidebar"`) will auto-land on the first entry, which is now the Getting started category — clicking it routes to the index page.*
+_The `link: { type: "doc", id: "getting-started/index" }` makes the category label itself clickable and route to the index page. Children show nested. The **User Guide** navbar (`type: "docSidebar"`) will auto-land on the first entry, which is now the Getting started category — clicking it routes to the index page._
 
 - [ ] **Step 6: Grep and fix inbound links to the old path**
 
 Run Grep on `docs/` for these patterns; update any hits:
+
 - `./getting-started)` → decide per hit whether to link to `./getting-started/index`, `./getting-started/ui`, or `./getting-started/api`. From sibling docs (e.g. `docs/user-guide/reader-setup.md`), a link that used to go to the whole Getting Started page now most likely wants `./getting-started/ui`.
 - `/docs/getting-started)` → same, case by case.
 - `/docs/getting-started#` → these targeted anchors within the old file; they now live in `docs/getting-started/ui.md` — update to `/docs/getting-started/ui#...`.
@@ -1169,7 +1200,7 @@ The footer has:
 },
 ```
 
-Docusaurus *should* resolve `/docs/getting-started` to the new `getting-started/index.md` automatically (trailing-slash aware, index-file aware). Run `pnpm build` and check. If the broken-link check fires on this link, update the footer `to` to `/docs/getting-started/` (trailing slash) or whatever resolves in the build output.
+Docusaurus _should_ resolve `/docs/getting-started` to the new `getting-started/index.md` automatically (trailing-slash aware, index-file aware). Run `pnpm build` and check. If the broken-link check fires on this link, update the footer `to` to `/docs/getting-started/` (trailing slash) or whatever resolves in the build output.
 
 - [ ] **Step 8: Full verification**
 
@@ -1179,6 +1210,7 @@ Expected: both pass. This is the first full build since Task A0 — all B1–B5 
 - [ ] **Step 9: Manual visual check — every touched surface**
 
 Run: `pnpm serve`. Walk through:
+
 - Click **User Guide** in the top navbar → should land on Getting started index page.
 - Click **UI quickstart** card → should route to the ui page.
 - Click **API quickstart** card → should route to the api page.
@@ -1237,6 +1269,7 @@ Expected: 4 or 5 commits in the order: §7, §6, §8 (optional no-op), §5, §4.
 - [ ] **Step 4: Final browser walkthrough**
 
 Run: `pnpm serve`. Visit in order:
+
 - `/docs/getting-started` (index) → follow both quickstart links
 - `/docs/getting-started/api` → follow every outbound link in Next steps
 - `/docs/api/resource-identifiers` → follow the private-endpoints link

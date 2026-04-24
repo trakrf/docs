@@ -61,7 +61,7 @@ Not changed by PR #197, but noted in the Linear issue for documentation. Session
 In the table at lines 39–46, insert a new row. `keys:admin` sits at the bottom of the table (below `scans:write`) to keep the read/write pairs visually intact:
 
 ```markdown
-| `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyId}` |
+| `keys:admin` | Admin | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyId}` |
 ```
 
 Also extend the "few non-obvious pairings" bullet list below the table with one bullet:
@@ -102,15 +102,19 @@ Requests authenticated with an API key that lacks `keys:admin` return `403 forbi
 ### Example: rotate a key from a script
 
 \`\`\`bash
+
 # 1. Mint the replacement
+
 NEW_KEY=$(curl -s -H "Authorization: Bearer $TRAKRF_API_KEY" \
                -H "Content-Type: application/json" \
                -d '{"name":"rotated-'"$(date -u +%Y-%m-%d)"'","scopes":["assets:read","keys:admin"],"expires_at":"2026-07-22T00:00:00Z"}' \
-               "$BASE_URL/api/v1/orgs/$ORG_ID/api-keys" \
-          | jq -r '.data.jwt')
+ "$BASE_URL/api/v1/orgs/$ORG_ID/api-keys" \
+ | jq -r '.data.jwt')
 
 # 2. Deploy $NEW_KEY to the integration, then rotate $TRAKRF_API_KEY in your secrets manager.
+
 # 3. Revoke the old key once the cutover is confirmed:
+
 curl -X DELETE -H "Authorization: Bearer $NEW_KEY" \
      "$BASE_URL/api/v1/orgs/$ORG_ID/api-keys/$OLD_KEY_ID"
 \`\`\`

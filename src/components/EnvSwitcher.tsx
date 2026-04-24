@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
-import { useDeployEnv, type DeployEnvLabel } from "@site/src/hooks/useDeployEnv";
+import {
+  useDeployEnv,
+  type DeployEnvLabel,
+} from "@site/src/hooks/useDeployEnv";
 import styles from "./EnvSwitcher.module.css";
 
 type SwitcherValue = DeployEnvLabel | "auto";

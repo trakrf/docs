@@ -6,10 +6,10 @@ sidebar_position: 3
 
 Every resource in the TrakRF API has **two** IDs:
 
-| ID | Type | Where you see it | How you use it |
-|---|---|---|---|
-| `identifier` | string | URL path params, response bodies | The business-meaningful ID (e.g. `ASSET-0001`, `LOC-0001`). This is the one clients key on. |
-| `surrogate_id` | integer | Response bodies only | Stable integer ID retained for backward compatibility with earlier TrakRF tooling. Visible so clients that already correlate on it keep working; `identifier` is the canonical key. |
+| ID             | Type    | Where you see it                 | How you use it                                                                                                                                                                      |
+| -------------- | ------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `identifier`   | string  | URL path params, response bodies | The business-meaningful ID (e.g. `ASSET-0001`, `LOC-0001`). This is the one clients key on.                                                                                         |
+| `surrogate_id` | integer | Response bodies only             | Stable integer ID retained for backward compatibility with earlier TrakRF tooling. Visible so clients that already correlate on it keep working; `identifier` is the canonical key. |
 
 This page explains where each form appears, why integrators should key on `identifier`, and what the additional hierarchy-helper fields on locations mean.
 
@@ -62,10 +62,10 @@ Responses return both IDs so clients that need to correlate across related recor
 
 Location responses include two additional fields that describe where the node sits in the location tree:
 
-| Field   | Type    | Meaning                                                                                                                                                             |
-| ------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Field   | Type    | Meaning                                                                                                                                                              |
+| ------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `path`  | string  | The location's position in the tree as a dot-separated [`ltree`](https://www.postgresql.org/docs/current/ltree.html) label path, e.g. `warehouse_a.aisle_3.shelf_b`. |
-| `depth` | integer | The number of labels in `path` — `1` for a root location, `2` for its direct children, and so on.                                                                   |
+| `depth` | integer | The number of labels in `path` — `1` for a root location, `2` for its direct children, and so on.                                                                    |
 
 Example (abbreviated) from `GET /api/v1/locations`:
 

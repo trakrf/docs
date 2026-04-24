@@ -2,7 +2,7 @@
 
 **Linear:** [TRA-408](https://linear.app/trakrf/issue/TRA-408) — sub-issue of TRA-210
 **Parent context:** Follow-ons from the 2026-04-20 black-box API evaluation. A new integrator opening the docs portal is currently sent down multiple dead ends before they can make their first successful API call.
-**Related (not handled here):** TRA-407 (service-side contract fixes), TRA-409 (auto-publish spec on PR branches), TRA-395 (rate-limit behavior), TRA-393 (key-mint UI — *Done*), TRA-396 (read-path API-key auth — *Done*).
+**Related (not handled here):** TRA-407 (service-side contract fixes), TRA-409 (auto-publish spec on PR branches), TRA-395 (rate-limit behavior), TRA-393 (key-mint UI — _Done_), TRA-396 (read-path API-key auth — _Done_).
 
 ## Goal
 
@@ -15,7 +15,7 @@ Two PRs off fresh branches from `main`. The current local `feature/tra-394-redoc
 - **PR A — `fix/tra-408-api-docs-corrections`** — factual corrections (§1, §2, §3, §9).
   Small, low-risk, ships first.
 - **PR B — `feat/tra-408-api-quickstart-and-conventions`** — integrator quickstart and new-convention documentation (§4, §5, §6, §7, §8).
-  Branched off main *after* PR A merges. Bigger structural change (folder split on Getting Started) and new pages for §6 and §7.
+  Branched off main _after_ PR A merges. Bigger structural change (folder split on Getting Started) and new pages for §6 and §7.
 
 Each section lands as its own conventional commit with a `TRA-408` scope; no squash merges.
 
@@ -104,7 +104,7 @@ Every other part of `error-codes.md` is fair game.
 
 ### §5 — Integrations: fill placeholders and fix the nav landing
 
-- Rewrite `docs/integrations/mqtt-message-format.md` — 1-paragraph honest abstract: MQTT is the ingest path used by the prior fixed-reader projects whose schema and pipeline TrakRF inherits; a first-party MQTT integration surface is on the roadmap *post-handheld-launch*; **no committed timeline**. No Linear ticket link (none exists yet).
+- Rewrite `docs/integrations/mqtt-message-format.md` — 1-paragraph honest abstract: MQTT is the ingest path used by the prior fixed-reader projects whose schema and pipeline TrakRF inherits; a first-party MQTT integration surface is on the roadmap _post-handheld-launch_; **no committed timeline**. No Linear ticket link (none exists yet).
 - Rewrite `docs/integrations/fixed-reader-setup.md` — same pattern for CS463/fixed-reader support: the platform already accepts fixed-reader data via the inherited pipeline; self-serve setup UI lands post-handheld-launch.
 - Create `docs/integrations/index.md` — brief "what's available now / what's planned" overview; becomes the landing page for the **Integrations** top-nav item.
 - Update `sidebars.ts` `integrationsSidebar` to place `integrations/index` first. The existing navbar item is `type: "docSidebar"`, which auto-lands on the first sidebar entry, so **no `docusaurus.config.ts` change needed** for the navbar landing. Verify at `pnpm serve` time.
@@ -119,7 +119,7 @@ Every other part of `error-codes.md` is fair game.
 - Rows seeded from §6's catalog: `/auth/{login,signup,forgot-password,reset-password,accept-invite}`, `/users/me`, `/users/me/current-org`, `/orgs`, `/orgs/{id}`, `/orgs/{id}/api-keys` (GET/POST/DELETE), `/orgs/me`. Every row: Status = "undocumented", Classification = "pending".
 - Special call-out block on `/orgs/me` — response-shape quirk (bare `{id, name}`, not envelope) — this is the cross-link target for the note PR A leaves dangling.
 - Add to `sidebars.ts` `apiSidebar` between `error-codes` and `postman`.
-- **Cross-PR backfill:** the `/orgs/me` note in `docs/api/rate-limits.md` (landed in PR A §3 without a forward link) gets a tiny one-line edit here to add `See [private-endpoints#orgs-me](./private-endpoints#orgs-me) for the full write-up.` This is the cross-PR link described under *Cross-PR dependency* below, and it lives with §6's commit because that's when the link becomes resolvable.
+- **Cross-PR backfill:** the `/orgs/me` note in `docs/api/rate-limits.md` (landed in PR A §3 without a forward link) gets a tiny one-line edit here to add `See [private-endpoints#orgs-me](./private-endpoints#orgs-me) for the full write-up.` This is the cross-PR link described under _Cross-PR dependency_ below, and it lives with §6's commit because that's when the link becomes resolvable.
 - **Files:** 1 new, `rate-limits.md` one-line edit, sidebar edit.
 - **Expected diff:** ~52 lines.
 
