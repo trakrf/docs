@@ -38,6 +38,10 @@ If you need functionality not available via the documented public API, [email su
 }
 ```
 
+:::note API-key authentication only
+`/orgs/me` accepts API keys only. Session JWTs from the web app return `401 unauthorized` on this endpoint. All other public-read and public-write endpoints accept both credential types.
+:::
+
 If you're using `/orgs/me` as a health check, consider also probing a "real" endpoint (e.g. `GET /api/v1/assets?limit=1`) so your checks exercise the database path, not just the token verification path.
 
 ## Classification policy {#policy}
