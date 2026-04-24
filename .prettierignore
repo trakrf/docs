@@ -3,3 +3,9 @@ build/
 .docusaurus/
 pnpm-lock.yaml
 CHANGELOG.md
+
+# Auto-generated / synced from platform via scripts/refresh-openapi.sh.
+# Prettier-formatting these produces massive diffs that the next sync
+# reverts; exclude them from lint so drift doesn't churn after each sync.
+static/api/
+
