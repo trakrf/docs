@@ -14,6 +14,9 @@
           "id": {
             "type": "integer"
           },
+          "jti": {
+            "type": "string"
+          },
           "key": {
             "type": "string"
           },
@@ -555,7 +558,7 @@
         },
         "type": "object"
       },
-      "locations.ListLocationsResponse": {
+      "locations.ListAncestorsResponse": {
         "properties": {
           "data": {
             "items": {
@@ -578,13 +581,71 @@
         },
         "type": "object"
       },
-      "locations.LocationHierarchyResponse": {
+      "locations.ListChildrenResponse": {
         "properties": {
           "data": {
             "items": {
               "$ref": "#/components/schemas/location.PublicLocationView"
             },
             "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "locations.ListDescendantsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/location.PublicLocationView"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "locations.ListLocationsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/location.PublicLocationView"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
           }
         },
         "type": "object"
@@ -620,6 +681,18 @@
               "$ref": "#/components/schemas/apikey.APIKeyListItem"
             },
             "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
           }
         },
         "type": "object"
@@ -1083,7 +1156,7 @@
     },
     "/api/v1/assets/{identifier}": {
       "delete": {
-        "description": "Soft-delete an asset by its natural identifier. The asset is marked inactive and removed from future list results.",
+        "description": "Delete an asset by its natural identifier. The asset is removed from all subsequent queries and its identifier becomes immediately available for reuse. Returns 204 on success, 404 if the asset does not exist or has already been deleted.",
         "operationId": "assets.delete",
         "parameters": [
           {
@@ -1164,6 +1237,7 @@
         ]
       },
       "get": {
+        "description": "Retrieve an asset by its natural identifier. Returns 404 if the asset does not exist.",
         "operationId": "assets.get",
         "parameters": [
           {
@@ -1418,14 +1492,16 @@
             "in": "query",
             "name": "limit",
             "schema": {
+              "default": 50,
               "type": "integer"
             }
           },
           {
-            "description": "pagination offset",
+            "description": "min 0",
             "in": "query",
             "name": "offset",
             "schema": {
+              "default": 0,
               "type": "integer"
             }
           },
@@ -1882,14 +1958,16 @@
             "in": "query",
             "name": "limit",
             "schema": {
+              "default": 50,
               "type": "integer"
             }
           },
           {
-            "description": "pagination offset",
+            "description": "min 0",
             "in": "query",
             "name": "offset",
             "schema": {
+              "default": 0,
               "type": "integer"
             }
           },
@@ -2128,14 +2206,16 @@
             "in": "query",
             "name": "limit",
             "schema": {
+              "default": 50,
               "type": "integer"
             }
           },
           {
-            "description": "pagination offset",
+            "description": "min 0",
             "in": "query",
             "name": "offset",
             "schema": {
+              "default": 0,
               "type": "integer"
             }
           },
@@ -2259,7 +2339,7 @@
     },
     "/api/v1/locations/{identifier}": {
       "delete": {
-        "description": "Soft-delete a location by its natural identifier. The location is marked inactive and removed from future list results.",
+        "description": "Delete a location by its natural identifier. The location is removed from all subsequent queries and its identifier becomes immediately available for reuse. Returns 204 on success, 404 if the location does not exist or has already been deleted.",
         "operationId": "locations.delete",
         "parameters": [
           {
@@ -2350,6 +2430,7 @@
         ]
       },
       "get": {
+        "description": "Retrieve a location by its natural identifier. Returns 404 if the location does not exist.",
         "operationId": "locations.get",
         "parameters": [
           {
@@ -2598,6 +2679,24 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "max 200",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "min 0",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -2605,7 +2704,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/locations.LocationHierarchyResponse"
+                  "$ref": "#/components/schemas/locations.ListAncestorsResponse"
                 }
               }
             },
@@ -2688,6 +2787,24 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "max 200",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "min 0",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -2695,7 +2812,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/locations.LocationHierarchyResponse"
+                  "$ref": "#/components/schemas/locations.ListChildrenResponse"
                 }
               }
             },
@@ -2778,6 +2895,24 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "max 200",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "min 0",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -2785,7 +2920,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/locations.LocationHierarchyResponse"
+                  "$ref": "#/components/schemas/locations.ListDescendantsResponse"
                 }
               }
             },
@@ -3129,6 +3264,24 @@
             "schema": {
               "type": "integer"
             }
+          },
+          {
+            "description": "max 200",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "default": 50,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "min 0",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
           }
         ],
         "responses": {
@@ -3316,12 +3469,12 @@
             }
           },
           {
-            "description": "API key id",
+            "description": "Either the integer surrogate id or the UUID jti",
             "in": "path",
             "name": "key_id",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             }
           }
         ],
