@@ -10,6 +10,12 @@ The endpoints marked **Internal** in the table below are used by the first-party
 If you need functionality not available via the documented public API, [email support](mailto:support@trakrf.id) so we can prioritize exposing the right primitives.
 :::
 
+## Programmatic access {#programmatic-access}
+
+For server-to-server or scripted integrations, the supported credential is an **API key** issued via the in-app **avatar menu → API Keys** flow (see [Authentication](./authentication)). Session JWTs minted by `POST /api/v1/auth/login` exist to keep the first-party SPA logged in and may change without notice — they are not a public auth path.
+
+**SSO and per-user OAuth are not currently exposed** as public auth paths. If your integration needs human-on-behalf-of credentials rather than an org-scoped API key, [email support](mailto:support@trakrf.id) so we can prioritize the request.
+
 ## Endpoint list
 
 | Endpoint                       | Method(s) | Used by               | Status                      | Classification |
