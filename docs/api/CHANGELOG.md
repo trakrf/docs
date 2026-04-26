@@ -26,6 +26,8 @@ Tracked but not yet in a release tag. Merged changes land here first, then move 
 - `POST /api/v1/inventory/save` now accepts `location_identifier` (string) and `asset_identifiers` (string array), matching the identifier convention used everywhere else in the v1 surface. The numeric `location_id` / `asset_ids` fields still work for backward compatibility but are no longer shown in the published spec.
 - The `type` field on assets enumerates its allowed values (`asset`, `person`, `inventory`) in the OpenAPI spec, and validation errors on unknown values return the allowed set in the `fields[].params` object.
 - `POST /api/v1/orgs/{id}/api-keys`, `GET /api/v1/orgs/{id}/api-keys`, and `DELETE /api/v1/orgs/{id}/api-keys/{keyId}` are now public, authenticated with the new **`keys:admin`** scope (or a session JWT from an org administrator). A `keys:admin` key may mint another `keys:admin` key, enabling unattended rotation for iPaaS, CI/CD, and IaC workflows. See [Authentication → Programmatic key rotation](./authentication#programmatic-key-rotation).
+- `DELETE /api/v1/orgs/{id}/api-keys/{keyID}` now accepts either the integer surrogate `id` or the UUID `jti` for `{keyID}` — both forms revoke the same key. Documented in [Authentication → Identifying a key](./authentication#identifying-a-key) ([TRA-501](https://linear.app/trakrf/issue/TRA-501), [TRA-504](https://linear.app/trakrf/issue/TRA-504)).
+- Pagination envelope (`limit`, `offset`, `total_count`) added on `GET /api/v1/locations/{identifier}/{ancestors,children,descendants}`, `GET /api/v1/orgs/{id}/api-keys`, and `GET /api/v1/assets/{identifier}/history`. Every list endpoint now uses the standard envelope; the previous "non-paginated exceptions" carve-out on the [Pagination](./pagination-filtering-sorting) page has been removed ([TRA-503](https://linear.app/trakrf/issue/TRA-503), [TRA-504](https://linear.app/trakrf/issue/TRA-504)).
 
 ### Changed
 
@@ -34,6 +36,8 @@ Tracked but not yet in a release tag. Merged changes land here first, then move 
 - Added a UI-form-to-scope-string mapping table on Authentication → Scopes ([TRA-467](https://linear.app/trakrf/issue/TRA-467) — F6).
 - Errors → Envelope clarified that `title` is descriptive and varies; clients should match on `type` ([TRA-467](https://linear.app/trakrf/issue/TRA-467) — F7).
 - Added **[Date fields](./date-fields)** — a new API-reference page documenting the `valid_from` / `valid_to` convention: `valid_from` always present as RFC3339, `valid_to` omitted when unset, inbound `FlexibleDate` parsing with US-first slash-date ambiguity warning ([TRA-472](https://linear.app/trakrf/issue/TRA-472)).
+- API quickstart step 5 ("Mint an API key") now names the **Expires** picker, enumerates its options (Never / 30 days / 90 days / 1 year / Custom), and recommends 90 days as the production default ([TRA-449](https://linear.app/trakrf/issue/TRA-449), [TRA-504](https://linear.app/trakrf/issue/TRA-504)).
+- [Errors](./errors) now documents the optional `params` object on `validation_error.fields[]` entries — field-specific constraint metadata such as `max_length`, `allowed_values`, `min`, `max`. The field has shipped for some time but was undocumented in the API reference ([TRA-504](https://linear.app/trakrf/issue/TRA-504)).
 
 ### Fixed
 
