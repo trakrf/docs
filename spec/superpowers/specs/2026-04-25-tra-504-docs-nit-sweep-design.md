@@ -109,7 +109,7 @@ Commit body documents both verifications (procedure run, observed result, conclu
 
 **Change:** Add a new H3 sub-section under **Key lifecycle** titled `### Identifying a key {#identifying-a-key}` with three points:
 
-1. Each API key has two identifiers: an integer `id` (surrogate, present in list responses from `GET /api/v1/orgs/{id}/api-keys`) and a UUID `jti` (visible in the JWT `sub` claim and displayed in the web UI's API Keys page).
+1. Each API key has two identifiers: an integer `id` (surrogate, present in list responses from `GET /api/v1/orgs/{id}/api-keys`) and a UUID `jti` (visible in the JWT `jti` claim and displayed in the web UI's API Keys page).
 2. `DELETE /api/v1/orgs/{id}/api-keys/{keyID}` accepts either form for `{keyID}` — the integer surrogate or the UUID.
 3. Recommend `jti` for human-readable scripts and audit trails: it's stable, visible everywhere (UI, JWT, API responses), and self-describing as a UUID.
 

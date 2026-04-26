@@ -119,9 +119,9 @@ const data = await res.json();
 Every API key has two identifiers:
 
 - An integer `id` (surrogate key) — present in list responses from `GET /api/v1/orgs/{id}/api-keys`.
-- A UUID `jti` — embedded in the JWT's `sub` claim, displayed in the web UI's API Keys page, and printed in audit-log entries.
+- A UUID `jti` — embedded in the JWT's `jti` claim, displayed in the web UI's API Keys page, and present in API responses.
 
-`DELETE /api/v1/orgs/{id}/api-keys/{keyID}` accepts either form for `{keyID}`. For human-readable scripts, audit trails, and incident-response runbooks, prefer `jti`: it's stable, visible everywhere the key surfaces (UI, JWT, API responses, logs), and self-describing as a UUID.
+`DELETE /api/v1/orgs/{id}/api-keys/{keyID}` accepts either form for `{keyID}`. For human-readable scripts, audit trails, and incident-response runbooks, prefer `jti`: it's stable and visible everywhere the key surfaces (UI, JWT, API responses).
 
 ## Programmatic key rotation {#programmatic-key-rotation}
 
