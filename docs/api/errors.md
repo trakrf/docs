@@ -72,7 +72,8 @@ When `type` is `validation_error`, the envelope carries an additional `fields` a
       {
         "field": "type",
         "code": "invalid_value",
-        "message": "type is not a valid value"
+        "message": "type is not a valid value",
+        "params": { "allowed_values": ["asset", "person", "inventory"] }
       }
     ]
   }
@@ -96,8 +97,6 @@ Current `code` values (extensible):
 - `too_long` — string or collection length above the maximum
 - `too_small` — numeric value below the minimum
 - `too_large` — numeric value above the maximum
-
-Some entries also include a `params` object carrying constraint metadata (e.g. `max_length`, `allowed_values`, `min`, `max`). The keys are field-specific — don't expect a fixed schema, and treat unknown keys gracefully.
 
 The `code` enum is extensible — TrakRF may add new validation codes in any v1 release. Treat unknown codes as generic invalid-value errors and surface the `message` field.
 
