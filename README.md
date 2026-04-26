@@ -60,9 +60,10 @@ anyone can spot-check which build is live.
 
 - `docs.{commit, build_time}` — emitted by `scripts/write-health-json.mjs` at build time. The file
   `static/health.json` is **gitignored** — it's a build artifact.
-- `platform.{commit, tag, build_time, spec_refreshed_at}` — committed snapshot at
-  `static/api/platform-meta.json`, written by `scripts/refresh-openapi.sh` whenever the OpenAPI spec
-  is refreshed. It pins the bundled spec to a specific platform build.
+- `platform.{commit, source_url, spec_refreshed_at}` — committed snapshot at
+  `static/api/platform-meta.json`, written by `scripts/refresh-openapi.sh` when the OpenAPI spec is
+  pulled from `trakrf/platform`. Pins the bundled spec to a specific platform commit; `source_url`
+  links to the commit on GitHub.
 
 ## Contributing
 
