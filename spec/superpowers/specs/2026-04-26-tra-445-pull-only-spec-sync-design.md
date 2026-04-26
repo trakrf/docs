@@ -8,10 +8,10 @@
 
 `static/api/openapi.{json,yaml}` on `trakrf/docs` `main` flips between two structurally different artifacts depending on which of two writers ran most recently:
 
-| Flow | Source | Schema names |
-|---|---|---|
-| **Push** — `trakrf/platform/.github/workflows/publish-api-docs.yml` | `docs/api/openapi.public.{json,yaml}` (filtered, customer-facing, committed in platform repo) | Short — `apikey.APIKeyCreateResponse`, `shared.TagIdentifier` |
-| **Pull** — `trakrf/docs/scripts/refresh-openapi.sh` | `https://app.preview.trakrf.id/api/v1/openapi.{json,yaml}` (runtime, unfiltered) | Long — `github_com_trakrf_platform_backend_internal_models_apikey.APIKeyCreateResponse` |
+| Flow                                                                | Source                                                                                        | Schema names                                                                            |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **Push** — `trakrf/platform/.github/workflows/publish-api-docs.yml` | `docs/api/openapi.public.{json,yaml}` (filtered, customer-facing, committed in platform repo) | Short — `apikey.APIKeyCreateResponse`, `shared.TagIdentifier`                           |
+| **Pull** — `trakrf/docs/scripts/refresh-openapi.sh`                 | `https://app.preview.trakrf.id/api/v1/openapi.{json,yaml}` (runtime, unfiltered)              | Long — `github_com_trakrf_platform_backend_internal_models_apikey.APIKeyCreateResponse` |
 
 Recent log on `main`:
 
@@ -20,9 +20,9 @@ Recent log on `main`:
 
 Symptoms:
 
-1. **Reviewer noise.** The push bot opens one `sync/platform-<sha>` PR per platform-`main` advance. Each carries a Cloudflare Pages preview deploy. Older bot PRs do not auto-close when a *feature* PR (e.g. `docs(tra-*)` running `refresh-openapi.sh` manually) lands a spec. Observed 2026-04-22: PRs #22, #24, #25 all open against older SHAs after PR #26 merged the manually-refreshed spec.
+1. **Reviewer noise.** The push bot opens one `sync/platform-<sha>` PR per platform-`main` advance. Each carries a Cloudflare Pages preview deploy. Older bot PRs do not auto-close when a _feature_ PR (e.g. `docs(tra-*)` running `refresh-openapi.sh` manually) lands a spec. Observed 2026-04-22: PRs #22, #24, #25 all open against older SHAs after PR #26 merged the manually-refreshed spec.
 2. **Schema-name divergence.** Same endpoint, different type names depending on which flow last ran. Confusing for readers and machine-broken for any consumer that pins on a name.
-3. **Dual sources of truth.** TRA-445's original framing ("auto-close stale sync PRs") assumed only SHA differs. Surfaced 2026-04-26: the artifacts themselves differ. The originally proposed "diff is fully subsumed by new `main`" close-logic is structurally unworkable because the pull-flow spec is *never* an ancestor of the push-flow spec.
+3. **Dual sources of truth.** TRA-445's original framing ("auto-close stale sync PRs") assumed only SHA differs. Surfaced 2026-04-26: the artifacts themselves differ. The originally proposed "diff is fully subsumed by new `main`" close-logic is structurally unworkable because the pull-flow spec is _never_ an ancestor of the push-flow spec.
 
 ## Approach
 
@@ -78,6 +78,7 @@ The Postman collection is regenerated from the freshly-pulled `openapi.json` via
 ### `platform-meta.json` schema (B1)
 
 **Before (TRA-508 shape):**
+
 ```json
 {
   "commit": "abc1234",
@@ -88,6 +89,7 @@ The Postman collection is regenerated from the freshly-pulled `openapi.json` via
 ```
 
 **After:**
+
 ```json
 {
   "commit": "abc1234",
@@ -96,7 +98,7 @@ The Postman collection is regenerated from the freshly-pulled `openapi.json` via
 }
 ```
 
-- `commit` keeps its 7-char short-SHA shape, so `health.platform.commit` in `/health.json` doesn't change format. The *meaning* shifts from "deployed-on-preview" to "spec-source-on-platform-main"; worth a one-line callout in the PR description.
+- `commit` keeps its 7-char short-SHA shape, so `health.platform.commit` in `/health.json` doesn't change format. The _meaning_ shifts from "deployed-on-preview" to "spec-source-on-platform-main"; worth a one-line callout in the PR description.
 - `tag` and `build_time` dropped — they described `/health` of a deployed build; under pull-only the spec source is `main` HEAD, which has no deploy and no semver tag at fetch time.
 - `source_url` added for clickability from `/health.json` rendering.
 
@@ -106,20 +108,20 @@ Defaults to `main`. Setting it to a branch / tag / SHA lets a developer pull fro
 
 ## Components / files changed (docs PR)
 
-| File | Change |
-|---|---|
-| `scripts/refresh-openapi.sh` | Rewrite. New source URL, new `TRAKRF_PLATFORM_REF` override, `git ls-remote` for SHA, new `platform-meta.json` schema. Drop `/health` snapshot logic and `TRAKRF_SPEC_HOST` env var. Add `pnpm dlx openapi-to-postmanv2` step to regenerate `static/api/trakrf-api.postman_collection.json` from the freshly-pulled spec. Header comment updated to describe pull-from-platform-main flow. |
-| `static/api/trakrf-api.postman_collection.json` | Regenerated by the new script. May change shape slightly because the source spec is the customer-facing filtered one (short schema names) instead of platform's runtime spec; the collection still maps to the same endpoint paths. |
-| `.github/workflows/sync-preview.yml` | Delete the "Merge platform preview spec" step (lines 123–135). It fetches `sync/platform-preview` and merges it into the docs preview branch — that branch has no writer post-rescope and the step is dead. |
-| `README.md` | Update the `static/api/platform-meta.json` description (currently line 64) to describe the new flow ("pulled from `trakrf/platform` `main`'s committed spec") and the new field shape. |
-| `static/api/openapi.{json,yaml}` | Will swap from current long-named runtime spec to short-named filtered spec on first refresh. Big diff but content-equivalent at the path level; reviewer eyeballs the path list (it should match `openapi.public.json`'s path list on platform `main`). |
-| `static/api/platform-meta.json` | Refreshed via the new script; new schema. |
+| File                                            | Change                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `scripts/refresh-openapi.sh`                    | Rewrite. New source URL, new `TRAKRF_PLATFORM_REF` override, `git ls-remote` for SHA, new `platform-meta.json` schema. Drop `/health` snapshot logic and `TRAKRF_SPEC_HOST` env var. Add `pnpm dlx openapi-to-postmanv2` step to regenerate `static/api/trakrf-api.postman_collection.json` from the freshly-pulled spec. Header comment updated to describe pull-from-platform-main flow. |
+| `static/api/trakrf-api.postman_collection.json` | Regenerated by the new script. May change shape slightly because the source spec is the customer-facing filtered one (short schema names) instead of platform's runtime spec; the collection still maps to the same endpoint paths.                                                                                                                                                        |
+| `.github/workflows/sync-preview.yml`            | Delete the "Merge platform preview spec" step (lines 123–135). It fetches `sync/platform-preview` and merges it into the docs preview branch — that branch has no writer post-rescope and the step is dead.                                                                                                                                                                                |
+| `README.md`                                     | Update the `static/api/platform-meta.json` description (currently line 64) to describe the new flow ("pulled from `trakrf/platform` `main`'s committed spec") and the new field shape.                                                                                                                                                                                                     |
+| `static/api/openapi.{json,yaml}`                | Will swap from current long-named runtime spec to short-named filtered spec on first refresh. Big diff but content-equivalent at the path level; reviewer eyeballs the path list (it should match `openapi.public.json`'s path list on platform `main`).                                                                                                                                   |
+| `static/api/platform-meta.json`                 | Refreshed via the new script; new schema.                                                                                                                                                                                                                                                                                                                                                  |
 
 ## Cross-repo coordination
 
 **TRA-445 (this ticket, docs PR):** all of the above.
 
-**Companion ticket (new, platform):** Delete `.github/workflows/publish-api-docs.yml`. Title suggestion: *"Retire `publish-api-docs.yml` — docs now pulls instead of platform pushing (companion to TRA-445)"*. Label `repo:platform`. Linked as relates-to TRA-445; mentioned in TRA-445's Linear comments and docs-PR body.
+**Companion ticket (new, platform):** Delete `.github/workflows/publish-api-docs.yml`. Title suggestion: _"Retire `publish-api-docs.yml` — docs now pulls instead of platform pushing (companion to TRA-445)"_. Label `repo:platform`. Linked as relates-to TRA-445; mentioned in TRA-445's Linear comments and docs-PR body.
 
 **Order:** docs PR first, then platform PR.
 
@@ -140,7 +142,7 @@ If docs ships first, the platform bot can keep opening `sync/platform-<sha>` PRs
 
 - Docs PR merged with the smoke test recorded in the PR description.
 - Companion platform ticket filed with link.
-- One-time remote cleanup completed (orphan `sync/platform-preview` branch deleted; any stale `sync/platform-<sha>` branches swept). *Done interactively during brainstorm: `sync/platform-preview` deleted; no per-SHA branches existed.*
+- One-time remote cleanup completed (orphan `sync/platform-preview` branch deleted; any stale `sync/platform-<sha>` branches swept). _Done interactively during brainstorm: `sync/platform-preview` deleted; no per-SHA branches existed._
 - TRA-445 closed with a resolution comment pointing at the merged PR + companion ticket.
 
 ## Out of scope
