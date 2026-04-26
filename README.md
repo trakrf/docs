@@ -53,6 +53,17 @@ Requires `.env` with `TRAKRF_PREVIEW_URL` and docs-tour credentials (copy from `
 
 **Full regeneration** (prose + images): see [`docs/app-tour/AUTHORING.md`](docs/app-tour/AUTHORING.md).
 
+## `/health.json`
+
+The deployed docs site serves `/health.json` (e.g. `https://docs.preview.trakrf.id/health.json`) so
+anyone can spot-check which build is live.
+
+- `docs.{commit, build_time}` — emitted by `scripts/write-health-json.mjs` at build time. The file
+  `static/health.json` is **gitignored** — it's a build artifact.
+- `platform.{commit, tag, build_time, spec_refreshed_at}` — committed snapshot at
+  `static/api/platform-meta.json`, written by `scripts/refresh-openapi.sh` whenever the OpenAPI spec
+  is refreshed. It pins the bundled spec to a specific platform build.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
