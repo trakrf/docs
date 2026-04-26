@@ -46,6 +46,25 @@ Report spec-vs-service mismatches separately from the doc-vs-service findings in
 
 Write up findings to FINDINGS.md at the end of the session. Lead with documentation and workflow gaps; treat API bugs as supporting evidence tied to the workflow step that surfaced them. Report spec contract mismatches in their own section.
 
+### Terminology coherence pass
+
+Independent of correctness, do one pass focused on vocabulary:
+
+1. List every domain term that appears in the API surface (path params, field names, schema names, query params).
+2. For each term, write a one-sentence definition based on context.
+3. Flag any term that has multiple incompatible definitions across the spec, OR any term where two definitions only differ by qualifier ("customer X" vs "tag X") that gets stripped in code/URL surfaces.
+
+Report these as "coherence findings" separately from correctness findings. A coherent vocabulary is a precondition for an AI-driven integration partner to reason about the API. Substring overlap defeats qualifier-based disambiguation in any context where the qualifier isn't visible (URL path segments, generated identifier types, log lines).
+
+### Triage: would an AI integration partner trip on this?
+
+For each finding, tag it with: would an AI-driven integration partner running ingestion against this API trip on it?
+
+- **Yes** → pre-launch (Launch label, Todo).
+- **No** — internal hygiene, polish, or DX improvement that doesn't break integration → post-launch (post-v1 label, Backlog).
+
+Use this framing instead of abstract High/Medium/Low priority. Integration partners are the realistic first audience for the public API, and "trips an AI ingestor" is a concrete test that "Medium priority" is not.
+
 ## Cleanup
 
 Delete any API keys or artifacts you create before ending the session. Leave pre-existing artifacts alone.
