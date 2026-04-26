@@ -23,13 +23,13 @@ Use whichever HTTP client / language you'd naturally reach for. The variation be
 
 **Focus on documentation and workflow gaps, not just API bugs.** At each step ask: could a new developer get from "I have a login" to "I am calling the API" using only what the docs say? Where do they have to guess, get stuck, or contact support?
 
-Verify every claim in the docs against the live service. When the docs and the service disagree, that is a primary finding.
+Verify every claim in the docs against the live service. When the docs and the service disagree, that is a primary finding. Check both the OpenAPI spec AND the prose quickstart / tutorial pages — the two can drift independently. Generated-client users hit the spec; humans following the docs hit the prose pages.
 
 ## OpenAPI spec contract check
 
 After your exploratory evaluation, run a mechanical pass against the published OpenAPI spec. An integration partner will auto-generate a connector from this spec — if the spec and the service disagree, the connector breaks.
 
-1. **Fetch the spec.** Find the OpenAPI JSON/YAML URL from the docs site. If the docs don't link to it, that's a finding.
+1. **Fetch the spec.** The OpenAPI spec is published at `$API_TEST_DOCS_URL/redocusaurus/trakrf-api.yaml`. If that path 404s, that is itself a finding worth reporting. If the docs don't link to it from a discoverable location, that's also a finding.
 
 2. **Walk every path.** For each endpoint in the spec, make a real call (with your API key) and verify:
    - Does the endpoint respond at all? (404 = spec lies about the route)
