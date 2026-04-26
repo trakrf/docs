@@ -23,13 +23,13 @@ Use whichever HTTP client / language you'd naturally reach for. The variation be
 
 **Focus on documentation and workflow gaps, not just API bugs.** At each step ask: could a new developer get from "I have a login" to "I am calling the API" using only what the docs say? Where do they have to guess, get stuck, or contact support?
 
-Verify every claim in the docs against the live service. When the docs and the service disagree, that is a primary finding.
+Verify every claim in the docs against the live service. When the docs and the service disagree, that is a primary finding. Check both the OpenAPI spec AND the prose quickstart / tutorial pages — the two can drift independently. Generated-client users hit the spec; humans following the docs hit the prose pages.
 
 ## OpenAPI spec contract check
 
 After your exploratory evaluation, run a mechanical pass against the published OpenAPI spec. An integration partner will auto-generate a connector from this spec — if the spec and the service disagree, the connector breaks.
 
-1. **Fetch the spec.** Find the OpenAPI JSON/YAML URL from the docs site. If the docs don't link to it, that's a finding.
+1. **Fetch the spec.** The OpenAPI spec is published at `$API_TEST_DOCS_URL/redocusaurus/trakrf-api.yaml`. If that path 404s, that is itself a finding worth reporting. If the docs don't link to it from a discoverable location, that's also a finding.
 
 2. **Walk every path.** For each endpoint in the spec, make a real call (with your API key) and verify:
    - Does the endpoint respond at all? (404 = spec lies about the route)
@@ -45,6 +45,25 @@ Report spec-vs-service mismatches separately from the doc-vs-service findings in
 ## Report findings
 
 Write up findings to FINDINGS.md at the end of the session. Lead with documentation and workflow gaps; treat API bugs as supporting evidence tied to the workflow step that surfaced them. Report spec contract mismatches in their own section.
+
+### Terminology coherence pass
+
+Independent of correctness, do one pass focused on vocabulary:
+
+1. List every domain term that appears in the API surface (path params, field names, schema names, query params).
+2. For each term, write a one-sentence definition based on context.
+3. Flag any term that has multiple incompatible definitions across the spec, OR any term where two definitions only differ by qualifier ("customer X" vs "tag X") that gets stripped in code/URL surfaces.
+
+Report these as "coherence findings" separately from correctness findings. A coherent vocabulary is a precondition for an AI-driven integration partner to reason about the API. Substring overlap defeats qualifier-based disambiguation in any context where the qualifier isn't visible (URL path segments, generated identifier types, log lines).
+
+### Triage: would an AI integration partner trip on this?
+
+For each finding, tag it with: would an AI-driven integration partner running ingestion against this API trip on it?
+
+- **Yes** → pre-launch (Launch label, Todo).
+- **No** — internal hygiene, polish, or DX improvement that doesn't break integration → post-launch (post-v1 label, Backlog).
+
+Use this framing instead of abstract High/Medium/Low priority. Integration partners are the realistic first audience for the public API, and "trips an AI ingestor" is a concrete test that "Medium priority" is not.
 
 ## Cleanup
 
