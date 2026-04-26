@@ -66,12 +66,14 @@ When `type` is `validation_error`, the envelope carries an additional `fields` a
       {
         "field": "identifier",
         "code": "too_long",
-        "message": "identifier must be at most 255 characters"
+        "message": "identifier must be at most 255 characters",
+        "params": { "max_length": 255 }
       },
       {
         "field": "type",
         "code": "invalid_value",
-        "message": "type is not a valid value"
+        "message": "type is not a valid value",
+        "params": { "allowed_values": ["asset", "person", "inventory"] }
       }
     ]
   }
@@ -85,6 +87,7 @@ Field entries:
 | `field`   | The JSON field name of the offending request attribute (e.g. `identifier`, `org_name`). Values are the snake_case JSON keys defined by the endpoint's request schema, not Go struct names or JSON-pointer paths. |
 | `code`    | A machine-readable code — your validation UI can branch on this. Extensible enum.                                                                                                                                |
 | `message` | A human-readable message safe to show the end user.                                                                                                                                                              |
+| `params`  | Optional. Field-specific constraint metadata (e.g. `max_length`, `allowed_values`, `min`, `max`). Schema varies per field — treat unknown keys gracefully.                                                       |
 
 Current `code` values (extensible):
 

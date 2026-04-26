@@ -33,7 +33,7 @@ Preview-scoped keys will not authenticate against production and vice versa; the
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — not key management.)
 3. **If your account belongs to multiple organizations,** keys are scoped to whichever org is currently selected in the avatar menu. Check the org switcher before clicking **New key**. See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for detail.
 4. Click **New key**. Give it a descriptive name (e.g. `"local-dev"`). For this quickstart, `scans:read` alone is enough — the `/locations/current` endpoint you'll call below is gated by `scans:read`. Grant `assets:read` and `locations:read` if you plan to hit the other read endpoints, and `assets:write` for the create/update/delete walkthrough in step 4. See [Authentication → Scopes](./authentication#scopes) for the full matrix.
-5. **Set an expiration.** Leaving the expiry field blank mints a permanent credential — fine for a throwaway local-dev key, but for anything shared or long-lived, pick a date (e.g. 90 days) and put a rotation reminder on the calendar. See [Authentication → Key lifecycle](./authentication#key-lifecycle).
+5. **Pick an expiration.** The **Expires** picker offers **Never / 30 days / 90 days / 1 year / Custom**. **90 days** is the recommended default for production keys; see [Key lifecycle](./authentication#key-lifecycle) before choosing **Never**.
 6. Submit. The full JWT is displayed **once**. Copy it immediately — it cannot be shown again.
 7. Save it to an environment variable:
 

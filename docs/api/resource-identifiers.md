@@ -92,7 +92,7 @@ Example (abbreviated) from `GET /api/v1/locations`:
 
 Each label in `path` preserves the original casing and hyphens of the corresponding `identifier` — `WAREHOUSE-A` stays `WAREHOUSE-A`, not `warehouse_a`. `path` is a derived helper for tree traversal, not a second identifier. Don't try to look up a location by its `path` — URL path params still take the `identifier` (see [URL path parameters](#url-path-parameters--identifier-only)).
 
-These fields are most useful for UI renderers that want to sort or indent a flat list by tree position without making follow-up calls. For explicit hierarchy traversal, prefer the dedicated endpoints (`GET /api/v1/locations/{identifier}/ancestors`, `/children`, `/descendants`) described in [Pagination, filtering, sorting → Non-paginated list exceptions](./pagination-filtering-sorting#non-paginated-exceptions).
+These fields are most useful for UI renderers that want to sort or indent a flat list by tree position without making follow-up calls. For explicit hierarchy traversal, prefer the dedicated endpoints (`GET /api/v1/locations/{identifier}/ancestors`, `/children`, `/descendants`) — see [Pagination, filtering, sorting](./pagination-filtering-sorting) for envelope and filtering conventions.
 
 ## Writes (PUT, DELETE)
 
