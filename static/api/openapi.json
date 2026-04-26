@@ -1,7 +1,7 @@
 {
   "components": {
     "schemas": {
-      "github_com_trakrf_platform_backend_internal_models_apikey.APIKeyCreateResponse": {
+      "apikey.APIKeyCreateResponse": {
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -32,7 +32,7 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_apikey.APIKeyListItem": {
+      "apikey.APIKeyListItem": {
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -70,7 +70,7 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_apikey.CreateAPIKeyRequest": {
+      "apikey.CreateAPIKeyRequest": {
         "properties": {
           "expires_at": {
             "format": "date-time",
@@ -95,7 +95,7 @@
         ],
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_asset.CreateAssetWithIdentifiersRequest": {
+      "asset.CreateAssetWithIdentifiersRequest": {
         "properties": {
           "current_location": {
             "example": "WHS-01",
@@ -113,7 +113,7 @@
           },
           "identifiers": {
             "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest"
+              "$ref": "#/components/schemas/shared.TagIdentifierRequest"
             },
             "type": "array"
           },
@@ -155,7 +155,7 @@
         ],
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_asset.PublicAssetView": {
+      "asset.PublicAssetView": {
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -172,7 +172,7 @@
           },
           "identifiers": {
             "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifier"
+              "$ref": "#/components/schemas/shared.TagIdentifier"
             },
             "type": "array"
           },
@@ -207,7 +207,7 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_asset.UpdateAssetRequest": {
+      "asset.UpdateAssetRequest": {
         "properties": {
           "current_location": {
             "example": "WHS-01",
@@ -257,7 +257,54 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse": {
+      "assets.CreateAssetResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/asset.PublicAssetView"
+          }
+        },
+        "type": "object"
+      },
+      "assets.GetAssetResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/asset.PublicAssetView"
+          }
+        },
+        "type": "object"
+      },
+      "assets.ListAssetsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/asset.PublicAssetView"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "assets.UpdateAssetResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/asset.PublicAssetView"
+          }
+        },
+        "type": "object"
+      },
+      "errors.ErrorResponse": {
         "properties": {
           "error": {
             "properties": {
@@ -266,7 +313,7 @@
               },
               "fields": {
                 "items": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.FieldError"
+                  "$ref": "#/components/schemas/errors.FieldError"
                 },
                 "type": "array"
               },
@@ -303,7 +350,7 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_errors.FieldError": {
+      "errors.FieldError": {
         "properties": {
           "code": {
             "type": "string"
@@ -321,7 +368,36 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_location.CreateLocationWithIdentifiersRequest": {
+      "inventory.SaveRequest": {
+        "properties": {
+          "asset_identifiers": {
+            "example": [
+              "ASSET-0001"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "location_identifier": {
+            "example": "WH-01",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "inventory.SaveResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/storage.SaveInventoryResult"
+          }
+        },
+        "type": "object"
+      },
+      "location.CreateLocationWithIdentifiersRequest": {
         "properties": {
           "description": {
             "example": "Main warehouse location",
@@ -336,7 +412,7 @@
           },
           "identifiers": {
             "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest"
+              "$ref": "#/components/schemas/shared.TagIdentifierRequest"
             },
             "type": "array"
           },
@@ -373,7 +449,7 @@
         ],
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_location.PublicLocationView": {
+      "location.PublicLocationView": {
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -390,7 +466,7 @@
           },
           "identifiers": {
             "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifier"
+              "$ref": "#/components/schemas/shared.TagIdentifier"
             },
             "type": "array"
           },
@@ -424,7 +500,7 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_location.UpdateLocationRequest": {
+      "location.UpdateLocationRequest": {
         "properties": {
           "description": {
             "example": "Updated description",
@@ -466,7 +542,175 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_report.PublicAssetHistoryItem": {
+      "locations.CreateLocationResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/location.PublicLocationView"
+          }
+        },
+        "type": "object"
+      },
+      "locations.GetLocationResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/location.PublicLocationView"
+          }
+        },
+        "type": "object"
+      },
+      "locations.ListAncestorsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/location.PublicLocationView"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "locations.ListChildrenResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/location.PublicLocationView"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "locations.ListDescendantsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/location.PublicLocationView"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "locations.ListLocationsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/location.PublicLocationView"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "locations.UpdateLocationResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/location.PublicLocationView"
+          }
+        },
+        "type": "object"
+      },
+      "orgs.CreateAPIKeyResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/apikey.APIKeyCreateResponse"
+          }
+        },
+        "type": "object"
+      },
+      "orgs.GetOrgMeResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/orgs.OrgMeView"
+          }
+        },
+        "type": "object"
+      },
+      "orgs.ListAPIKeysResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/apikey.APIKeyListItem"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "orgs.OrgMeView": {
+        "properties": {
+          "id": {
+            "example": 42,
+            "type": "integer"
+          },
+          "name": {
+            "example": "Acme Logistics",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "report.PublicAssetHistoryItem": {
         "properties": {
           "duration_seconds": {
             "type": "integer"
@@ -481,9 +725,13 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_report.PublicCurrentLocationItem": {
+      "report.PublicCurrentLocationItem": {
         "properties": {
           "asset": {
+            "type": "string"
+          },
+          "asset_deleted_at": {
+            "format": "date-time",
             "type": "string"
           },
           "last_seen": {
@@ -496,7 +744,53 @@
         },
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_shared.TagIdentifier": {
+      "reports.AssetHistoryResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/report.PublicAssetHistoryItem"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "reports.ListCurrentLocationsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/report.PublicCurrentLocationItem"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 50,
+            "type": "integer"
+          },
+          "offset": {
+            "example": 0,
+            "type": "integer"
+          },
+          "total_count": {
+            "example": 100,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "shared.TagIdentifier": {
         "properties": {
           "id": {
             "type": "integer"
@@ -526,7 +820,7 @@
         ],
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest": {
+      "shared.TagIdentifierRequest": {
         "properties": {
           "type": {
             "enum": [
@@ -549,7 +843,7 @@
         ],
         "type": "object"
       },
-      "github_com_trakrf_platform_backend_internal_storage.SaveInventoryResult": {
+      "storage.SaveInventoryResult": {
         "properties": {
           "count": {
             "type": "integer"
@@ -563,296 +857,6 @@
           "timestamp": {
             "format": "date-time",
             "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_assets.CreateAssetResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_asset.PublicAssetView"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_assets.GetAssetResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_asset.PublicAssetView"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_assets.ListAssetsResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_asset.PublicAssetView"
-            },
-            "type": "array"
-          },
-          "limit": {
-            "example": 50,
-            "type": "integer"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_assets.UpdateAssetResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_asset.PublicAssetView"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_inventory.SaveRequest": {
-        "properties": {
-          "asset_identifiers": {
-            "example": [
-              "ASSET-0001"
-            ],
-            "items": {
-              "type": "string"
-            },
-            "minItems": 1,
-            "type": "array"
-          },
-          "location_identifier": {
-            "example": "WH-01",
-            "maxLength": 255,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_inventory.SaveResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_storage.SaveInventoryResult"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_locations.CreateLocationResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.PublicLocationView"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_locations.GetLocationResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.PublicLocationView"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_locations.ListAncestorsResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.PublicLocationView"
-            },
-            "type": "array"
-          },
-          "limit": {
-            "example": 50,
-            "type": "integer"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_locations.ListChildrenResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.PublicLocationView"
-            },
-            "type": "array"
-          },
-          "limit": {
-            "example": 50,
-            "type": "integer"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_locations.ListDescendantsResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.PublicLocationView"
-            },
-            "type": "array"
-          },
-          "limit": {
-            "example": 50,
-            "type": "integer"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_locations.ListLocationsResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.PublicLocationView"
-            },
-            "type": "array"
-          },
-          "limit": {
-            "example": 50,
-            "type": "integer"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_locations.UpdateLocationResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.PublicLocationView"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_orgs.CreateAPIKeyResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_apikey.APIKeyCreateResponse"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_orgs.GetOrgMeResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/internal_handlers_orgs.OrgMeView"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_orgs.ListAPIKeysResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_apikey.APIKeyListItem"
-            },
-            "type": "array"
-          },
-          "limit": {
-            "example": 50,
-            "type": "integer"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_orgs.OrgMeView": {
-        "properties": {
-          "id": {
-            "example": 42,
-            "type": "integer"
-          },
-          "name": {
-            "example": "Acme Logistics",
-            "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_reports.AssetHistoryResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_report.PublicAssetHistoryItem"
-            },
-            "type": "array"
-          },
-          "limit": {
-            "example": 50,
-            "type": "integer"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
-          }
-        },
-        "type": "object"
-      },
-      "internal_handlers_reports.ListCurrentLocationsResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_report.PublicCurrentLocationItem"
-            },
-            "type": "array"
-          },
-          "limit": {
-            "example": 50,
-            "type": "integer"
-          },
-          "offset": {
-            "example": 0,
-            "type": "integer"
-          },
-          "total_count": {
-            "example": 100,
-            "type": "integer"
           }
         },
         "type": "object"
@@ -957,7 +961,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_assets.ListAssetsResponse"
+                  "$ref": "#/components/schemas/assets.ListAssetsResponse"
                 }
               }
             },
@@ -987,7 +991,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -997,7 +1001,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1007,7 +1011,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1017,7 +1021,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1035,7 +1039,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1061,7 +1065,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_asset.CreateAssetWithIdentifiersRequest"
+                "$ref": "#/components/schemas/asset.CreateAssetWithIdentifiersRequest"
               }
             }
           },
@@ -1074,7 +1078,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_assets.CreateAssetResponse"
+                  "$ref": "#/components/schemas/assets.CreateAssetResponse"
                 }
               }
             },
@@ -1084,7 +1088,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1094,7 +1098,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1104,7 +1108,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1114,7 +1118,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1124,7 +1128,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1134,7 +1138,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1177,7 +1181,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1187,7 +1191,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1197,7 +1201,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1207,7 +1211,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1217,7 +1221,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1255,7 +1259,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_assets.GetAssetResponse"
+                  "$ref": "#/components/schemas/assets.GetAssetResponse"
                 }
               }
             },
@@ -1285,7 +1289,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1295,7 +1299,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1305,7 +1309,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1315,7 +1319,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1325,7 +1329,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1370,7 +1374,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_asset.UpdateAssetRequest"
+                "$ref": "#/components/schemas/asset.UpdateAssetRequest"
               }
             }
           },
@@ -1383,7 +1387,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_assets.UpdateAssetResponse"
+                  "$ref": "#/components/schemas/assets.UpdateAssetResponse"
                 }
               }
             },
@@ -1393,7 +1397,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1403,7 +1407,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1413,7 +1417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1423,7 +1427,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1433,7 +1437,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1443,7 +1447,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1453,7 +1457,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1527,7 +1531,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_reports.AssetHistoryResponse"
+                  "$ref": "#/components/schemas/reports.AssetHistoryResponse"
                 }
               }
             },
@@ -1557,7 +1561,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1567,7 +1571,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1577,7 +1581,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1587,7 +1591,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1597,7 +1601,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1615,7 +1619,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1654,7 +1658,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest"
+                "$ref": "#/components/schemas/shared.TagIdentifierRequest"
               }
             }
           },
@@ -1678,7 +1682,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1688,7 +1692,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1698,7 +1702,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1708,7 +1712,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1718,7 +1722,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1728,7 +1732,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1780,7 +1784,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1790,7 +1794,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1800,7 +1804,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1810,7 +1814,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1820,7 +1824,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1830,7 +1834,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1858,7 +1862,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/internal_handlers_inventory.SaveRequest"
+                "$ref": "#/components/schemas/inventory.SaveRequest"
               }
             }
           },
@@ -1871,7 +1875,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_inventory.SaveResponse"
+                  "$ref": "#/components/schemas/inventory.SaveResponse"
                 }
               }
             },
@@ -1881,7 +1885,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1891,7 +1895,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1901,7 +1905,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1911,7 +1915,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -1929,7 +1933,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2009,7 +2013,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_locations.ListLocationsResponse"
+                  "$ref": "#/components/schemas/locations.ListLocationsResponse"
                 }
               }
             },
@@ -2039,7 +2043,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2049,7 +2053,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2059,7 +2063,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2069,7 +2073,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2103,7 +2107,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.CreateLocationWithIdentifiersRequest"
+                "$ref": "#/components/schemas/location.CreateLocationWithIdentifiersRequest"
               }
             }
           },
@@ -2116,7 +2120,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_locations.CreateLocationResponse"
+                  "$ref": "#/components/schemas/locations.CreateLocationResponse"
                 }
               }
             },
@@ -2126,7 +2130,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2136,7 +2140,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2146,7 +2150,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2156,7 +2160,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2166,7 +2170,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2176,7 +2180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2198,7 +2202,7 @@
     },
     "/api/v1/locations/current": {
       "get": {
-        "description": "Snapshot of each asset's most recent location, filterable by natural key.",
+        "description": "Snapshot of each asset's most recent location, filterable by natural key. Because this view is derived from immutable scan history, it can resolve identifiers for assets that have since been deleted. By default those rows are excluded; pass `include_deleted=true` to include them, and check `asset_deleted_at` to distinguish deleted from live.",
         "operationId": "locations.current",
         "parameters": [
           {
@@ -2236,6 +2240,15 @@
             }
           },
           {
+            "description": "include rows for soft-deleted assets",
+            "in": "query",
+            "name": "include_deleted",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "description": "comma-separated sort fields; prefix '-' for DESC",
             "in": "query",
             "name": "sort",
@@ -2249,7 +2262,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_reports.ListCurrentLocationsResponse"
+                  "$ref": "#/components/schemas/reports.ListCurrentLocationsResponse"
                 }
               }
             },
@@ -2279,7 +2292,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2289,7 +2302,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2299,7 +2312,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2309,7 +2322,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2360,7 +2373,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2370,7 +2383,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2380,7 +2393,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2390,7 +2403,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2400,7 +2413,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2410,7 +2423,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2448,7 +2461,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_locations.GetLocationResponse"
+                  "$ref": "#/components/schemas/locations.GetLocationResponse"
                 }
               }
             },
@@ -2478,7 +2491,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2488,7 +2501,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2498,7 +2511,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2508,7 +2521,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2518,7 +2531,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2563,7 +2576,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_location.UpdateLocationRequest"
+                "$ref": "#/components/schemas/location.UpdateLocationRequest"
               }
             }
           },
@@ -2576,7 +2589,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_locations.UpdateLocationResponse"
+                  "$ref": "#/components/schemas/locations.UpdateLocationResponse"
                 }
               }
             },
@@ -2586,7 +2599,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2596,7 +2609,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2606,7 +2619,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2616,7 +2629,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2626,7 +2639,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2636,7 +2649,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2646,7 +2659,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2704,7 +2717,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_locations.ListAncestorsResponse"
+                  "$ref": "#/components/schemas/locations.ListAncestorsResponse"
                 }
               }
             },
@@ -2714,7 +2727,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2724,7 +2737,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2734,7 +2747,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2744,7 +2757,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2754,7 +2767,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2812,7 +2825,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_locations.ListChildrenResponse"
+                  "$ref": "#/components/schemas/locations.ListChildrenResponse"
                 }
               }
             },
@@ -2822,7 +2835,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2832,7 +2845,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2842,7 +2855,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2852,7 +2865,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2862,7 +2875,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2920,7 +2933,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_locations.ListDescendantsResponse"
+                  "$ref": "#/components/schemas/locations.ListDescendantsResponse"
                 }
               }
             },
@@ -2930,7 +2943,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2940,7 +2953,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2950,7 +2963,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2960,7 +2973,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -2970,7 +2983,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3009,7 +3022,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_shared.TagIdentifierRequest"
+                "$ref": "#/components/schemas/shared.TagIdentifierRequest"
               }
             }
           },
@@ -3033,7 +3046,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3043,7 +3056,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3053,7 +3066,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3063,7 +3076,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3073,7 +3086,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3083,7 +3096,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3135,7 +3148,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3145,7 +3158,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3155,7 +3168,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3165,7 +3178,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3175,7 +3188,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3185,7 +3198,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3214,7 +3227,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_orgs.GetOrgMeResponse"
+                  "$ref": "#/components/schemas/orgs.GetOrgMeResponse"
                 }
               }
             },
@@ -3224,7 +3237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3234,7 +3247,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3289,7 +3302,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_orgs.ListAPIKeysResponse"
+                  "$ref": "#/components/schemas/orgs.ListAPIKeysResponse"
                 }
               }
             },
@@ -3299,7 +3312,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3309,7 +3322,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3319,7 +3332,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3329,7 +3342,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3369,7 +3382,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_apikey.CreateAPIKeyRequest"
+                "$ref": "#/components/schemas/apikey.CreateAPIKeyRequest"
               }
             }
           },
@@ -3382,7 +3395,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/internal_handlers_orgs.CreateAPIKeyResponse"
+                  "$ref": "#/components/schemas/orgs.CreateAPIKeyResponse"
                 }
               }
             },
@@ -3392,7 +3405,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3402,7 +3415,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3412,7 +3425,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3422,7 +3435,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3432,7 +3445,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3486,7 +3499,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3496,7 +3509,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3506,7 +3519,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3516,7 +3529,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
@@ -3526,7 +3539,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/github_com_trakrf_platform_backend_internal_models_errors.ErrorResponse"
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
                 }
               }
             },
