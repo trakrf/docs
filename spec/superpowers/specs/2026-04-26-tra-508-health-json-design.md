@@ -9,7 +9,7 @@
 Two version-tracking gaps on the docs site:
 
 1. No way to confirm which build of `trakrf/docs` is currently deployed at `docs.trakrf.id` / `docs.preview.trakrf.id`.
-2. The committed OpenAPI snapshot at `static/api/openapi.json` only carries `info.version: "v1"` (the API contract version). There is no record of *which platform build* the spec was captured from. Even when `scripts/refresh-openapi.sh` is run regularly, we cannot tell at a glance whether the docs reference is in sync with the platform that produced it.
+2. The committed OpenAPI snapshot at `static/api/openapi.json` only carries `info.version: "v1"` (the API contract version). There is no record of _which platform build_ the spec was captured from. Even when `scripts/refresh-openapi.sh` is run regularly, we cannot tell at a glance whether the docs reference is in sync with the platform that produced it.
 
 The platform backend exposes `/health` (`backend/internal/handlers/health/health.go`) returning commit SHA, tag, and build time at runtime. Docusaurus is a static site, so a runtime endpoint is not possible — but a build-time JSON artifact gives equivalent spot-check capability for the docs site, and snapshotting the platform's `/health` at spec-refresh time pins the committed spec to a specific platform build.
 
@@ -115,7 +115,7 @@ No script for `pnpm dev`. Dev mode does not need `health.json`; if developers wa
 /static/health.json
 ```
 
-`static/health.json` is a regenerated build artifact and must not be committed. `static/api/platform-meta.json` *is* committed — it is the snapshot.
+`static/health.json` is a regenerated build artifact and must not be committed. `static/api/platform-meta.json` _is_ committed — it is the snapshot.
 
 ### `docusaurus.config.ts`
 
@@ -152,14 +152,14 @@ CF Pages serves → https://docs.trakrf.id/health.json
 
 ## Error handling
 
-| Failure | Behavior | Why |
-|---|---|---|
-| `<SPEC_HOST>/health` unreachable during refresh | Warn, skip writing `platform-meta.json`, leave existing file intact, spec still written | Spec is load-bearing, meta is best-effort. Previous successful refresh's data stays accurate. |
-| `<SPEC_HOST>/health` returns malformed JSON | Same as above | `jq` parse failure caught, warn, continue |
-| `static/api/platform-meta.json` missing at build time | `health.json` emitted with `platform: null`, log warning, build continues | Don't block deploys on missing snapshot |
-| `static/api/platform-meta.json` present but unparseable | Same as above | Log mentions parse error specifically |
-| `git` not available in CF Pages (shallow checkout) | Use `CF_PAGES_COMMIT_SHA` env var directly; never call `git` in CF | Env-var-first resolution order |
-| `git` fails locally too | `commit: "unknown"`, build continues | YAGNI to fail the build over a metadata field |
+| Failure                                                 | Behavior                                                                                | Why                                                                                           |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `<SPEC_HOST>/health` unreachable during refresh         | Warn, skip writing `platform-meta.json`, leave existing file intact, spec still written | Spec is load-bearing, meta is best-effort. Previous successful refresh's data stays accurate. |
+| `<SPEC_HOST>/health` returns malformed JSON             | Same as above                                                                           | `jq` parse failure caught, warn, continue                                                     |
+| `static/api/platform-meta.json` missing at build time   | `health.json` emitted with `platform: null`, log warning, build continues               | Don't block deploys on missing snapshot                                                       |
+| `static/api/platform-meta.json` present but unparseable | Same as above                                                                           | Log mentions parse error specifically                                                         |
+| `git` not available in CF Pages (shallow checkout)      | Use `CF_PAGES_COMMIT_SHA` env var directly; never call `git` in CF                      | Env-var-first resolution order                                                                |
+| `git` fails locally too                                 | `commit: "unknown"`, build continues                                                    | YAGNI to fail the build over a metadata field                                                 |
 
 ## Testing
 

@@ -523,7 +523,7 @@ Expected: `1 file changed, 1 insertion(+)`.
 
 **Files:**
 
-- Modify: `CONTRIBUTING.md` *or* `README.md` (one short section, ≤ 10 lines)
+- Modify: `CONTRIBUTING.md` _or_ `README.md` (one short section, ≤ 10 lines)
 
 - [ ] **Step 1: Decide which file gets the note**
 
