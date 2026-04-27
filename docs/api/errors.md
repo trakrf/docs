@@ -36,16 +36,24 @@ The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/
 
 ## Error type catalog
 
-| `type`             | HTTP status | When you'll see it                                                                          | Retry?                                |
-| ------------------ | ----------- | ------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `validation_error` | 400         | Request body failed schema validation (see [validation errors](#validation-errors) below)   | No — fix the request                  |
-| `bad_request`      | 400         | Malformed request — bad JSON, unknown query param, invalid sort field                       | No — fix the request                  |
-| `unauthorized`     | 401         | Missing, malformed, revoked, or expired API key. `title` varies by cause — match on `type`. | No — re-auth                          |
-| `forbidden`        | 403         | Valid key but insufficient scope for this endpoint                                          | No — needs a key with the right scope |
-| `not_found`        | 404         | Natural-key lookup failed                                                                   | No — check the identifier             |
-| `conflict`         | 409         | Unique-constraint violation (typically a duplicate `identifier`)                            | No — reconcile with `GET` then `PUT`  |
-| `rate_limited`     | 429         | You've hit the rate limit — see [Rate limits](./rate-limits)                                | Yes, after `Retry-After` seconds      |
-| `internal_error`   | 500         | Unhandled server failure                                                                    | Yes, with exponential backoff         |
+| `type`             | HTTP status | When you'll see it                                                                                                                                                              | Retry?                                |
+| ------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `validation_error` | 400         | A specific field in the request was invalid — a body field, a query parameter, or an unknown JSON / query key. Carries `fields[]`; see [validation errors](#validation-errors). | No — fix the request                  |
+| `bad_request`      | 400         | Request was malformed in a way the API can't attribute to a specific field — invalid JSON, JSON-type mismatch, unparseable path segment. No `fields[]`.                         | No — fix the request                  |
+| `unauthorized`     | 401         | Missing, malformed, revoked, or expired API key. `title` varies by cause — match on `type`.                                                                                     | No — re-auth                          |
+| `forbidden`        | 403         | Valid key but insufficient scope for this endpoint                                                                                                                              | No — needs a key with the right scope |
+| `not_found`        | 404         | Natural-key lookup failed                                                                                                                                                       | No — check the identifier             |
+| `conflict`         | 409         | Unique-constraint violation (typically a duplicate `identifier`)                                                                                                                | No — reconcile with `GET` then `PUT`  |
+| `rate_limited`     | 429         | You've hit the rate limit — see [Rate limits](./rate-limits)                                                                                                                    | Yes, after `Retry-After` seconds      |
+| `internal_error`   | 500         | Unhandled server failure                                                                                                                                                        | Yes, with exponential backoff         |
+
+### `validation_error` vs `bad_request`
+
+The split between the two 400-class types is whether the API can name the offending input. Anything the schema validator catches, plus unknown JSON keys and unknown query parameters, returns `validation_error` with a populated `fields[]` array. Anything the API rejects at a structural level — invalid JSON syntax, a value the decoder rejects before knowing which field it belongs to, or an unparseable path segment — returns `bad_request` with no `fields[]`.
+
+One quirk worth noting: sending the wrong JSON type for a body field (for example, a number where the schema expects a string) returns `bad_request`, not `validation_error` — the JSON decoder fails before per-field reporting is reliable. If you see `bad_request` on a body that looks well-formed, this is the most likely cause.
+
+### Extensibility
 
 The `type` enum is **extensible** — TrakRF may add new error types in any v1 release. Clients should handle unknown `type` values gracefully (fall through to a generic error handler based on HTTP status code, which is a closed enum).
 
