@@ -31,6 +31,13 @@ pnpm build
 
 Generates static content into the `build/` directory.
 
+The site builds in one of two modes, controlled by `DEPLOY_ENV`:
+
+- `DEPLOY_ENV=production` — emits `https://docs.trakrf.id` / `https://app.trakrf.id` URLs in SSR HTML, sitemap, canonical tags, OpenAPI spec download links, and the `<EnvBaseURL/>` family of components.
+- `DEPLOY_ENV=preview` (default for local dev) — emits the `*.preview.trakrf.id` equivalents.
+
+On Cloudflare Pages, set `DEPLOY_ENV=production` on the production environment and `DEPLOY_ENV=preview` on the preview environment. If unset, the build auto-detects from `CF_PAGES_BRANCH` (`main` → production, anything else → preview).
+
 ### Serve
 
 ```bash
