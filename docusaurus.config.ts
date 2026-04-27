@@ -2,6 +2,26 @@ import { themes as prismThemes } from "prism-react-renderer";
 import type { Config } from "@docusaurus/types";
 import type * as Preset from "@docusaurus/preset-classic";
 
+type DeployEnv = "production" | "preview";
+
+function resolveDeployEnv(): DeployEnv {
+  const explicit = process.env.DEPLOY_ENV;
+  if (explicit === "production" || explicit === "preview") return explicit;
+  if (process.env.CF_PAGES_BRANCH === "main") return "production";
+  if (process.env.CF_PAGES === "1") return "preview";
+  return "preview";
+}
+
+const deployEnv = resolveDeployEnv();
+const docsHost =
+  deployEnv === "production"
+    ? "https://docs.trakrf.id"
+    : "https://docs.preview.trakrf.id";
+const appHost =
+  deployEnv === "production"
+    ? "https://app.trakrf.id"
+    : "https://app.preview.trakrf.id";
+
 const config: Config = {
   title: "TrakRF Docs",
   tagline: "RFID Asset Tracking Platform",
@@ -11,8 +31,14 @@ const config: Config = {
     v4: true,
   },
 
-  url: "https://docs.trakrf.id",
+  url: docsHost,
   baseUrl: "/",
+
+  customFields: {
+    deployEnv,
+    docsHost,
+    appHost,
+  },
 
   onBrokenLinks: "throw",
 
