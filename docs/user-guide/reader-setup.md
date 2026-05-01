@@ -64,7 +64,7 @@ Once connected, the **Basic Settings** card on the same page exposes:
 - **Signal Power** slider — controls the reader's transmit power in **dBm EIRP**. The CS108 supports roughly **+10.0 to +30.0 dBm** (and up to **+31.5 dBm** in some regions / with certain power supplies), so the practical range is constrained by your regulatory region — FCC, ETSI, etc. The slider is marked **Low / Medium / High** and shows the current value (e.g. `30 dBm`) on the right. Higher power = longer read range, but also more cross-reads from neighbouring shelves. Start at the max and dial back if you're picking up tags you don't want.
 
   :::note
-  The on-screen slider currently runs from 0 to 30 dBm; it's being aligned with the hardware's real floor of +10 dBm (tracked in TRA-391).
+  The on-screen slider currently runs from 0 to 30 dBm; alignment with the hardware's real floor of +10 dBm is in progress.
   :::
 
 The **Advanced Settings** section (collapsed by default) holds session/query tuning for denser environments. Most users won't need to touch it.

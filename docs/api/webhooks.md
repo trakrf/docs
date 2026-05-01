@@ -47,13 +47,13 @@ Each event payload will include the full logical context — both forms of the a
 
 Until webhooks ship, the equivalent patterns on the existing REST API:
 
-- **Poll `GET /api/v1/assets/{id}/history?from=<last-high-water-mark>`** per asset you're tracking, to get scan events for that asset since your last pull. (The `GET /api/v1/scans` endpoint referenced in earlier docs no longer exists — TRA-396 consolidated the read path under the asset-history endpoint.)
-- **Poll `GET /api/v1/locations/current`** for the current asset-at-location snapshot (cheaper than replaying the full scan stream). This endpoint was renamed from `/api/v1/reports/current-locations` under TRA-396; if you see the old path in any third-party code, update it.
+- **Poll `GET /api/v1/assets/{id}/history?from=<last-high-water-mark>`** per asset you're tracking, to get scan events for that asset since your last pull.
+- **Poll `GET /api/v1/locations/current`** for the current asset-at-location snapshot (cheaper than replaying the full scan stream).
 
 See the [interactive reference](/api) for the available endpoints and [Authentication](./authentication) for how to authenticate the polling calls.
 
 ## Status and contact
 
-Webhooks are tracked under the public-API epic [TRA-210](https://linear.app/trakrf/issue/TRA-210). There's no committed ship date yet — the work is gated on customer demand and TrakRF's own readiness for reliable outbound delivery at scale.
+There's no committed ship date for webhooks yet — the work is gated on customer demand and TrakRF's own readiness for reliable outbound delivery at scale.
 
 To put a real customer need behind this feature, [email support](mailto:support@trakrf.id) with the events you'd want to subscribe to and what your handler would do with them. Concrete use cases accelerate scheduling.
