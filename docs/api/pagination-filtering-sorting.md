@@ -154,11 +154,11 @@ Sortable fields vary per resource; the interactive reference at [`/api`](/api) l
 
 ### Assets
 
-List active forklifts currently at one of two locations, sorted by most-recently-seen first, 100 per page:
+List active assets currently at one of two locations (by `external_key`), newest first, 100 per page:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets?is_active=true&type=forklift&location=LOC-A&location=LOC-B&sort=-last_seen&limit=100"
+     "$BASE_URL/api/v1/assets?is_active=true&location_external_key=LOC-A&location_external_key=LOC-B&sort=-created_at&limit=100"
 ```
 
 ### Locations
