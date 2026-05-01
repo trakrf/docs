@@ -41,23 +41,9 @@ Every `valid_from` / `valid_to` on the response is RFC3339 in UTC — clients ca
 
 Note that the second record has **no `valid_to` key at all** — not `"valid_to": null`, not `"valid_to": ""`. Test for the key's presence, not its value.
 
-## Inbound: accepted formats on writes
+## Inbound: RFC3339 only
 
-For clarity, send `valid_from` / `valid_to` as **RFC3339 in UTC**. The API also accepts a couple of other common shapes for convenience:
-
-| Format                | Example                |
-| --------------------- | ---------------------- |
-| RFC3339 (recommended) | `2026-04-24T15:30:00Z` |
-| ISO 8601 date-only    | `2026-04-24`           |
-| US `MM/DD/YYYY`       | `04/24/2026`           |
-
-A handful of other date formats also parse for tolerance, but the three above are the ones you should rely on.
-
-:::warning Slash dates are parsed US-first
-
-`04/05/2026` is parsed as **April 5**, not May 4. If your sender does not always emit US-format dates, send RFC3339 (`2026-04-05T00:00:00Z`) or ISO 8601 (`2026-04-05`) to avoid silent month/day confusion.
-
-:::
+Send `valid_from` / `valid_to` as **RFC3339 in UTC** (e.g. `2026-04-24T15:30:00Z`). The OpenAPI spec declares both fields as `format: date-time`, and that is the contract — generated clients and spec validators will reject anything else. Use a date library to format your inputs (`Instant.toString()` in Java, `datetime.isoformat() + "Z"` in Python, `new Date().toISOString()` in JavaScript) rather than constructing the string by hand.
 
 ## Example
 
