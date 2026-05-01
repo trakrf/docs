@@ -9,6 +9,8 @@ The TrakRF API uses URL-path versioning (`/api/v1/`) with a strong stability com
 
 ## Stability commitment (v1)
 
+The v1 stability commitment begins at public launch. Field renames and shape adjustments that landed before launch — including the canonical `id` + `external_key` rename ([CHANGELOG](./CHANGELOG)) — are pre-stability vocabulary cleanup, not v1 breaks. Once launched, `/api/v1/` is stable per the rules below.
+
 Within `/api/v1/`, TrakRF commits to the following:
 
 **Will not change without a new major version:**

@@ -20,6 +20,22 @@ Each entry covers:
 
 Tracked but not yet in a release tag. Merged changes land here first, then move to a dated section on each platform release.
 
+### Changed — pre-launch v1 vocabulary cleanup
+
+The following are pre-launch vocabulary cleanup, not v1 breaks. The v1 stability commitment in [Versioning](./versioning) begins at public launch. These changes land before launch so the shipped v1 surface is the long-term shape.
+
+- **Canonical `id` + `external_key` rename** ([TRA-549](https://linear.app/trakrf/issue/TRA-549)). Public response surfaces now expose canonical integer `id` (server-assigned, used in URL path params, FK fields, and response keys) and string `external_key` (customer-assigned natural key). Replaces the prior `identifier` (string canonical) / `surrogate_id` (int suppressed) model. See [Resource identifiers](./resource-identifiers) for the full convention.
+  - Across assets, locations, reports, and tag schemas: `identifier` → `external_key`, `surrogate_id` → `id`. Path params use `{id}` (int) on every single-resource route.
+  - Foreign-key fields are flat scalar pairs: `current_location_id` + `current_location_external_key` on assets, `parent_id` + `parent_external_key` on locations, `location_id` + `location_external_key` + `asset_id` + `asset_external_key` on reports.
+  - List filters that reference related resources accept both forms where applicable: e.g. `?location_id=42` and `?location_external_key=WAREHOUSE-7` on `GET /api/v1/assets`.
+  - Round-trip consistency: request and response field names match, so generated clients can `GET` a resource and `PUT` it back without remapping.
+- **New `/lookup` endpoints for natural-key access** ([TRA-549](https://linear.app/trakrf/issue/TRA-549)). `GET /api/v1/assets/lookup?external_key=...` and `GET /api/v1/locations/lookup?external_key=...` return a single live resource (200) or 404. Equality match only, live rows only, multiple natural-key params or none returns 400.
+- **Asset `external_key` is optional on create** ([TRA-549](https://linear.app/trakrf/issue/TRA-549)). Omitting `external_key` on `POST /api/v1/assets` triggers a server-assigned value in the format `ASSET-NNNN` from a per-organization sequence. Locations still require an explicit `external_key`.
+- **Tag schemas renamed** ([TRA-549](https://linear.app/trakrf/issue/TRA-549)): `shared.TagIdentifier` → `shared.Tag`, `shared.TagIdentifierRequest` → `shared.TagRequest`. Tag responses expose canonical `id` (int) for path-param access (e.g. `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`).
+- **Tag composite natural-key uniqueness enforced** ([TRA-561](https://linear.app/trakrf/issue/TRA-561)). Partial unique index `(org_id, tag_type, value) WHERE deleted_at IS NULL` rejects duplicate live `(tag_type, value)` pairs within an organization with `409 conflict`.
+- **API key revocation split into two routes** ([TRA-549](https://linear.app/trakrf/issue/TRA-549)). `DELETE /api/v1/orgs/{id}/api-keys/{key_id}` accepts the integer `key_id` only; revocation by UUID `jti` moves to `DELETE /api/v1/orgs/{id}/api-keys/by-jti/{jti}`. Replaces the prior dual-input `key_id` that flattened to `string` in generated SDKs and broke int-path lookups in typed clients.
+- **Tag path param naming** ([TRA-549](https://linear.app/trakrf/issue/TRA-549)). The camelCase `tagSurrogateId` path param on tag-removal routes is now snake_case `tag_id`, matching `key_id` / `org_id` conventions elsewhere on the surface.
+
 ### Added
 
 - `POST /api/v1/locations` now accepts `parent_identifier` (natural key) to create a child location in one call. Previously the only parent field (`parent_location_id`, an internal numeric FK) was not exposed to API consumers, and parent-related payload keys were silently ignored. See the updated request schema in the [API reference](/api).

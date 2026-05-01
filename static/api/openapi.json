@@ -9,7 +9,6 @@
           },
           "expires_at": {
             "format": "date-time",
-            "nullable": true,
             "type": "string"
           },
           "id": {
@@ -48,7 +47,6 @@
           },
           "expires_at": {
             "format": "date-time",
-            "nullable": true,
             "type": "string"
           },
           "id": {
@@ -101,17 +99,21 @@
       },
       "asset.CreateAssetWithTagsRequest": {
         "properties": {
-          "current_location": {
+          "current_location_external_key": {
             "example": "WHS-01",
             "maxLength": 255,
             "minLength": 1,
             "type": "string"
           },
+          "current_location_id": {
+            "example": 42,
+            "type": "integer"
+          },
           "description": {
             "maxLength": 1024,
             "type": "string"
           },
-          "identifier": {
+          "external_key": {
             "maxLength": 255,
             "type": "string"
           },
@@ -130,18 +132,9 @@
           },
           "tags": {
             "items": {
-              "$ref": "#/components/schemas/shared.TagIdentifierRequest"
+              "$ref": "#/components/schemas/shared.TagRequest"
             },
             "type": "array"
-          },
-          "type": {
-            "enum": [
-              "asset",
-              "person",
-              "inventory"
-            ],
-            "example": "asset",
-            "type": "string"
           },
           "valid_from": {
             "example": "2025-01-01T00:00:00Z",
@@ -165,15 +158,22 @@
             "format": "date-time",
             "type": "string"
           },
-          "current_location": {
+          "current_location_external_key": {
             "nullable": true,
             "type": "string"
+          },
+          "current_location_id": {
+            "nullable": true,
+            "type": "integer"
           },
           "description": {
             "type": "string"
           },
-          "identifier": {
+          "external_key": {
             "type": "string"
+          },
+          "id": {
+            "type": "integer"
           },
           "is_active": {
             "type": "boolean"
@@ -185,17 +185,11 @@
           "name": {
             "type": "string"
           },
-          "surrogate_id": {
-            "type": "integer"
-          },
           "tags": {
             "items": {
-              "$ref": "#/components/schemas/shared.TagIdentifier"
+              "$ref": "#/components/schemas/shared.Tag"
             },
             "type": "array"
-          },
-          "type": {
-            "type": "string"
           },
           "updated_at": {
             "format": "date-time",
@@ -207,7 +201,6 @@
           },
           "valid_to": {
             "format": "date-time",
-            "nullable": true,
             "type": "string"
           }
         },
@@ -215,17 +208,21 @@
       },
       "asset.UpdateAssetRequest": {
         "properties": {
-          "current_location": {
+          "current_location_external_key": {
             "example": "WHS-01",
             "maxLength": 255,
             "minLength": 1,
             "type": "string"
           },
+          "current_location_id": {
+            "example": 42,
+            "type": "integer"
+          },
           "description": {
             "maxLength": 1024,
             "type": "string"
           },
-          "identifier": {
+          "external_key": {
             "maxLength": 255,
             "minLength": 1,
             "type": "string"
@@ -242,14 +239,6 @@
             "minLength": 1,
             "type": "string"
           },
-          "type": {
-            "enum": [
-              "asset",
-              "person",
-              "inventory"
-            ],
-            "type": "string"
-          },
           "valid_from": {
             "example": "2025-01-01T00:00:00Z",
             "format": "date-time",
@@ -259,6 +248,14 @@
             "example": "2026-01-01T00:00:00Z",
             "format": "date-time",
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "assets.AddTagResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/shared.Tag"
           }
         },
         "type": "object"
@@ -347,7 +344,10 @@
                   "not_found",
                   "conflict",
                   "rate_limited",
-                  "internal_error"
+                  "internal_error",
+                  "method_not_allowed",
+                  "unsupported_media_type",
+                  "missing_org_context"
                 ],
                 "example": "validation_error",
                 "type": "string",
@@ -377,39 +377,6 @@
         },
         "type": "object"
       },
-      "inventory.SaveRequest": {
-        "properties": {
-          "asset_identifiers": {
-            "example": [
-              "ASSET-0001"
-            ],
-            "items": {
-              "type": "string"
-            },
-            "minItems": 1,
-            "type": "array"
-          },
-          "location_identifier": {
-            "example": "WH-01",
-            "maxLength": 255,
-            "minLength": 1,
-            "type": "string"
-          }
-        },
-        "required": [
-          "asset_identifiers",
-          "location_identifier"
-        ],
-        "type": "object"
-      },
-      "inventory.SaveResponse": {
-        "properties": {
-          "data": {
-            "$ref": "#/components/schemas/storage.SaveInventoryResult"
-          }
-        },
-        "type": "object"
-      },
       "location.CreateLocationWithTagsRequest": {
         "properties": {
           "description": {
@@ -417,7 +384,7 @@
             "maxLength": 1024,
             "type": "string"
           },
-          "identifier": {
+          "external_key": {
             "example": "wh1",
             "maxLength": 255,
             "minLength": 1,
@@ -433,15 +400,20 @@
             "minLength": 1,
             "type": "string"
           },
-          "parent_identifier": {
+          "parent_external_key": {
             "example": "wh1",
             "maxLength": 255,
             "minLength": 1,
             "type": "string"
           },
+          "parent_id": {
+            "example": 42,
+            "minimum": 1,
+            "type": "integer"
+          },
           "tags": {
             "items": {
-              "$ref": "#/components/schemas/shared.TagIdentifierRequest"
+              "$ref": "#/components/schemas/shared.TagRequest"
             },
             "type": "array"
           },
@@ -457,7 +429,7 @@
           }
         },
         "required": [
-          "identifier",
+          "external_key",
           "name"
         ],
         "type": "object"
@@ -474,8 +446,11 @@
           "description": {
             "type": "string"
           },
-          "identifier": {
+          "external_key": {
             "type": "string"
+          },
+          "id": {
+            "type": "integer"
           },
           "is_active": {
             "type": "boolean"
@@ -483,18 +458,20 @@
           "name": {
             "type": "string"
           },
-          "parent": {
+          "parent_external_key": {
+            "nullable": true,
             "type": "string"
+          },
+          "parent_id": {
+            "nullable": true,
+            "type": "integer"
           },
           "path": {
             "type": "string"
           },
-          "surrogate_id": {
-            "type": "integer"
-          },
           "tags": {
             "items": {
-              "$ref": "#/components/schemas/shared.TagIdentifier"
+              "$ref": "#/components/schemas/shared.Tag"
             },
             "type": "array"
           },
@@ -520,7 +497,7 @@
             "maxLength": 1024,
             "type": "string"
           },
-          "identifier": {
+          "external_key": {
             "example": "wh1",
             "maxLength": 255,
             "minLength": 1,
@@ -536,11 +513,16 @@
             "minLength": 1,
             "type": "string"
           },
-          "parent_identifier": {
+          "parent_external_key": {
             "example": "wh1",
             "maxLength": 255,
             "minLength": 1,
             "type": "string"
+          },
+          "parent_id": {
+            "example": 42,
+            "minimum": 1,
+            "type": "integer"
           },
           "valid_from": {
             "example": "2025-12-14T00:00:00Z",
@@ -551,6 +533,14 @@
             "example": "2026-12-14T00:00:00Z",
             "format": "date-time",
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "locations.AddTagResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/shared.Tag"
           }
         },
         "type": "object"
@@ -729,8 +719,13 @@
             "nullable": true,
             "type": "integer"
           },
-          "location": {
+          "location_external_key": {
+            "nullable": true,
             "type": "string"
+          },
+          "location_id": {
+            "nullable": true,
+            "type": "integer"
           },
           "timestamp": {
             "format": "date-time",
@@ -741,19 +736,29 @@
       },
       "report.PublicCurrentLocationItem": {
         "properties": {
-          "asset": {
-            "type": "string"
-          },
           "asset_deleted_at": {
             "format": "date-time",
             "type": "string"
+          },
+          "asset_external_key": {
+            "nullable": true,
+            "type": "string"
+          },
+          "asset_id": {
+            "nullable": true,
+            "type": "integer"
           },
           "last_seen": {
             "format": "date-time",
             "type": "string"
           },
-          "location": {
+          "location_external_key": {
+            "nullable": true,
             "type": "string"
+          },
+          "location_id": {
+            "nullable": true,
+            "type": "integer"
           }
         },
         "type": "object"
@@ -804,7 +809,7 @@
         },
         "type": "object"
       },
-      "shared.TagIdentifier": {
+      "shared.Tag": {
         "properties": {
           "id": {
             "type": "integer"
@@ -812,7 +817,7 @@
           "is_active": {
             "type": "boolean"
           },
-          "type": {
+          "tag_type": {
             "enum": [
               "rfid",
               "ble",
@@ -829,14 +834,14 @@
           }
         },
         "required": [
-          "type",
+          "tag_type",
           "value"
         ],
         "type": "object"
       },
-      "shared.TagIdentifierRequest": {
+      "shared.TagRequest": {
         "properties": {
-          "type": {
+          "tag_type": {
             "enum": [
               "rfid",
               "ble",
@@ -855,24 +860,6 @@
         "required": [
           "value"
         ],
-        "type": "object"
-      },
-      "storage.SaveInventoryResult": {
-        "properties": {
-          "count": {
-            "type": "integer"
-          },
-          "location_id": {
-            "type": "integer"
-          },
-          "location_name": {
-            "type": "string"
-          },
-          "timestamp": {
-            "format": "date-time",
-            "type": "string"
-          }
-        },
         "type": "object"
       }
     },
@@ -930,9 +917,17 @@
             }
           },
           {
-            "description": "filter by location natural key (may repeat)",
+            "description": "filter by current location id (canonical, may repeat)",
             "in": "query",
-            "name": "location",
+            "name": "location_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "filter by current location external_key (may repeat)",
+            "in": "query",
+            "name": "location_external_key",
             "schema": {
               "type": "string"
             }
@@ -946,15 +941,7 @@
             }
           },
           {
-            "description": "filter by type",
-            "in": "query",
-            "name": "type",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "substring search (case-insensitive) on name, identifier, description, and active tag values",
+            "description": "substring search (case-insensitive) on name, external_key, description, and active tag values",
             "in": "query",
             "name": "q",
             "schema": {
@@ -1073,7 +1060,7 @@
         ]
       },
       "post": {
-        "description": "Create a new asset record, optionally with one or more tags (RFID, BLE, NFC, barcode).\n\nThe `identifier` field is optional. Provide a value from your system of record\n(ERP, WMS, asset management) for natural-key joins, or omit it to receive a\nserver-assigned identifier in the format `ASSET-NNNN` (per-organization sequence).\nA caller-supplied identifier that collides with an existing asset returns 409.\n\nReturns the created asset with its assigned tags. The Location response header contains the canonical URL.",
+        "description": "Create a new asset record, optionally with one or more tags (RFID, BLE, NFC, barcode).\n\nThe `external_key` field is optional. Provide a value from your system of record\n(ERP, WMS, asset management) for natural-key joins, or omit it to receive a\nserver-assigned external_key in the format `ASSET-NNNN` (per-organization sequence).\nA caller-supplied external_key that collides with an existing asset returns 409.\n\nReturns the created asset with its assigned tags. The Location response header contains the canonical URL.",
         "operationId": "assets.create",
         "requestBody": {
           "content": {
@@ -1172,18 +1159,238 @@
         ]
       }
     },
-    "/api/v1/assets/{identifier}": {
-      "delete": {
-        "description": "Delete an asset by its natural identifier. The asset is removed from all subsequent queries and its identifier becomes immediately available for reuse. Returns 204 on success, 404 if the asset does not exist or has already been deleted.",
-        "operationId": "assets.delete",
+    "/api/v1/assets/lookup": {
+      "get": {
+        "description": "Find a single live asset by its external_key. Equality match only.\nReturns the matching object (200) or 404. Multiple natural-key parameters or none returns 400.\nSoft-deleted rows are not addressable through this endpoint.",
+        "operationId": "assets.lookup",
         "parameters": [
           {
-            "description": "Asset identifier",
-            "in": "path",
-            "name": "identifier",
+            "description": "Asset external_key (natural key)",
+            "in": "query",
+            "name": "external_key",
             "required": true,
             "schema": {
               "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/assets.GetAssetResponse"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "description": "Steady-state requests/min for this API key",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "Requests remaining before throttling; bounded by X-RateLimit-Limit",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "Unix timestamp (seconds) when X-RateLimit-Remaining will next equal X-RateLimit-Limit",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "bad_request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "rate_limited",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKey": [
+              "assets:read"
+            ]
+          }
+        ],
+        "summary": "Look up an asset by external_key",
+        "tags": [
+          "assets"
+        ]
+      }
+    },
+    "/api/v1/assets/{asset_id}/tags/{tag_id}": {
+      "delete": {
+        "description": "Detach a tag from an asset by its tag record id.",
+        "operationId": "assets.tags.remove",
+        "parameters": [
+          {
+            "description": "Asset id (canonical)",
+            "in": "path",
+            "name": "asset_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Tag id",
+            "in": "path",
+            "name": "tag_id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "deleted"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "bad_request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "rate_limited"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "internal_error"
+          }
+        },
+        "security": [
+          {
+            "APIKey": [
+              "assets:write"
+            ]
+          }
+        ],
+        "summary": "Remove a tag from an asset",
+        "tags": [
+          "assets"
+        ]
+      }
+    },
+    "/api/v1/assets/{id}": {
+      "delete": {
+        "description": "Delete an asset by its canonical id. The asset is removed from all subsequent queries and its external_key becomes immediately available for reuse. Returns 204 on success, 404 if the asset does not exist or has already been deleted.",
+        "operationId": "assets.delete",
+        "parameters": [
+          {
+            "description": "Asset id (canonical)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
         ],
@@ -1255,16 +1462,16 @@
         ]
       },
       "get": {
-        "description": "Retrieve an asset by its natural identifier. Returns 404 if the asset does not exist.",
+        "description": "Retrieve an asset by its canonical id. Returns 404 if the asset does not exist.",
         "operationId": "assets.get",
         "parameters": [
           {
-            "description": "Asset identifier (natural key)",
+            "description": "Asset id (canonical)",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
@@ -1365,7 +1572,7 @@
             ]
           }
         ],
-        "summary": "Get asset by natural identifier",
+        "summary": "Get asset by canonical id",
         "tags": [
           "assets"
         ]
@@ -1375,12 +1582,12 @@
         "operationId": "assets.update",
         "parameters": [
           {
-            "description": "Asset identifier",
+            "description": "Asset id (canonical)",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
@@ -1491,18 +1698,18 @@
         ]
       }
     },
-    "/api/v1/assets/{identifier}/history": {
+    "/api/v1/assets/{id}/history": {
       "get": {
-        "description": "Location history for an asset identified by its natural key.",
+        "description": "Location history for an asset identified by its canonical id.",
         "operationId": "assets.history",
         "parameters": [
           {
-            "description": "Asset identifier (natural key)",
+            "description": "Asset id (canonical)",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           },
           {
@@ -1653,18 +1860,18 @@
         ]
       }
     },
-    "/api/v1/assets/{identifier}/tags": {
+    "/api/v1/assets/{id}/tags": {
       "post": {
         "description": "Attach a tag (RFID EPC, BLE beacon ID, barcode, etc.) to an existing asset.\nThe tag must be unique within the organization.",
         "operationId": "assets.tags.add",
         "parameters": [
           {
-            "description": "Asset identifier",
+            "description": "Asset id (canonical)",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
@@ -1672,7 +1879,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/shared.TagIdentifierRequest"
+                "$ref": "#/components/schemas/shared.TagRequest"
               }
             }
           },
@@ -1685,12 +1892,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "type": "object"
+                  "$ref": "#/components/schemas/assets.AddTagResponse"
                 }
               }
             },
-            "description": "data: shared.TagIdentifier"
+            "description": "tag attached"
           },
           "400": {
             "content": {
@@ -1766,207 +1972,6 @@
         ]
       }
     },
-    "/api/v1/assets/{identifier}/tags/{tagId}": {
-      "delete": {
-        "description": "Detach a tag from an asset by its tag record ID.",
-        "operationId": "assets.tags.remove",
-        "parameters": [
-          {
-            "description": "Asset identifier",
-            "in": "path",
-            "name": "identifier",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Tag ID",
-            "in": "path",
-            "name": "tagId",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "deleted"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "bad_request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "forbidden"
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "not_found"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "rate_limited"
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "internal_error"
-          }
-        },
-        "security": [
-          {
-            "APIKey": [
-              "assets:write"
-            ]
-          }
-        ],
-        "summary": "Remove a tag from an asset",
-        "tags": [
-          "assets"
-        ]
-      }
-    },
-    "/api/v1/inventory/save": {
-      "post": {
-        "description": "Persist scanned RFID assets to the asset_scans hypertable",
-        "operationId": "inventory.save",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/inventory.SaveRequest"
-              }
-            }
-          },
-          "description": "Save request with location and asset identifiers",
-          "required": true,
-          "x-originalParamName": "request"
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/inventory.SaveResponse"
-                }
-              }
-            },
-            "description": "Created"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "Invalid request"
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "Unauthorized"
-          },
-          "403": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "Location or assets not owned by org"
-          },
-          "429": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "rate_limited",
-            "headers": {
-              "Retry-After": {
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            }
-          },
-          "500": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/errors.ErrorResponse"
-                }
-              }
-            },
-            "description": "Internal server error"
-          }
-        },
-        "security": [
-          {
-            "APIKey": [
-              "scans:write"
-            ]
-          }
-        ],
-        "summary": "Save inventory scans",
-        "tags": [
-          "inventory"
-        ]
-      }
-    },
     "/api/v1/locations": {
       "get": {
         "operationId": "locations.list",
@@ -1990,9 +1995,9 @@
             }
           },
           {
-            "description": "filter by parent identifier (may repeat)",
+            "description": "filter by parent's external_key (may repeat)",
             "in": "query",
-            "name": "parent",
+            "name": "parent_external_key",
             "schema": {
               "type": "string"
             }
@@ -2006,7 +2011,7 @@
             }
           },
           {
-            "description": "substring search (case-insensitive) on name, identifier, description, and active tag values",
+            "description": "substring search on name, external_key, description, and active tag values",
             "in": "query",
             "name": "q",
             "schema": {
@@ -2031,27 +2036,7 @@
                 }
               }
             },
-            "description": "OK",
-            "headers": {
-              "X-RateLimit-Limit": {
-                "description": "Steady-state requests/min for this API key",
-                "schema": {
-                  "type": "integer"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "description": "Requests remaining before throttling; bounded by X-RateLimit-Limit",
-                "schema": {
-                  "type": "integer"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "description": "Unix timestamp (seconds) when X-RateLimit-Remaining will next equal X-RateLimit-Limit",
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            }
+            "description": "OK"
           },
           "400": {
             "content": {
@@ -2091,15 +2076,7 @@
                 }
               }
             },
-            "description": "rate_limited",
-            "headers": {
-              "Retry-After": {
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            }
+            "description": "rate_limited"
           }
         },
         "security": [
@@ -2115,7 +2092,7 @@
         ]
       },
       "post": {
-        "description": "Create a new location in the hierarchy, optionally with one or more tags.\nSet ParentLocationID to nest the location under an existing parent. The Location response header contains the canonical URL.",
+        "description": "Create a new location in the hierarchy, optionally with one or more tags.\nSet parent_id (canonical) or parent_external_key (alternate) to nest under an existing parent.",
         "operationId": "locations.create",
         "requestBody": {
           "content": {
@@ -2216,7 +2193,7 @@
     },
     "/api/v1/locations/current": {
       "get": {
-        "description": "Snapshot of each asset's most recent location, filterable by natural key. Because this view is derived from immutable scan history, it can resolve identifiers for assets that have since been deleted. By default those rows are excluded; pass `include_deleted=true` to include them, and check `asset_deleted_at` to distinguish deleted from live.",
+        "description": "Snapshot of each asset's most recent location, filterable by canonical id or external_key. Because this view is derived from immutable scan history, it can resolve references for assets that have since been deleted. By default those rows are excluded; pass `include_deleted=true` to include them, and check `asset_deleted_at` to distinguish deleted from live.",
         "operationId": "locations.current",
         "parameters": [
           {
@@ -2238,15 +2215,23 @@
             }
           },
           {
-            "description": "filter by location identifier (may repeat)",
+            "description": "filter by location id (canonical, may repeat)",
             "in": "query",
-            "name": "location",
+            "name": "location_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "filter by location external_key (may repeat)",
+            "in": "query",
+            "name": "location_external_key",
             "schema": {
               "type": "string"
             }
           },
           {
-            "description": "substring search (case-insensitive) on asset name, identifier, and active tag values",
+            "description": "substring search (case-insensitive) on asset name, external_key, and active tag values",
             "in": "query",
             "name": "q",
             "schema": {
@@ -2364,18 +2349,108 @@
         ]
       }
     },
-    "/api/v1/locations/{identifier}": {
-      "delete": {
-        "description": "Delete a location by its natural identifier. The location is removed from all subsequent queries and its identifier becomes immediately available for reuse. Returns 204 on success, 404 if the location does not exist or has already been deleted.",
-        "operationId": "locations.delete",
+    "/api/v1/locations/lookup": {
+      "get": {
+        "description": "Find a single live location by its external_key. Returns 404 if no match.\nExactly one natural-key parameter is required; multiple or none returns 400.",
+        "operationId": "locations.lookup",
         "parameters": [
           {
-            "description": "Location identifier",
-            "in": "path",
-            "name": "identifier",
+            "description": "Location external_key (natural key)",
+            "in": "query",
+            "name": "external_key",
             "required": true,
             "schema": {
               "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/locations.GetLocationResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "bad_request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "not_found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "rate_limited"
+          }
+        },
+        "security": [
+          {
+            "APIKey": [
+              "locations:read"
+            ]
+          }
+        ],
+        "summary": "Lookup location by external_key",
+        "tags": [
+          "locations"
+        ]
+      }
+    },
+    "/api/v1/locations/{id}": {
+      "delete": {
+        "description": "Delete a location by its ID. The location is removed from all subsequent queries. Returns 204 on success, 404 if the location does not exist or has already been deleted.",
+        "operationId": "locations.delete",
+        "parameters": [
+          {
+            "description": "Location ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
         ],
@@ -2457,16 +2532,16 @@
         ]
       },
       "get": {
-        "description": "Retrieve a location by its natural identifier. Returns 404 if the location does not exist.",
+        "description": "Retrieve a location by its canonical ID. Returns 404 if not found.",
         "operationId": "locations.get",
         "parameters": [
           {
-            "description": "Location identifier (natural key)",
+            "description": "Location ID",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
@@ -2479,27 +2554,7 @@
                 }
               }
             },
-            "description": "OK",
-            "headers": {
-              "X-RateLimit-Limit": {
-                "description": "Steady-state requests/min for this API key",
-                "schema": {
-                  "type": "integer"
-                }
-              },
-              "X-RateLimit-Remaining": {
-                "description": "Requests remaining before throttling; bounded by X-RateLimit-Limit",
-                "schema": {
-                  "type": "integer"
-                }
-              },
-              "X-RateLimit-Reset": {
-                "description": "Unix timestamp (seconds) when X-RateLimit-Remaining will next equal X-RateLimit-Limit",
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            }
+            "description": "OK"
           },
           "400": {
             "content": {
@@ -2549,15 +2604,7 @@
                 }
               }
             },
-            "description": "rate_limited",
-            "headers": {
-              "Retry-After": {
-                "description": "Seconds to wait before retrying",
-                "schema": {
-                  "type": "integer"
-                }
-              }
-            }
+            "description": "Too Many Requests"
           }
         },
         "security": [
@@ -2567,7 +2614,7 @@
             ]
           }
         ],
-        "summary": "Get location by natural identifier",
+        "summary": "Get location by ID",
         "tags": [
           "locations"
         ]
@@ -2577,12 +2624,12 @@
         "operationId": "locations.update",
         "parameters": [
           {
-            "description": "Location identifier",
+            "description": "Location ID",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
@@ -2693,18 +2740,17 @@
         ]
       }
     },
-    "/api/v1/locations/{identifier}/ancestors": {
+    "/api/v1/locations/{id}/ancestors": {
       "get": {
-        "description": "Return all ancestor locations from the root of the hierarchy down to the immediate parent of the specified location.",
         "operationId": "locations.ancestors",
         "parameters": [
           {
-            "description": "Location identifier",
+            "description": "Location ID",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           },
           {
@@ -2811,18 +2857,17 @@
         ]
       }
     },
-    "/api/v1/locations/{identifier}/children": {
+    "/api/v1/locations/{id}/children": {
       "get": {
-        "description": "Return the immediate child locations of the specified location (one level deep only).",
         "operationId": "locations.children",
         "parameters": [
           {
-            "description": "Location identifier",
+            "description": "Location ID",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           },
           {
@@ -2929,18 +2974,17 @@
         ]
       }
     },
-    "/api/v1/locations/{identifier}/descendants": {
+    "/api/v1/locations/{id}/descendants": {
       "get": {
-        "description": "Return all descendant locations (children, grandchildren, etc.) beneath the specified location in the hierarchy.",
         "operationId": "locations.descendants",
         "parameters": [
           {
-            "description": "Location identifier",
+            "description": "Location ID",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           },
           {
@@ -3047,26 +3091,25 @@
         ]
       }
     },
-    "/api/v1/locations/{identifier}/tags": {
+    "/api/v1/locations/{id}/tags": {
       "post": {
-        "description": "Attach a tag (RFID EPC, BLE beacon ID, barcode, etc.) to an existing location.\nThe tag must be unique within the organization.",
         "operationId": "locations.tags.add",
         "parameters": [
           {
-            "description": "Location identifier",
+            "description": "Location ID",
             "in": "path",
-            "name": "identifier",
+            "name": "id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
         "requestBody": {
           "content": {
-            "application/json": {
+            "*/*": {
               "schema": {
-                "$ref": "#/components/schemas/shared.TagIdentifierRequest"
+                "$ref": "#/components/schemas/shared.TagRequest"
               }
             }
           },
@@ -3079,12 +3122,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
-                  "type": "object"
+                  "$ref": "#/components/schemas/locations.AddTagResponse"
                 }
               }
             },
-            "description": "data: shared.TagIdentifier"
+            "description": "tag attached"
           },
           "400": {
             "content": {
@@ -3160,24 +3202,23 @@
         ]
       }
     },
-    "/api/v1/locations/{identifier}/tags/{tagId}": {
+    "/api/v1/locations/{location_id}/tags/{tag_id}": {
       "delete": {
-        "description": "Detach a tag from a location by its tag record ID.",
         "operationId": "locations.tags.remove",
         "parameters": [
           {
-            "description": "Location identifier",
+            "description": "Location ID",
             "in": "path",
-            "name": "identifier",
+            "name": "location_id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           },
           {
             "description": "Tag ID",
             "in": "path",
-            "name": "tagId",
+            "name": "tag_id",
             "required": true,
             "schema": {
               "type": "integer"
@@ -3512,6 +3553,102 @@
         ]
       }
     },
+    "/api/v1/orgs/{id}/api-keys/by-jti/{jti}": {
+      "delete": {
+        "description": "Revoke an API key by its UUID jti (stable identifier embedded in the JWT).",
+        "operationId": "api_keys.revoke_by_jti",
+        "parameters": [
+          {
+            "description": "Organization id",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "API key jti (UUID)",
+            "in": "path",
+            "name": "jti",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/errors.ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          },
+          {
+            "APIKey": [
+              "keys:admin"
+            ]
+          }
+        ],
+        "summary": "Revoke an API key by jti",
+        "tags": [
+          "api-keys"
+        ]
+      }
+    },
     "/api/v1/orgs/{id}/api-keys/{key_id}": {
       "delete": {
         "operationId": "api_keys.revoke",
@@ -3526,12 +3663,12 @@
             }
           },
           {
-            "description": "Either the integer surrogate id or the UUID jti",
+            "description": "API key id (canonical)",
             "in": "path",
             "name": "key_id",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer"
             }
           }
         ],
@@ -3607,6 +3744,11 @@
       }
     }
   },
+  "security": [
+    {
+      "APIKey": []
+    }
+  ],
   "servers": [
     {
       "description": "Preview (per-PR deploys). Preview-scoped API keys authenticate here only — they will fail with 401 against Production, and Production keys will fail here.",
