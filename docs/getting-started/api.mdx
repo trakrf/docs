@@ -61,8 +61,10 @@ A successful response looks like:
 {
   "data": [
     {
-      "asset": "ASSET-0001",
-      "location": "LOC-0001",
+      "asset_id": 4287,
+      "asset_external_key": "ASSET-0001",
+      "location_id": 42,
+      "location_external_key": "LOC-0001",
       "last_seen": "2026-04-20T14:32:18Z"
     }
   ],
@@ -72,7 +74,7 @@ A successful response looks like:
 }
 ```
 
-The `data` array holds one item per asset that has ever been scanned. Each item is `{ asset, location, last_seen }` where `asset` and `location` are the business **identifiers** (not integer surrogate IDs — see [Resource identifiers](../api/resource-identifiers) for why).
+The `data` array holds one item per asset that has ever been scanned. Each item carries both forms of the asset and location identifiers as flat scalar fields: integer `id` (server-assigned, canonical for path params and FK joins) and string `external_key` (your handle, useful for joining back to your system of record). See [Resource identifiers](../api/resource-identifiers).
 
 If you get a `401`, the key is malformed or not being sent in the header. If you get a `403`, the body names the missing scope — for this endpoint it'll be `"Missing required scope: scans:read"`. If you get a `429`, you're being rate-limited — see [Rate limits](../api/rate-limits). If you're calling from browser JavaScript and getting a CORS error with no body, the API is server-to-server only ([details](../api/authentication#server-to-server)).
 
@@ -97,7 +99,7 @@ Write handlers against `body.error.type` and `body.error.detail`, not top-level 
 
 The two key concepts integrators trip on:
 
-- **`identifier` vs `surrogate_id`** — every resource has a human-meaningful string identifier (what you see in URLs and as `asset` / `location` values above) and an integer surrogate_id (returned in full resource objects). Always key on `identifier`. Full convention: [Resource identifiers](../api/resource-identifiers).
+- **Two identifiers per resource** — every asset and location has an integer `id` (server-assigned, used in URL path params and FK fields) and a string `external_key` (your handle for joining TrakRF records back to a SKU, asset tag, or ERP code). Both are first-class — pick whichever fits the context. Full convention: [Resource identifiers](../api/resource-identifiers).
 - **Response envelope** — every endpoint on the public surface wraps payloads in `{ "data": ..., ... }`, including `GET /api/v1/orgs/me`. List endpoints add pagination metadata (`limit`, `offset`, `total_count`) — see [Pagination, filtering, sorting](../api/pagination-filtering-sorting).
 
 ## 5. Next steps

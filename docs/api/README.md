@@ -18,7 +18,7 @@ This page is the map. The pages linked below are the territory.
 ## Concept guides
 
 - **[Authentication](./authentication)** — API keys, Bearer headers, scopes, key lifecycle
-- **[Resource identifiers](./resource-identifiers)** — why you key on `identifier`, not `surrogate_id`
+- **[Resource identifiers](./resource-identifiers)** — canonical integer `id`, natural-key `external_key`, `/lookup` access, and how the two work together
 - **[Pagination, filtering, sorting](./pagination-filtering-sorting)** — conventions that apply to every list endpoint
 - **[Errors](./errors)** — error envelope, error-type catalog, retry guidance
 - **[Rate limits](./rate-limits)** — per-key token bucket, `X-RateLimit-*` headers, `Retry-After`

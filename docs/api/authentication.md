@@ -52,20 +52,20 @@ The **New key** form in the web app lets you pick a resource (Assets / Locations
 
 Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
 
-| Scope             | Access | Endpoints (representative)                                                                  |
-| ----------------- | ------ | ------------------------------------------------------------------------------------------- |
-| `assets:read`     | Read   | `GET /assets`, `GET /assets/{identifier}`                                                   |
-| `assets:write`    | Write  | `POST /assets`, `PUT /assets/{identifier}`, `DELETE /assets/{identifier}`                   |
-| `locations:read`  | Read   | `GET /locations`, `GET /locations/{identifier}`                                             |
-| `locations:write` | Write  | `POST /locations`, `PUT /locations/{identifier}`, `DELETE /locations/{identifier}`          |
-| `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{identifier}/history`, scan-event endpoints          |
-| `scans:write`     | Write  | `POST /inventory/save`                                                                      |
-| `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{keyID}` |
+| Scope             | Access | Endpoints (representative)                                                                                                   |
+| ----------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `assets:read`     | Read   | `GET /assets`, `GET /assets/{id}`, `GET /assets/lookup`                                                                      |
+| `assets:write`    | Write  | `POST /assets`, `PUT /assets/{id}`, `DELETE /assets/{id}`                                                                    |
+| `locations:read`  | Read   | `GET /locations`, `GET /locations/{id}`, `GET /locations/lookup`                                                             |
+| `locations:write` | Write  | `POST /locations`, `PUT /locations/{id}`, `DELETE /locations/{id}`                                                           |
+| `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{id}/history`, scan-event endpoints                                                   |
+| `scans:write`     | Write  | `POST /inventory/save`                                                                                                       |
+| `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{key_id}`, `.../api-keys/by-jti/{jti}`    |
 
 A few non-obvious pairings worth calling out:
 
 - **`/locations/current`** is gated by **`scans:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the scans scope.
-- **`/assets/{identifier}/history`** is gated by **`scans:read`** for the same reason — it's a projection of scan events, not a property of the asset.
+- **`/assets/{id}/history`** is gated by **`scans:read`** for the same reason — it's a projection of scan events, not a property of the asset.
 - **`/inventory/save`** is gated by **`scans:write`**, not `assets:write`. It ingests scan events, so writes land under the scans scope.
 - **`keys:admin`** is the only "admin" scope in v1 — it gates key creation, listing, and revocation on the caller's own org. A `keys:admin` key may mint another key with `keys:admin`, enabling unattended self-rotation. See [Programmatic key rotation](#programmatic-key-rotation).
 
@@ -118,10 +118,15 @@ const data = await res.json();
 
 Every API key has two identifiers:
 
-- An integer `id` (surrogate key) — present in list responses from `GET /api/v1/orgs/{id}/api-keys`.
-- A UUID `jti` — embedded in the JWT's `jti` claim, displayed in the web UI's API Keys page, and present in API responses.
+- An integer `id` — server-assigned, present in list responses from `GET /api/v1/orgs/{id}/api-keys` and in the create response.
+- A UUID `jti` — embedded in the JWT's `jti` claim, displayed in the web UI's API Keys page, and returned alongside `id` in API responses.
 
-`DELETE /api/v1/orgs/{id}/api-keys/{keyID}` accepts either form for `{keyID}`. For human-readable scripts, audit trails, and incident-response runbooks, prefer `jti`: it's stable and visible everywhere the key surfaces (UI, JWT, API responses).
+Each identifier has its own revocation route:
+
+- **`DELETE /api/v1/orgs/{id}/api-keys/{key_id}`** — `key_id` is the integer `id`. Use this from generated SDKs and scripts that already have the `id` in hand (e.g., from a list call).
+- **`DELETE /api/v1/orgs/{id}/api-keys/by-jti/{jti}`** — UUID jti as a path segment. Use this from runbooks, on-call response, and audit workflows where the operator copies the jti out of the web UI or a JWT header.
+
+The two routes revoke the same key — pick whichever identifier you have. The split (rather than a single dual-input route) keeps generated SDKs cleanly typed: `revokeApiKey(123)` against the int route, `revokeApiKeyByJti("3f2a...-...")` against the UUID route, no string-vs-int coercion ambiguity.
 
 ## Programmatic key rotation {#programmatic-key-rotation}
 
@@ -132,7 +137,7 @@ The workflow is **create-new → cut-over → revoke-old**, which keeps the inte
 1. **List existing keys** — `GET /api/v1/orgs/{id}/api-keys` returns the key metadata (name, scopes, created / last-used, expiration). The JWT itself is never included.
 2. **Mint a replacement** — `POST /api/v1/orgs/{id}/api-keys` with `{"name": "<integration>-rotated-<YYYY-MM-DD>", "scopes": [...], "expires_at": "<future>"}`. The response body carries the full JWT **once**; persist it to your secrets store immediately.
 3. **Cut over** — deploy the new JWT to the integration. Both keys are valid during the overlap.
-4. **Revoke the old key** — `DELETE /api/v1/orgs/{id}/api-keys/{keyID}`, where `{keyID}` is either the integer `id` or the UUID `jti` (see [Identifying a key](#identifying-a-key)). Any subsequent request with the old JWT returns `401 unauthorized`.
+4. **Revoke the old key** — `DELETE /api/v1/orgs/{id}/api-keys/{key_id}` (integer id) or `DELETE /api/v1/orgs/{id}/api-keys/by-jti/{jti}` (UUID jti). See [Identifying a key](#identifying-a-key) for which to use. Any subsequent request with the old JWT returns `401 unauthorized`.
 
 ### Self-rotation
 

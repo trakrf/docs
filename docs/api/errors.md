@@ -16,7 +16,7 @@ Non-2xx responses return `Content-Type: application/json` with the error object 
     "type": "validation_error",
     "title": "Invalid request",
     "status": 400,
-    "detail": "identifier must be 1-255 characters",
+    "detail": "external_key must be 1-255 characters",
     "instance": "/api/v1/assets",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
   }
@@ -42,9 +42,9 @@ The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/
 | `bad_request`            | 400         | Request was malformed in a way the API can't attribute to a specific field — invalid JSON, JSON-type mismatch, unparseable path segment. No `fields[]`.                                                                                          | No — fix the request                   |
 | `unauthorized`           | 401         | Missing, malformed, revoked, or expired API key. The specific cause (missing header, wrong scheme, expired token, revoked key) is in `detail`.                                                                                                   | No — re-auth                           |
 | `forbidden`              | 403         | Valid key but insufficient scope for this endpoint                                                                                                                                                                                               | No — needs a key with the right scope  |
-| `not_found`              | 404         | Natural-key lookup failed                                                                                                                                                                                                                        | No — check the identifier              |
+| `not_found`              | 404         | Resource lookup failed (path-param `id`, `/lookup?external_key=`, or list filter that resolves to nothing)                                                                                                                                       | No — check the identifier              |
 | `method_not_allowed`     | 405         | The route does not accept the HTTP method you used (e.g. `PATCH` on a collection that only supports `GET` and `POST`). Allowed methods are listed in the response `Allow` header.                                                                | No — use a supported method            |
-| `conflict`               | 409         | Unique-constraint violation (typically a duplicate `identifier`)                                                                                                                                                                                 | No — reconcile with `GET` then `PUT`   |
+| `conflict`               | 409         | Unique-constraint violation (typically a duplicate `external_key` on assets/locations or a duplicate `(tag_type, value)` on tags)                                                                                                                | No — reconcile with `GET` then `PUT`   |
 | `unsupported_media_type` | 415         | Request body was sent with a `Content-Type` other than `application/json`. Set the header and retry.                                                                                                                                             | No — fix the `Content-Type`            |
 | `missing_org_context`    | 422         | Authentication succeeded but the principal has no org context — typically a session JWT minted before an org was selected, or an API key whose org has since been deleted. Pick an org (UI) or re-mint the key against a live org (integrators). | No — establish org context, then retry |
 | `rate_limited`           | 429         | You've hit the rate limit — see [Rate limits](./rate-limits)                                                                                                                                                                                     | Yes, after `Retry-After` seconds       |
@@ -75,16 +75,16 @@ When `type` is `validation_error`, the envelope carries an additional `fields` a
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
       {
-        "field": "identifier",
+        "field": "external_key",
         "code": "too_long",
-        "message": "identifier must be at most 255 characters",
+        "message": "external_key must be at most 255 characters",
         "params": { "max_length": 255 }
       },
       {
-        "field": "type",
+        "field": "tag_type",
         "code": "invalid_value",
-        "message": "type is not a valid value",
-        "params": { "allowed_values": ["asset", "person", "inventory"] }
+        "message": "tag_type is not a valid value",
+        "params": { "allowed_values": ["rfid", "ble", "barcode"] }
       }
     ]
   }
@@ -95,7 +95,7 @@ Field entries:
 
 | Field     | Purpose                                                                                                                                                                                                          |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `field`   | The JSON field name of the offending request attribute (e.g. `identifier`, `org_name`). Values are the snake_case JSON keys defined by the endpoint's request schema, not Go struct names or JSON-pointer paths. |
+| `field`   | The JSON field name of the offending request attribute (e.g. `external_key`, `name`). Values are the snake_case JSON keys defined by the endpoint's request schema, not Go struct names or JSON-pointer paths. |
 | `code`    | A machine-readable code — your validation UI can branch on this. Extensible enum.                                                                                                                                |
 | `message` | A human-readable message safe to show the end user.                                                                                                                                                              |
 | `params`  | Optional. Field-specific constraint metadata (e.g. `max_length`, `allowed_values`, `min`, `max`). Schema varies per field — treat unknown keys gracefully.                                                       |
@@ -184,13 +184,13 @@ Use the retry column in the catalog above as the default, but these patterns app
 - **4xx other than 429:** Never retry blindly. These indicate a problem with the request the server cannot fix by seeing it again. Fix the request and retry once.
 - **429:** Wait `Retry-After` seconds, then retry. Exponential backoff with jitter is appropriate if you're hitting the limit repeatedly. See [Rate limits](./rate-limits).
 - **500:** Retry with exponential backoff, starting at 1 second, doubling to ~30s, with jitter. Surface the failure after 3-5 attempts.
-- **Network timeouts (no response):** Retry with backoff. Treat the first attempt as "unknown state" — for idempotent methods (`GET`, `PUT`, `DELETE`), retry is safe. For `POST`, retry may create duplicates if you didn't supply an `identifier`; see [Idempotency](#idempotency).
+- **Network timeouts (no response):** Retry with backoff. Treat the first attempt as "unknown state" — for idempotent methods (`GET`, `PUT`, `DELETE`), retry is safe. For `POST`, retry may create duplicates if you didn't supply an `external_key`; see [Idempotency](#idempotency).
 
 ## Idempotency
 
 The TrakRF v1 API does **not** support the `Idempotency-Key` header. Retry safety comes from HTTP semantics and natural-key constraints:
 
-- **`POST /assets`, `POST /locations`** — retrying with the same `identifier` hits the `UNIQUE(org_id, identifier)` constraint and returns `409 conflict`. Detect the 409, then use `GET` or `PUT` to reconcile. **If you omit `identifier` on a POST retry, you may create duplicates** — for retry-critical workflows, always supply an identifier.
+- **`POST /assets`, `POST /locations`** — retrying with the same `external_key` hits the partial unique index `(org_id, external_key) WHERE deleted_at IS NULL` and returns `409 conflict`. Detect the 409, then `GET /api/v1/{resource}/lookup?external_key=...` to recover the canonical `id` and `PUT` to reconcile. **If you omit `external_key` on a POST `/assets` retry, you may create duplicates** — the server will mint a fresh `ASSET-NNNN` each time. For retry-critical workflows, always supply an `external_key`.
 - **`PUT`** — HTTP-semantically idempotent. Safe to retry.
 - **`DELETE`** — idempotent. A second delete returns `404 not_found` (not `204`) so you can detect state drift; both outcomes are fine to treat as "deleted."
 

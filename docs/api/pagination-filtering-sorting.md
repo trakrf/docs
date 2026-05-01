@@ -73,24 +73,28 @@ Offset pagination reflects the table state at each request. If rows are inserted
 
 Filter parameters are specific to each resource. All filters are query parameters; when a filter accepts multiple values, pass the parameter multiple times (not comma-separated).
 
-| Endpoint                                  | Filter params                                     |
-| ----------------------------------------- | ------------------------------------------------- |
-| `GET /api/v1/assets`                      | `location` (repeatable), `is_active`, `type`, `q` |
-| `GET /api/v1/locations`                   | `parent` (repeatable), `is_active`, `q`           |
-| `GET /api/v1/locations/current`           | `location` (repeatable), `q`                      |
-| `GET /api/v1/assets/{identifier}/history` | `from`, `to` (RFC 3339 timestamps)                |
+| Endpoint                          | Filter params                                                                                  |
+| --------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `GET /api/v1/assets`              | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`             |
+| `GET /api/v1/locations`           | `parent_external_key` (repeatable), `is_active`, `q`                                           |
+| `GET /api/v1/locations/current`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted`, `q`       |
+| `GET /api/v1/assets/{id}/history` | `from`, `to` (RFC 3339 timestamps)                                                             |
 
 ### Repeatable filters
 
 Repeat the parameter to express "any of":
 
 ```bash
-# Assets currently at LOC-A OR LOC-B
+# Assets currently at LOC-A OR LOC-B (by external_key)
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets?location=LOC-A&location=LOC-B"
+     "$BASE_URL/api/v1/assets?location_external_key=LOC-A&location_external_key=LOC-B"
+
+# Same intent, by canonical id
+curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/assets?location_id=42&location_id=43"
 ```
 
-Comma-separated values in a single `location=LOC-A,LOC-B` parameter are **not** parsed as multiple filters — the server sees a single value with a literal comma.
+Comma-separated values in a single `location_external_key=LOC-A,LOC-B` parameter are **not** parsed as multiple filters — the server sees a single value with a literal comma.
 
 ### Boolean filters
 
@@ -105,14 +109,14 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 `q` performs a fuzzy search across the resource's most commonly queried fields:
 
-| Endpoint                        | Fields matched                      |
-| ------------------------------- | ----------------------------------- |
-| `GET /api/v1/assets`            | `name`, `identifier`, `description` |
-| `GET /api/v1/locations`         | `name`, `identifier`, `description` |
-| `GET /api/v1/locations/current` | asset `name`, asset `identifier`    |
+| Endpoint                        | Fields matched                                          |
+| ------------------------------- | ------------------------------------------------------- |
+| `GET /api/v1/assets`            | `name`, `external_key`, `description`, active tag values |
+| `GET /api/v1/locations`         | `name`, `external_key`, `description`, active tag values |
+| `GET /api/v1/locations/current` | asset `name`, asset `external_key`, active tag values   |
 
 ```bash
-# Find assets whose name, identifier, or description matches "forklift"
+# Find assets whose name, external_key, description, or tag value matches "forklift"
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?q=forklift"
 ```
@@ -121,12 +125,12 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 ### Time range (history)
 
-`GET /api/v1/assets/{identifier}/history` accepts `from` and `to` as [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) timestamps (a subset of ISO 8601). The server validates the RFC 3339 profile — e.g. `2026-04-01T00:00:00Z` or `2026-04-01T09:00:00-04:00`. Either bound may be omitted:
+`GET /api/v1/assets/{id}/history` accepts `from` and `to` as [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) timestamps (a subset of ISO 8601). The server validates the RFC 3339 profile — e.g. `2026-04-01T00:00:00Z` or `2026-04-01T09:00:00-04:00`. Either bound may be omitted:
 
 ```bash
 # Since the start of 2026-04
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/ASSET-0001/history?from=2026-04-01T00:00:00Z"
+     "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z"
 ```
 
 ## Sorting
@@ -137,14 +141,14 @@ All list endpoints take a `sort` parameter. Comma-separated for multi-key sorts,
 # Newest first
 ?sort=-created_at
 
-# By type ascending, then name ascending
-?sort=type,name
+# By name ascending
+?sort=name
 
-# Active status descending, then identifier ascending
-?sort=-is_active,identifier
+# Active status descending, then external_key ascending
+?sort=-is_active,external_key
 ```
 
-Sortable fields vary per resource; the interactive reference at [`/api`](/api) lists the exact set each endpoint accepts. Unknown sort fields return `400 bad_request`. When no `sort` is supplied, results default to the resource's natural ordering (typically identifier ascending).
+Sortable fields vary per resource; the interactive reference at [`/api`](/api) lists the exact set each endpoint accepts. Unknown sort fields return `400 validation_error`. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending).
 
 ## Worked examples per resource
 
@@ -159,14 +163,14 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 ### Locations
 
-List all descendants of a parent location (via filter), sorted by identifier:
+List immediate children of a parent location (filtered by the parent's `external_key`), sorted by `external_key`:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/locations?parent=WAREHOUSE-A&sort=identifier&limit=200"
+     "$BASE_URL/api/v1/locations?parent_external_key=WAREHOUSE-A&sort=external_key&limit=200"
 ```
 
-For explicit ancestor/descendant traversal, use the dedicated endpoints: `GET /api/v1/locations/{identifier}/ancestors`, `/children`, `/descendants`.
+For explicit ancestor/descendant traversal, use the dedicated endpoints: `GET /api/v1/locations/{id}/ancestors`, `/children`, `/descendants`.
 
 ### Current locations
 
@@ -174,21 +178,21 @@ Where each asset was last seen — one row per asset. Filter by the location(s) 
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/locations/current?location=DOCK-1&sort=-last_seen"
+     "$BASE_URL/api/v1/locations/current?location_external_key=DOCK-1&sort=-last_seen"
 ```
 
 ### History
 
-Asset movement history over a window:
+Asset movement history over a window (path takes the canonical integer asset `id`):
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/ASSET-0001/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&limit=200"
+     "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&limit=200"
 ```
 
 ## Related
 
 - [Quickstart](./quickstart) — first successful call
-- [Resource identifiers](./resource-identifiers) — `identifier` vs `surrogate_id`
+- [Resource identifiers](./resource-identifiers) — canonical `id`, natural-key `external_key`, and `/lookup`
 - [Errors](./errors) — what `400 bad_request` on a malformed filter or sort looks like
 - [Interactive reference](/api) — per-endpoint parameter catalog

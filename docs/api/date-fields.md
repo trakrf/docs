@@ -23,13 +23,15 @@ Every `valid_from` / `valid_to` on the response is RFC3339 in UTC — clients ca
 {
   "data": [
     {
-      "identifier": "LOC-0001",
+      "id": 7,
+      "external_key": "LOC-0001",
       "name": "Warehouse A",
       "valid_from": "2026-01-15T00:00:00Z",
       "valid_to": "2026-12-31T23:59:59Z"
     },
     {
-      "identifier": "LOC-0002",
+      "id": 8,
+      "external_key": "LOC-0002",
       "name": "Warehouse B",
       "valid_from": "2026-02-01T00:00:00Z"
     }
@@ -62,20 +64,20 @@ A handful of other date formats also parse for tolerance, but the three above ar
 Create an asset with an explicit `valid_from` and no `valid_to`, then read it back:
 
 ```bash
-# Create
-curl -X POST \
+# Create — capture the assigned id from the response
+ASSET_ID=$(curl -s -X POST \
      -H "Authorization: Bearer $TRAKRF_API_KEY" \
      -H "Content-Type: application/json" \
      -d '{
-       "identifier": "ASSET-0042",
+       "external_key": "ASSET-0042",
        "name": "Pallet jack",
        "valid_from": "2026-04-24T00:00:00Z"
      }' \
-     "$BASE_URL/api/v1/assets"
+     "$BASE_URL/api/v1/assets" | jq -r '.data.id')
 
-# Read
+# Read it back by canonical id
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/ASSET-0042"
+     "$BASE_URL/api/v1/assets/$ASSET_ID"
 ```
 
 Response:
@@ -83,8 +85,8 @@ Response:
 ```json
 {
   "data": {
-    "identifier": "ASSET-0042",
-    "surrogate_id": 27545812,
+    "id": 4287,
+    "external_key": "ASSET-0042",
     "name": "Pallet jack",
     "valid_from": "2026-04-24T00:00:00Z"
   }

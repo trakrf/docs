@@ -58,8 +58,10 @@ A successful response looks like:
 {
   "data": [
     {
-      "asset": "ASSET-0001",
-      "location": "LOC-0001",
+      "asset_id": 4287,
+      "asset_external_key": "ASSET-0001",
+      "location_id": 42,
+      "location_external_key": "LOC-0001",
       "last_seen": "2026-04-20T14:32:18Z"
     }
   ],
@@ -68,6 +70,8 @@ A successful response looks like:
   "total_count": 1
 }
 ```
+
+Each row carries both forms of the asset and location identifiers as flat scalar fields — int `id` for downstream API calls, string `external_key` for joins back to your system of record. See [Resource identifiers](./resource-identifiers) for the full convention.
 
 Troubleshooting the first call:
 
@@ -98,32 +102,32 @@ Write error handlers against `body.error.type` and `body.error.detail`, not top-
 This walks through the write path end-to-end with an asset. It needs `assets:write` on the key (and `assets:read` if you want to verify via GET).
 
 ```bash
-# Create
-curl -X POST "$BASE_URL/api/v1/assets" \
+# Create — capture the assigned id from the response
+ASSET=$(curl -s -X POST "$BASE_URL/api/v1/assets" \
   -H "Authorization: Bearer $TRAKRF_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-        "identifier": "ASSET-QUICKSTART",
-        "name": "Quickstart test asset",
-        "type": "asset"
-      }'
+        "external_key": "ASSET-QUICKSTART",
+        "name": "Quickstart test asset"
+      }')
+ASSET_ID=$(echo "$ASSET" | jq -r '.data.id')
 
-# Read it back
+# Read it back by canonical id
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/ASSET-QUICKSTART"
+     "$BASE_URL/api/v1/assets/$ASSET_ID"
 
 # Update
-curl -X PUT "$BASE_URL/api/v1/assets/ASSET-QUICKSTART" \
+curl -X PUT "$BASE_URL/api/v1/assets/$ASSET_ID" \
   -H "Authorization: Bearer $TRAKRF_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name": "Quickstart test asset (renamed)"}'
 
 # Delete
-curl -X DELETE "$BASE_URL/api/v1/assets/ASSET-QUICKSTART" \
+curl -X DELETE "$BASE_URL/api/v1/assets/$ASSET_ID" \
   -H "Authorization: Bearer $TRAKRF_API_KEY"
 ```
 
-Each request echoes back the resource (or `204 No Content` on delete) wrapped in the standard `{ "data": ... }` envelope.
+Each request echoes back the resource (or `204 No Content` on delete) wrapped in the standard `{ "data": ... }` envelope. The path-param routes take the canonical integer `id`; if you only have the natural key, look it up first with `GET /api/v1/assets/lookup?external_key=ASSET-QUICKSTART` and read the `id` off the response. Full convention: [Resource identifiers](./resource-identifiers).
 
 ## 5. Alternative: Postman
 
@@ -152,7 +156,7 @@ Feed either into `openapi-generator-cli`, NSwag, `oapi-codegen`, etc. to scaffol
 - [Interactive reference](/api) — every endpoint, request/response shape, try-it-now widget
 - [Authentication](./authentication) — scopes, key lifecycle, rotation
 - [Pagination, filtering, sorting](./pagination-filtering-sorting) — conventions for list endpoints
-- [Resource identifiers](./resource-identifiers) — why you key on `identifier`, not `surrogate_id`
+- [Resource identifiers](./resource-identifiers) — canonical `id`, natural-key `external_key`, and `/lookup`
 - [Errors](./errors) — envelope, catalog, retry guidance
 - [Rate limits](./rate-limits) — budgets, headers, `Retry-After`
 - [Versioning](./versioning) — v1 stability commitment
