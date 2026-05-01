@@ -32,7 +32,7 @@ Preview-scoped keys will not authenticate against production and vice versa; the
 1. Sign in with an admin account on the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — not key management.)
 3. **If your account belongs to multiple organizations,** keys are scoped to whichever org is currently selected in the avatar menu. Check the org switcher before clicking **New key**. See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for detail.
-4. Click **New key**. Give it a descriptive name (e.g. `"local-dev"`). For this quickstart, `scans:read` alone is enough — the `/locations/current` endpoint you'll call below is gated by `scans:read`. Grant `assets:read` and `locations:read` if you plan to hit the other read endpoints, and `assets:write` for the create/update/delete walkthrough in step 4. See [Authentication → Scopes](./authentication#scopes) for the full matrix.
+4. Click **New key**. Give it a descriptive name (e.g. `"local-dev"`). The first verification call below (`GET /api/v1/orgs/me`) works with any valid key — no specific scope required. For the round-trip walkthrough in step 4 you'll need `assets:read` and `assets:write`; for the other read endpoints, `locations:read` and `scans:read`. See [Authentication → Scopes](./authentication#scopes) for the full matrix.
 5. **Pick an expiration.** The **Expires** picker offers **Never / 30 days / 90 days / 1 year / Custom**. **90 days** is the recommended default for production keys; see [Key lifecycle](./authentication#key-lifecycle) before choosing **Never**.
 6. Submit. The full JWT is displayed **once**. Copy it immediately — it cannot be shown again.
 7. Save it to an environment variable:
@@ -43,53 +43,44 @@ Preview-scoped keys will not authenticate against production and vice versa; the
 
 Full detail: [Authentication → Mint your first API key](./authentication#mint-your-first-api-key).
 
-## 3. First read call
+## 3. Verify your key works
 
-`GET /api/v1/locations/current` returns a snapshot of where TrakRF last saw each asset. It's cheap, needs `scans:read`, and tells you end-to-end that your key works:
+`GET /api/v1/orgs/me` returns the organization the API key is scoped to. It's the canonical "tell me about myself" endpoint, requires no specific scope, and confirms end-to-end that your key authenticates against the right environment:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/locations/current"
+     "$BASE_URL/api/v1/orgs/me"
 ```
 
-A successful response looks like:
+A successful response:
 
 ```json
 {
-  "data": [
-    {
-      "asset_id": 4287,
-      "asset_external_key": "ASSET-0001",
-      "location_id": 42,
-      "location_external_key": "LOC-0001",
-      "last_seen": "2026-04-20T14:32:18Z"
-    }
-  ],
-  "limit": 50,
-  "offset": 0,
-  "total_count": 1
+  "data": {
+    "id": 42,
+    "name": "Acme Logistics"
+  }
 }
 ```
 
-Each row carries both forms of the asset and location identifiers as flat scalar fields — int `id` for downstream API calls, string `external_key` for joins back to your system of record. See [Resource identifiers](./resource-identifiers) for the full convention.
+If the `name` matches the org you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface.
 
-Troubleshooting the first call:
+Troubleshooting:
 
-- `401 unauthorized` — the key is missing, malformed, or revoked. Re-check the `Authorization` header.
-- `403 forbidden` — the key lacks `scans:read`. The body names the missing scope (`"Missing required scope: scans:read"`). Create a new key with the right scope.
+- `401 unauthorized` — the key is missing, malformed, revoked, or scoped to the other environment (preview vs production). Re-check the `Authorization` header and the [Base URL](./authentication#base-url).
 - `429 rate_limited` — you're over budget; wait the `Retry-After` seconds. See [Rate limits](./rate-limits).
 - **Browser console error with no response body** — CORS. The API is server-to-server only; call it from a backend. See [Server-to-server design](./authentication#server-to-server).
 
-Every error response is wrapped in an `error` key — a `403` looks like:
+Every error response is wrapped in an `error` key — a `401` looks like:
 
 ```json
 {
   "error": {
-    "type": "forbidden",
-    "title": "Forbidden",
-    "status": 403,
-    "detail": "Missing required scope: scans:read",
-    "instance": "/api/v1/locations/current",
+    "type": "unauthorized",
+    "title": "Authentication required",
+    "status": 401,
+    "detail": "Use Authorization: Bearer <token>",
+    "instance": "/api/v1/orgs/me",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
   }
 }
@@ -133,7 +124,7 @@ Each request echoes back the resource (or `204 No Content` on delete) wrapped in
 
 Prefer a GUI? The same API surface is available as a ready-to-import Postman collection:
 
-1. Download [`trakrf-api.postman_collection.json`](/api/trakrf-api.postman_collection.json).
+1. Download <a href="/api/trakrf-api.postman_collection.json" download>`trakrf-api.postman_collection.json`</a>.
 2. In Postman, **Import → File** and select it.
 3. Set the collection variables:
    - `baseUrl` → `https://app.trakrf.id/api/v1` (or `https://app.preview.trakrf.id/api/v1` for preview accounts)

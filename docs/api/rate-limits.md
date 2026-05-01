@@ -83,7 +83,7 @@ The `Retry-After` value is an integer number of **seconds** to wait before the n
 The following endpoints do **not** emit `X-RateLimit-*` headers and are not counted against the bucket:
 
 - `GET /api/v1/orgs/me` — used as a connectivity/health check; excluded so that liveness probes never trip the limit.
-- **All write endpoints** — `POST /api/v1/inventory/save`, and every `POST`/`PUT`/`DELETE` under `/api/v1/assets` and `/api/v1/locations`. Writes are audited rather than rate-limited; if you need backpressure on ingest, apply it client-side.
+- **All write endpoints** — every `POST`/`PUT`/`DELETE` under `/api/v1/assets` and `/api/v1/locations`. Writes are audited rather than rate-limited; if you need backpressure on ingest, apply it client-side.
 
 **Response-shape note:** `GET /api/v1/orgs/me` returns the standard `{ "data": ... }` envelope, same as every other endpoint on the public surface. See [Private endpoints → /orgs/me](./private-endpoints#orgs-me) for the full catalog entry.
 

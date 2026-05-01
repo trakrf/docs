@@ -17,7 +17,7 @@ API keys are created by an organization administrator in the TrakRF web app:
 5. Submit. The full JWT is displayed **once** at creation. Copy it to your secrets store immediately; it cannot be shown again.
 6. Use it as the `Authorization: Bearer <key>` header on every API request. See [Request header](#request-header) for the exact format.
 
-<!-- TODO: screenshot of avatar menu → API Keys → New key dialog; capture via scripts/refresh-screenshots.sh pattern. Tracked as a follow-up to TRA-408. -->
+<!-- TODO: screenshot of avatar menu → API Keys → New key dialog; capture via scripts/refresh-screenshots.sh pattern. -->
 
 ## Request header
 
@@ -48,7 +48,6 @@ The **New key** form in the web app lets you pick a resource (Assets / Locations
 | Locations → Read           | `locations:read`                    |
 | Locations → Read+Write     | `locations:read`, `locations:write` |
 | Scans → Read               | `scans:read`                        |
-| Scans → Read+Write         | `scans:read`, `scans:write`         |
 
 Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
 
@@ -59,14 +58,12 @@ Selecting **None** for a resource grants no scope for that resource. Selecting *
 | `locations:read`  | Read   | `GET /locations`, `GET /locations/{id}`, `GET /locations/lookup`                                                             |
 | `locations:write` | Write  | `POST /locations`, `PUT /locations/{id}`, `DELETE /locations/{id}`                                                           |
 | `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{id}/history`, scan-event endpoints                                                   |
-| `scans:write`     | Write  | `POST /inventory/save`                                                                                                       |
 | `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{key_id}`, `.../api-keys/by-jti/{jti}`    |
 
 A few non-obvious pairings worth calling out:
 
 - **`/locations/current`** is gated by **`scans:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the scans scope.
 - **`/assets/{id}/history`** is gated by **`scans:read`** for the same reason — it's a projection of scan events, not a property of the asset.
-- **`/inventory/save`** is gated by **`scans:write`**, not `assets:write`. It ingests scan events, so writes land under the scans scope.
 - **`keys:admin`** is the only "admin" scope in v1 — it gates key creation, listing, and revocation on the caller's own org. A `keys:admin` key may mint another key with `keys:admin`, enabling unattended self-rotation. See [Programmatic key rotation](#programmatic-key-rotation).
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).

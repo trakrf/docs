@@ -13,7 +13,7 @@ Every timestamped resource in the TrakRF v1 API uses the same two effective-date
 | `valid_from` | Yes                     | RFC3339 UTC      | When the record became effective. Defaults to the creation time on insert. |
 | `valid_to`   | No — omitted when unset | RFC3339 UTC      | When the record expires. **Absent key = no expiry.**                       |
 
-The API never returns `0001-01-01T00:00:00Z` zero-time, never returns a `2099-12-31` far-future sentinel, and never returns `"valid_to": null`. If a client sees any of these, it's a bug — see the [Changelog](./CHANGELOG) entry for the normalization cleanup ([TRA-468](https://linear.app/trakrf/issue/TRA-468)).
+The API never returns `0001-01-01T00:00:00Z` zero-time, never returns a `2099-12-31` far-future sentinel, and never returns `"valid_to": null`. If a client sees any of these, it's a bug — please [report it](mailto:support@trakrf.id).
 
 ## Outbound: always RFC3339
 
