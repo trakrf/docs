@@ -4,104 +4,161 @@ sidebar_position: 3
 
 # Resource identifiers
 
-Every resource in the TrakRF API has **two** IDs:
+Every asset and location has two identifiers, and both are first-class. The integer `id` is server-assigned, immutable, and used in URL paths, foreign-key fields, and response keys — the canonical handle for everything inside the API. The string `external_key` is your handle, and the natural key for joining TrakRF records back to your system of record (a SKU, an asset tag, a manufacturer serial number, an ERP code). Each form has its own access path; both are fluently supported. Pick whichever fits the context — neither is a fallback for the other.
 
-| ID             | Type    | Where you see it                 | How you use it                                                                                                                                                                      |
-| -------------- | ------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `identifier`   | string  | URL path params, response bodies | The business-meaningful ID (e.g. `ASSET-0001`, `LOC-0001`). This is the one clients key on.                                                                                         |
-| `surrogate_id` | integer | Response bodies only             | Stable integer ID retained for backward compatibility with earlier TrakRF tooling. Visible so clients that already correlate on it keep working; `identifier` is the canonical key. |
+## Path-param lookup uses `id`
 
-This page explains where each form appears, why integrators should key on `identifier`, and what the additional hierarchy-helper fields on locations mean.
-
-## URL path parameters — `identifier` only
-
-Single-resource read endpoints take the `identifier` (string) as the URL path parameter:
+Single-resource endpoints take the canonical integer `id`:
 
 ```bash
-# Correct — takes the business identifier
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/ASSET-0001"
+     "$BASE_URL/api/v1/assets/4287"
 ```
 
-The integer `surrogate_id` is **not** accepted on reads:
+This is the conventional REST shape and the URL stays valid even if the asset's `external_key` changes. Use it when you have an `id` already in hand — typically because you got it from a list response, a previous create, or a record cached in your own database.
+
+## Natural-key lookup uses `/lookup?external_key=`
+
+When you have the natural key but not the canonical `id`, look the resource up by its `external_key`:
 
 ```bash
-# Wrong — returns 404 not_found
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/27545709"
+     "$BASE_URL/api/v1/assets/lookup?external_key=SKU-7421-A"
 ```
 
-This applies to every GET endpoint with a path param:
+Returns the matching asset (`200`) or `404` if no live asset has that key. Equality match only — no globs, no prefix, no regex. Multiple natural-key parameters or none returns `400`. Soft-deleted rows are not addressable through this endpoint; if you need to inspect a deleted record, look it up by `id`.
 
-- `GET /api/v1/assets/{identifier}`
-- `GET /api/v1/assets/{identifier}/history`
-- `GET /api/v1/locations/{identifier}`
+The same shape is available on locations:
 
-### Identifiers are case-sensitive {#case-sensitivity}
+```bash
+curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/locations/lookup?external_key=BACK-STORAGE-2"
+```
 
-Identifiers on the path are matched exactly as stored. `GET /api/v1/assets/ASSET-0001` returns `200`; `GET /api/v1/assets/asset-0001` returns `404 not_found`. Pick a casing convention at the point you `POST` the resource (the request-body `identifier` is what subsequent reads must quote) and stick with it — the API does not normalize case on lookup.
+Use `/lookup` when an integrator pastes an `external_key` directly (a barcode scan, a CSV row, an ERP record) and you need to resolve it to a TrakRF resource. Cache the returned `id` if you'll touch the resource again — subsequent path-param reads avoid the `/lookup` round trip.
 
-## Response bodies
+## List filters accept both forms
 
-Responses return both IDs so clients that need to correlate across related records (e.g. joining asset history back to a specific asset record) can use the stable `surrogate_id` as a foreign key:
+Where a list endpoint filters on a related resource, both forms work. For the assets list, filter by current location using either `location_id` or `location_external_key`:
+
+```bash
+# Canonical: filter by location id
+curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/assets?location_id=42"
+
+# Alternate: filter by location external_key
+curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/assets?location_external_key=BACK-STORAGE-2"
+```
+
+Both parameters are repeatable (`?location_id=42&location_id=43`) and both return the standard paginated list envelope. See [Pagination, filtering, sorting](./pagination-filtering-sorting) for the full envelope shape.
+
+## Foreign-key fields in responses come as flat scalar pairs
+
+When a resource references another resource, the response includes both forms as flat scalar fields. An asset response carries `current_location_id` (int) and `current_location_external_key` (string) side by side:
 
 ```json
 {
   "data": {
-    "identifier": "ASSET-0001",
-    "surrogate_id": 27545709,
-    "name": "Warehouse forklift",
-    "current_location": "LOC-0001"
+    "id": 4287,
+    "external_key": "SKU-7421-A",
+    "name": "Pallet jack #14",
+    "current_location_id": 42,
+    "current_location_external_key": "BACK-STORAGE-2",
+    "is_active": true,
+    "created_at": "2026-03-12T17:04:00Z",
+    "updated_at": "2026-04-29T09:21:00Z"
   }
 }
 ```
 
-**Clients should key on `identifier`.** `surrogate_id` is retained for backward compatibility with earlier TrakRF tooling — it's stable across updates to a given record, but opaque to integrators, not guaranteed stable across environments, and not accepted on any public URL path.
+Both fields are populated whenever the relationship exists — no nested object, no follow-up call to resolve the related resource's natural key. If you need the `id` for a downstream API call, it's there; if you need the `external_key` to write back to your system of record, it's there too. When the relationship is unset (an asset that has never been scanned, a root location with no parent), both fields are absent from the response — the same omit-when-unset convention used on optional [date fields](./date-fields).
 
-## Location hierarchy fields (`path`, `depth`) {#location-hierarchy-fields}
+## Round-trip consistency
 
-Location responses include two additional fields that describe where the node sits in the location tree:
+Request and response field names match, so generated clients can `GET` a resource, mutate fields, and `PUT` it back without remapping. Read `current_location_external_key` off an asset, edit it, and send it back under the same name:
 
-| Field   | Type    | Meaning                                                                                                                                                              |
-| ------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `path`  | string  | The location's position in the tree as a dot-separated [`ltree`](https://www.postgresql.org/docs/current/ltree.html) label path, e.g. `WAREHOUSE-A.AISLE-3.SHELF-B`. |
-| `depth` | integer | The number of labels in `path` — `1` for a root location, `2` for its direct children, and so on.                                                                    |
+```bash
+# Move an asset to a new location by its external_key
+curl -X PUT \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"current_location_external_key": "PORTABLE-1437"}' \
+     "$BASE_URL/api/v1/assets/4287"
+```
 
-Example (abbreviated) from `GET /api/v1/locations`:
+Either form is accepted on write. Send `current_location_id` if you have it; send `current_location_external_key` if that's what the user typed. Don't send both for the same relationship in one request.
+
+## Locations: `parent_id` and `parent_external_key`
+
+Locations follow the same flat-scalar pattern for their parent reference. A location response includes both `parent_id` and `parent_external_key` whenever the location has a parent:
 
 ```json
 {
-  "data": [
-    {
-      "identifier": "WAREHOUSE-A",
-      "name": "Warehouse A",
-      "path": "WAREHOUSE-A",
-      "depth": 1,
-      "parent": null
-    },
-    {
-      "identifier": "SHELF-B",
-      "name": "Shelf B",
-      "path": "WAREHOUSE-A.AISLE-3.SHELF-B",
-      "depth": 3,
-      "parent": "AISLE-3"
-    }
-  ]
+  "data": {
+    "id": 42,
+    "external_key": "BACK-STORAGE-2",
+    "name": "Back storage, bay 2",
+    "parent_id": 7,
+    "parent_external_key": "WAREHOUSE-WEST",
+    "path": "WAREHOUSE-WEST.BACK-STORAGE-2",
+    "depth": 2
+  }
 }
 ```
 
-Each label in `path` preserves the original casing and hyphens of the corresponding `identifier` — `WAREHOUSE-A` stays `WAREHOUSE-A`, not `warehouse_a`. `path` is a derived helper for tree traversal, not a second identifier. Don't try to look up a location by its `path` — URL path params still take the `identifier` (see [URL path parameters](#url-path-parameters--identifier-only)).
+Set either `parent_id` or `parent_external_key` on create or update to nest under an existing parent. Root locations (no parent) omit both fields.
 
-These fields are most useful for UI renderers that want to sort or indent a flat list by tree position without making follow-up calls. For explicit hierarchy traversal, prefer the dedicated endpoints (`GET /api/v1/locations/{identifier}/ancestors`, `/children`, `/descendants`) — see [Pagination, filtering, sorting](./pagination-filtering-sorting) for envelope and filtering conventions.
+`parent_id` and `parent_external_key` are one-hop only — they describe the immediate parent, not the chain to the root. For multi-hop traversal use the dedicated endpoint:
 
-## Writes (PUT, DELETE)
+```bash
+curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/locations/42/ancestors"
+```
 
-The published OpenAPI spec at [`/api`](/api) currently shows `{id}` on write-path parameters. This will align with the read-path `{identifier}` convention under [TRA-407](https://linear.app/trakrf/issue/TRA-407). Until that lands, the interactive reference is authoritative for the exact shape each write endpoint accepts. This page will be updated when the alignment ships.
+`path` is a derived label-path helper (`WAREHOUSE-WEST.BACK-STORAGE-2`) useful for sorting or indenting flat lists. It's not an identifier — you can't look a location up by its `path`.
 
-## Session-auth-only exception
+## Asset `external_key` is optional
 
-There is one SPA-only path that takes the integer `surrogate_id`:
+`external_key` is required on locations but optional on assets. Omit it on `POST /api/v1/assets` and the server assigns one in the format `ASSET-NNNN` from a per-organization sequence:
 
-- `GET /api/v1/assets/by-id/{surrogate_id}/history`
+```bash
+# Caller-supplied external_key
+curl -X POST \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"name": "Pallet jack #14", "external_key": "SKU-7421-A"}' \
+     "$BASE_URL/api/v1/assets"
 
-This path is accessible **only** with session cookies (used by the first-party TrakRF web app). API-key requests receive `401 unauthorized`. Integrators using API keys should always use `GET /api/v1/assets/{identifier}/history` with the string identifier. See [Private endpoints](./private-endpoints) for the full list of SPA-only paths.
+# Server-assigned external_key (returns external_key: "ASSET-0142" or similar)
+curl -X POST \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"name": "Pallet jack #14"}' \
+     "$BASE_URL/api/v1/assets"
+```
+
+A caller-supplied `external_key` that collides with an existing live asset returns `409 conflict`. Once an asset is soft-deleted its `external_key` becomes immediately available for reuse. Full create flows live in the [Quickstart](./quickstart).
+
+## Tags use a composite natural key
+
+Tags follow the same principle as assets and locations, with a composite shape: a tag's natural key is the `(tag_type, value)` pair within an organization, enforced by the partial unique index `(org_id, tag_type, value) WHERE deleted_at IS NULL`. Inserting a duplicate live `(tag_type, value)` for the same organization returns `409 conflict`.
+
+Tag responses still carry a canonical integer `id` for path-param access (e.g., `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`):
+
+```json
+{
+  "data": {
+    "id": 9183,
+    "tag_type": "rfid",
+    "value": "E2-8042-2D-19F0-AB10",
+    "is_active": true
+  }
+}
+```
+
+There's no top-level `/api/v1/tags/lookup` endpoint — tags are discovered through their parent resource, either embedded in an asset or location response or via `GET /api/v1/assets/{id}/tags`.
+
+## Authentication keys are different
+
+API keys (`/api/v1/orgs/{id}/api-keys`) follow a different identifier model from assets, locations, and tags — separate canonical `id` and JTI vocabulary, separate revocation paths. See [Authentication](./authentication) for the key lifecycle and the `/by-jti/{jti}` revocation route.
