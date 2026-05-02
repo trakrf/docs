@@ -76,7 +76,7 @@ Filter parameters are specific to each resource. All filters are query parameter
 | Endpoint                          | Filter params                                                                                  |
 | --------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `GET /api/v1/assets`              | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`             |
-| `GET /api/v1/locations`           | `parent_external_key` (repeatable), `is_active`, `q`                                           |
+| `GET /api/v1/locations`           | `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`                  |
 | `GET /api/v1/locations/current`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted`, `q`       |
 | `GET /api/v1/assets/{id}/history` | `from`, `to` (RFC 3339 timestamps)                                                             |
 
