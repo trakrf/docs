@@ -14,7 +14,7 @@ Non-2xx responses return `Content-Type: application/json` with the error object 
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "external_key must be 1-255 characters",
     "instance": "/api/v1/assets",
@@ -139,7 +139,7 @@ List endpoints validate their query string the same way. The `field` value in th
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "limit must be ≤ 200",
     "instance": "/api/v1/assets",
@@ -159,7 +159,7 @@ List endpoints validate their query string the same way. The `field` value in th
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "unknown sort field: bogus",
     "instance": "/api/v1/assets",
@@ -179,7 +179,7 @@ List endpoints validate their query string the same way. The `field` value in th
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "Invalid 'from' timestamp; RFC3339 required",
     "instance": "/api/v1/assets/ASSET-0001/history",
