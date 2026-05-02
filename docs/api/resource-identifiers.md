@@ -158,7 +158,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/locations/42/ancestors"
 ```
 
-`path` is a derived label-path helper, useful for sorting or indenting flat lists. Its segments are derived from each ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' paths. The path is **not** guaranteed to round-trip back to `external_key` — splitting `path` on `.` recovers the normalized segments, not the original natural keys.
+`path` is a derived label-path helper, useful for sorting or indenting flat lists. Its segments are derived from each ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' paths. The path is **not** guaranteed to round-trip back to `external_key` — splitting `path` on `.` is unreliable in general, and outright wrong if any ancestor's `external_key` contains a literal period (those pass through the transformation untouched and become indistinguishable from segment separators).
 
 If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`. Don't try to reverse the lowercasing or underscore substitution from `path`; the transformation is lossy on `external_key`s that already contain underscores or that differ only in case.
 
