@@ -76,11 +76,11 @@ Both fields are populated whenever the relationship exists — no nested object,
 
 That makes three response-shape behaviors that coexist on these resources, and it's worth knowing which is which:
 
-| Behavior               | Fields                                                                                                  | Test for                     |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| **Always present**     | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)  | the value itself             |
-| **Present as `null`**  | `current_location_id`, `current_location_external_key`, `parent_id`, `parent_external_key`              | `field === null`             |
-| **Omitted when unset** | `valid_to`, `description` (and any optional field documented as omit-when-unset on its individual page) | key presence (`'k' in resp`) |
+| Behavior               | Fields                                                                                                 | Test for                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| **Always present**     | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars) | the value itself             |
+| **Present as `null`**  | `current_location_id`, `current_location_external_key`, `parent_id`, `parent_external_key`             | `field === null`             |
+| **Omitted when unset** | `valid_to` (and any optional field documented as omit-when-unset on its individual page)               | key presence (`'k' in resp`) |
 
 The omit-when-unset set is small and explicit. When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs, and any field not called out in either is in the always-present row.
 
