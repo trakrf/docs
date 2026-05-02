@@ -183,11 +183,11 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 ### History
 
-Asset movement history over a window (path takes the canonical integer asset `id`):
+Asset movement history over a window, newest event first (path takes the canonical integer asset `id`):
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&limit=200"
+     "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&sort=-timestamp&limit=200"
 ```
 
 ## Related
