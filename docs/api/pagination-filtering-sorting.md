@@ -144,11 +144,11 @@ All list endpoints take a `sort` parameter. Comma-separated for multi-key sorts,
 # By name ascending
 ?sort=name
 
-# Active status descending, then external_key ascending
-?sort=-is_active,external_key
+# Newest first, then external_key as tiebreaker
+?sort=-created_at,external_key
 ```
 
-Sortable fields vary per resource; the interactive reference at [`/api`](/api) lists the exact set each endpoint accepts. Unknown sort fields return `400 validation_error`. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending).
+Sortable fields vary per resource; the interactive reference at [`/api`](/api) lists the exact set each endpoint accepts. Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending).
 
 ## Worked examples per resource
 
@@ -183,11 +183,11 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 ### History
 
-Asset movement history over a window (path takes the canonical integer asset `id`):
+Asset movement history over a window, newest event first (path takes the canonical integer asset `id`):
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&limit=200"
+     "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&sort=-timestamp&limit=200"
 ```
 
 ## Related
