@@ -8,7 +8,7 @@ The TrakRF API uses **API keys** to authenticate every request. API keys are JSO
 
 ## Mint your first API key {#mint-your-first-api-key}
 
-API keys are created by an organization administrator in the TrakRF web app:
+API keys are minted through the TrakRF web app. v1 does not provide a programmatic key-mint endpoint — the flow is browser-mediated by design, consistent with how Stripe gates dashboard-only key issuance.
 
 1. Sign in with an admin account (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)). Both hosts run the same UI and flow — use the one that matches your account. See [Base URL](#base-url) for the matching API host.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — signal power, session, worker log level — not key management.)
@@ -18,6 +18,8 @@ API keys are created by an organization administrator in the TrakRF web app:
 6. Use it as the `Authorization: Bearer <key>` header on every API request. See [Request header](#request-header) for the exact format.
 
 <!-- TODO: screenshot of avatar menu → API Keys → New key dialog; capture via scripts/refresh-screenshots.sh pattern. -->
+
+If your integration requires automated key provisioning (for example, headless CI environments without an interactive admin), [contact us](mailto:support@trakrf.id) — we'll handle provisioning manually for v1. There is no roadmap commitment to a programmatic mint endpoint; webhooks, OAuth, and client credentials are out of scope for v1.
 
 ## Request header
 
