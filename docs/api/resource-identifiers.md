@@ -92,14 +92,23 @@ Request and response field _names_ match (e.g., `current_location_external_key` 
 {
   "error": {
     "type": "validation_error",
-    "title": "Validation failed",
+    "title": "Invalid request",
     "status": 400,
     "detail": "unknown field 'id' in request body",
     "instance": "/api/v1/assets/4287",
-    "request_id": "01J..."
+    "request_id": "01J...",
+    "fields": [
+      {
+        "field": "id",
+        "code": "invalid_value",
+        "message": "unknown field"
+      }
+    ]
   }
 }
 ```
+
+A naive PUT of all four read-only fields produces one `fields[]` entry per offending key — see [Errors → Validation errors](./errors#validation-errors) for the complete envelope shape.
 
 Strip the four read-only fields before `PUT`. The minimal pattern with `jq`:
 
