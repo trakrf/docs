@@ -35,7 +35,7 @@ Offset-based. Two query params control the page:
 
 | Param    | Default | Max   | Notes                                                           |
 | -------- | ------- | ----- | --------------------------------------------------------------- |
-| `limit`  | `50`    | `200` | Page size. Values over 200 are rejected with `400 bad_request`. |
+| `limit`  | `50`    | `200` | Page size. Values over 200 are rejected with `400 validation_error` (`fields[].code = too_large`). See [Errors → Query-parameter validation errors](./errors#query-parameter-validation-errors). |
 | `offset` | `0`     | —     | Rows to skip. `offset=50&limit=50` gets the second page.        |
 
 Shell examples below use a `$BASE_URL` env var — set it to `https://app.trakrf.id` for production or `https://app.preview.trakrf.id` for preview. See [Authentication → Base URL](./authentication#base-url).
