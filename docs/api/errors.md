@@ -14,7 +14,7 @@ Non-2xx responses return `Content-Type: application/json` with the error object 
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "external_key must be 1-255 characters",
     "instance": "/api/v1/assets",
@@ -33,6 +33,26 @@ The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/
 | `detail`     | A longer human-readable explanation. Safe to log; may name the offending field or value.                                                                                                                                                |
 | `instance`   | The request path that produced the error. Useful when the same error appears across multiple logs.                                                                                                                                      |
 | `request_id` | A [ULID](https://github.com/ulid/spec) matching the `X-Request-ID` response header. Include this when filing support tickets.                                                                                                           |
+
+### Canonical titles
+
+`error.title` is fixed per `error.type`. Generated clients can rely on the pairing — branch on `type`, log `title`, surface `detail` to humans.
+
+| `error.type`             | `error.title`            |
+| ------------------------ | ------------------------ |
+| `validation_error`       | `Validation failed`      |
+| `bad_request`            | `Bad request`            |
+| `unauthorized`           | `Unauthorized`           |
+| `forbidden`              | `Forbidden`              |
+| `not_found`              | `Not found`              |
+| `method_not_allowed`     | `Method not allowed`     |
+| `conflict`               | `Conflict`               |
+| `unsupported_media_type` | `Unsupported media type` |
+| `missing_org_context`    | `Missing org context`    |
+| `rate_limited`           | `Rate limited`           |
+| `internal_error`         | `Internal server error`  |
+
+Per-call specifics (the offending field, the unparseable value, the resource id that didn't resolve) live in `detail` or `fields[]`, never in `title`.
 
 ## Error type catalog
 
@@ -119,7 +139,7 @@ List endpoints validate their query string the same way. The `field` value in th
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "limit must be ≤ 200",
     "instance": "/api/v1/assets",
@@ -139,7 +159,7 @@ List endpoints validate their query string the same way. The `field` value in th
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "unknown sort field: bogus",
     "instance": "/api/v1/assets",
@@ -159,7 +179,7 @@ List endpoints validate their query string the same way. The `field` value in th
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "Invalid 'from' timestamp; RFC3339 required",
     "instance": "/api/v1/assets/ASSET-0001/history",

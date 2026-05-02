@@ -94,7 +94,7 @@ The general rule: **any field present in the GET response but not in the request
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "unknown field 'id' in request body",
     "instance": "/api/v1/assets/4287",
@@ -185,6 +185,14 @@ curl -X POST \
 ```
 
 A caller-supplied `external_key` that collides with an existing live asset returns `409 conflict`. Once an asset is soft-deleted its `external_key` becomes immediately available for reuse. Full create flows live in the [Quickstart](./quickstart).
+
+## `is_active` is authoritative
+
+Assets and locations carry both an `is_active` boolean and a pair of `valid_from` / `valid_to` timestamps. The API treats `is_active` as the source of truth for whether the resource is usable right now. `valid_from` and `valid_to` are informational metadata — the v1 service does not compute effective state from them.
+
+Concretely: an asset with `is_active: true` and `valid_to: "2024-01-01T00:00:00Z"` (a `valid_to` already in the past) is still treated as active by the API. List filters on `is_active=true` will return it; `/lookup` will resolve it; `PUT`s will succeed.
+
+If your business logic needs time-based filtering ("active and within its validity window"), apply that filter client-side. A computed `is_active_effective` field is on the v1.x roadmap if customer pain materializes; do not depend on the service deriving it today.
 
 ## Tags use a composite natural key
 
