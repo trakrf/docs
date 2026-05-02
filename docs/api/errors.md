@@ -34,6 +34,26 @@ The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/
 | `instance`   | The request path that produced the error. Useful when the same error appears across multiple logs.                                                                                                                                      |
 | `request_id` | A [ULID](https://github.com/ulid/spec) matching the `X-Request-ID` response header. Include this when filing support tickets.                                                                                                           |
 
+### Canonical titles
+
+`error.title` is fixed per `error.type`. Generated clients can rely on the pairing — branch on `type`, log `title`, surface `detail` to humans.
+
+| `error.type`             | `error.title`            |
+| ------------------------ | ------------------------ |
+| `validation_error`       | `Validation failed`      |
+| `bad_request`            | `Bad request`            |
+| `unauthorized`           | `Unauthorized`           |
+| `forbidden`              | `Forbidden`              |
+| `not_found`              | `Not found`              |
+| `method_not_allowed`     | `Method not allowed`     |
+| `conflict`               | `Conflict`               |
+| `unsupported_media_type` | `Unsupported media type` |
+| `missing_org_context`    | `Missing org context`    |
+| `rate_limited`           | `Rate limited`           |
+| `internal_error`         | `Internal server error`  |
+
+Per-call specifics (the offending field, the unparseable value, the resource id that didn't resolve) live in `detail` or `fields[]`, never in `title`.
+
 ## Error type catalog
 
 | `type`                   | HTTP status | When you'll see it                                                                                                                                                                                                                               | Retry?                                 |
