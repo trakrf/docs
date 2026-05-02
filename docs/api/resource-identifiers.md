@@ -72,7 +72,17 @@ When a resource references another resource, the response includes both forms as
 }
 ```
 
-Both fields are populated whenever the relationship exists — no nested object, no follow-up call to resolve the related resource's natural key. If you need the `id` for a downstream API call, it's there; if you need the `external_key` to write back to your system of record, it's there too. When the relationship is unset (an asset that has never been scanned, a root location with no parent), both fields are absent from the response — the same omit-when-unset convention used on optional [date fields](./date-fields).
+Both fields are populated whenever the relationship exists — no nested object, no follow-up call to resolve the related resource's natural key. If you need the `id` for a downstream API call, it's there; if you need the `external_key` to write back to your system of record, it's there too. When the relationship is unset (an asset that has never been scanned, a root location with no parent), both fields are still **present in the response, set to `null`**. The OpenAPI spec declares them `nullable: true` and the service emits them on every response; clients should null-check, not key-presence-check.
+
+That makes three response-shape behaviors that coexist on these resources, and it's worth knowing which is which:
+
+| Behavior               | Fields                                                                                                  | Test for                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| **Always present**     | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)  | the value itself             |
+| **Present as `null`**  | `current_location_id`, `current_location_external_key`, `parent_id`, `parent_external_key`              | `field === null`             |
+| **Omitted when unset** | `valid_to`, `description` (and any optional field documented as omit-when-unset on its individual page) | key presence (`'k' in resp`) |
+
+The omit-when-unset set is small and explicit. When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs, and any field not called out in either is in the always-present row.
 
 ## Round-trip consistency
 
@@ -107,7 +117,7 @@ Locations follow the same flat-scalar pattern for their parent reference. A loca
 }
 ```
 
-Set either `parent_id` or `parent_external_key` on create or update to nest under an existing parent. Root locations (no parent) omit both fields.
+Set either `parent_id` or `parent_external_key` on create or update to nest under an existing parent. Root locations (no parent) carry both fields as `null`. They're never absent from the response — null-check, don't key-check.
 
 `parent_id` and `parent_external_key` are one-hop only — they describe the immediate parent, not the chain to the root. For multi-hop traversal use the dedicated endpoint:
 
