@@ -204,7 +204,3 @@ Tag responses still carry a canonical integer `id` for path-param access (e.g., 
 ```
 
 There's no top-level `/api/v1/tags/lookup` endpoint — tags are discovered through their parent resource, either embedded in an asset or location response or via `GET /api/v1/assets/{id}/tags`.
-
-## Authentication keys are different
-
-API keys (`/api/v1/orgs/{id}/api-keys`) follow a different identifier model from assets, locations, and tags — separate canonical `id` and JTI vocabulary, separate revocation paths. See [Authentication](./authentication) for the key lifecycle and the `/by-jti/{jti}` revocation route.
