@@ -19,7 +19,7 @@ The W5 spec-side work (declaring `sort` enums) shipped separately as platform PR
 
 Seeded locations carry `path: "WHS-01"` (preserves case and hyphens). Newly-created locations carry `path: "bb14_slug_test"` (lowercased, hyphens-to-underscores). Same field, two formats visible to integrators.
 
-**Disposition (per ticket):** doc-only fix. The lowercase-underscore behavior is canonical (TRA-569 S11 disposition); legacy seeded data preserves the old format and won't be migrated.
+**Disposition:** no doc change. We're pre-launch, so the inconsistency is fixed by reseeding to the canonical (lowercase + hyphen → underscore) format rather than by documenting a legacy carve-out. The existing `resource-identifiers.md` already documents the canonical transformation (line 161) and explicitly says `path` is not an identifier (line 165) — both of the ticket's "what to add" bullets are already covered. Reseeding is a separate platform/data concern, not in this PR's scope.
 
 ### W4 — PUT requires stripping six fields for locations, not four
 
@@ -61,14 +61,6 @@ Three options were considered:
 ## Changes
 
 ### File 1: `docs/api/resource-identifiers.md`
-
-#### W3 — add a legacy-format paragraph in the `path` discussion
-
-Insert after the existing paragraph that ends "lossy on `external_key`s that already contain underscores or that differ only in case" (around line 163):
-
-> Locations created in earlier seed data may carry `path` values that preserve the original case and hyphens of their `external_key` (e.g., `WHS-01` instead of `whs_01`). These rows are not migrated and remain visible to integrators. Treat `path` as informational only — never parse it for identity, and never rely on a specific format. Use `id` or `external_key` for identity.
-
-This is additive; it does not contradict the existing "derived via lowercase + hyphen → underscore" sentence, just adds the legacy carve-out the rest of the section was missing.
 
 #### W4 — rewrite "Read shape vs. write shape" as a generic rule
 
@@ -129,7 +121,6 @@ This mirrors the W4 generic-rule guidance (compile-time vs. runtime feedback for
 
 ## Acceptance criteria
 
-- [ ] `resource-identifiers.md`: `path` field documented as informational with explicit legacy-format acknowledgment.
 - [ ] `resource-identifiers.md`: "Read shape vs. write shape" section rewritten as the generic strip-read-only-fields rule, asset list framed as illustration.
 - [ ] `pagination-filtering-sorting.md`: broken `?sort=-is_active,external_key` example replaced with `?sort=-created_at,external_key`.
 - [ ] `pagination-filtering-sorting.md`: history worked example demonstrates `sort=-timestamp`.
