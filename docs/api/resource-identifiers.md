@@ -86,7 +86,7 @@ The omit-when-unset set is small and explicit. When in doubt, check the field's 
 
 ## Read shape vs. write shape
 
-Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields the server rejects on write — server-managed metadata (`id`, `created_at`, `updated_at`), derived fields (`path`, `depth` on locations), and embedded sub-resources (`tags`). The exact set varies by resource.
+Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields the server rejects on write — server-managed metadata (`id`, `created_at`, `updated_at`), derived fields (`tree_path`, `depth` on locations), and embedded sub-resources (`tags`). The exact set varies by resource.
 
 The general rule: **any field present in the GET response but not in the request schema is read-only and must be stripped before `PUT`.** A naive `GET` → mutate → `PUT` of the entire response object returns:
 
@@ -127,7 +127,7 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-Locations have a larger read-only set (notably the derived `path` and `depth` in addition to the metadata fields), and future resources may have their own. Don't memorize per-resource lists — derive the strip set from the schema diff between the response object and the request body shape. In a generated TypeScript client with strict typing, the read response type and the write request type are distinct, so the compiler enforces the strip — there's no manual deletion to do. In a generated Python or Go client without strict input types, you'll need to pop the read-only fields explicitly before sending, or wrap the API in a typed model that excludes them at the call site.
+Locations have a larger read-only set (notably the derived `tree_path` and `depth` in addition to the metadata fields), and future resources may have their own. Don't memorize per-resource lists — derive the strip set from the schema diff between the response object and the request body shape. In a generated TypeScript client with strict typing, the read response type and the write request type are distinct, so the compiler enforces the strip — there's no manual deletion to do. In a generated Python or Go client without strict input types, you'll need to pop the read-only fields explicitly before sending, or wrap the API in a typed model that excludes them at the call site.
 
 Either form of the FK pair is accepted on write. Send `location_id` if you have it; send `location_external_key` if that's what the user typed. Don't send both for the same relationship in one request — the server validates them as mutually exclusive.
 
@@ -143,7 +143,7 @@ Locations follow the same flat-scalar pattern for their parent reference. A loca
     "name": "Back storage, bay 2",
     "parent_id": 7,
     "parent_external_key": "WAREHOUSE-WEST",
-    "path": "warehouse_west.back_storage_2",
+    "tree_path": "warehouse_west.back_storage_2",
     "depth": 2
   }
 }
@@ -158,11 +158,11 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/locations/42/ancestors"
 ```
 
-`path` is a derived label-path helper, useful for sorting or indenting flat lists. Its segments are derived from each ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' paths. The path is **not** guaranteed to round-trip back to `external_key` — splitting `path` on `.` is unreliable in general, and outright wrong if any ancestor's `external_key` contains a literal period (those pass through the transformation untouched and become indistinguishable from segment separators).
+`tree_path` is a derived label-path helper, useful for sorting or indenting flat lists. Its segments are derived from each ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' tree paths. The value is **not** guaranteed to round-trip back to `external_key` — splitting `tree_path` on `.` is unreliable in general, and outright wrong if any ancestor's `external_key` contains a literal period (those pass through the transformation untouched and become indistinguishable from segment separators).
 
-If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`. Don't try to reverse the lowercasing or underscore substitution from `path`; the transformation is lossy on `external_key`s that already contain underscores or that differ only in case.
+If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`. Don't try to reverse the lowercasing or underscore substitution from `tree_path`; the transformation is lossy on `external_key`s that already contain underscores or that differ only in case.
 
-`path` is also not an identifier — you can't look a location up by its `path`. Use `GET /api/v1/locations/lookup?external_key=...` for natural-key lookups.
+`tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use `GET /api/v1/locations/lookup?external_key=...` for natural-key lookups.
 
 ## Asset `external_key` is optional
 
