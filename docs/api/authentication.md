@@ -41,7 +41,7 @@ Each key is issued with one or more scopes. The API rejects requests whose key l
 
 ### UI labels vs scope strings {#ui-labels}
 
-The **New key** form in the web app lets you pick a resource (Assets / Locations / Scans) and an access level (None / Read / Read+Write). Each combination maps to one or two of the scope strings used throughout these docs and in API responses. `keys:admin` is not exposed in the form — admin-tier keys are minted via API, see [Programmatic key rotation](#programmatic-key-rotation).
+The **New key** form in the web app lets you pick a resource (Assets / Locations / History) and an access level (None / Read / Read+Write). Each combination maps to one or two of the scope strings used throughout these docs and in API responses.
 
 | UI form (resource × level) | Scopes granted                      |
 | -------------------------- | ----------------------------------- |
@@ -49,7 +49,7 @@ The **New key** form in the web app lets you pick a resource (Assets / Locations
 | Assets → Read+Write        | `assets:read`, `assets:write`       |
 | Locations → Read           | `locations:read`                    |
 | Locations → Read+Write     | `locations:read`, `locations:write` |
-| Scans → Read               | `scans:read`                        |
+| History → Read             | `history:read`                      |
 
 Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
 
@@ -59,14 +59,12 @@ Selecting **None** for a resource grants no scope for that resource. Selecting *
 | `assets:write`    | Write  | `POST /assets`, `PUT /assets/{id}`, `DELETE /assets/{id}`                                                                    |
 | `locations:read`  | Read   | `GET /locations`, `GET /locations/{id}`, `GET /locations/lookup`                                                             |
 | `locations:write` | Write  | `POST /locations`, `PUT /locations/{id}`, `DELETE /locations/{id}`                                                           |
-| `scans:read`      | Read   | `GET /locations/current`, `GET /assets/{id}/history`, scan-event endpoints                                                   |
-| `keys:admin`      | Admin  | `POST /orgs/{id}/api-keys`, `GET /orgs/{id}/api-keys`, `DELETE /orgs/{id}/api-keys/{key_id}`, `.../api-keys/by-jti/{jti}`    |
+| `history:read`    | Read   | `GET /locations/current`, `GET /assets/{id}/history`                                                                         |
 
 A few non-obvious pairings worth calling out:
 
-- **`/locations/current`** is gated by **`scans:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the scans scope.
-- **`/assets/{id}/history`** is gated by **`scans:read`** for the same reason — it's a projection of scan events, not a property of the asset.
-- **`keys:admin`** is the only "admin" scope in v1 — it gates key creation, listing, and revocation on the caller's own org. A `keys:admin` key may mint another key with `keys:admin`, enabling unattended self-rotation. See [Programmatic key rotation](#programmatic-key-rotation).
+- **`/locations/current`** is gated by **`history:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the history scope.
+- **`/assets/{id}/history`** is gated by **`history:read`** for the same reason — it's a projection of scan events, not a property of the asset.
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).
 
