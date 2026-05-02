@@ -36,7 +36,7 @@ Preview-scoped keys will not authenticate against production and vice versa; the
 1. Sign in at the <EnvSignInLink><EnvLabel /> web app</EnvSignInLink>.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page configures devices — not keys.)
 3. Keys are scoped to the org selected in the avatar menu. If you admin multiple orgs, check the switcher first. ([details](../api/authentication#mint-your-first-api-key))
-4. Click **New key**. Give it a descriptive name (e.g. "local dev"), choose scopes (`scans:read` alone is enough for this quickstart — the `/locations/current` endpoint is gated by `scans:read`; grant `assets:read` and `locations:read` if you plan to hit the other read endpoints), and submit.
+4. Click **New key**. Give it a descriptive name (e.g. "local dev"), choose scopes (`history:read` alone is enough for this quickstart — the `/locations/current` endpoint is gated by `history:read`; grant `assets:read` and `locations:read` if you plan to hit the other read endpoints), and submit.
 5. **Copy the JWT immediately.** It's shown once at creation time and can't be recovered later.
 6. Save it to an environment variable for the next steps:
 
@@ -48,7 +48,7 @@ Full detail: [Authentication → Mint your first API key](../api/authentication#
 
 ## 3. Make your first call
 
-The `/api/v1/locations/current` endpoint returns a snapshot of where TrakRF last saw each asset. It's cheap, requires `scans:read`, and gives you a live signal that your key works:
+The `/api/v1/locations/current` endpoint returns a snapshot of where TrakRF last saw each asset. It's cheap, requires `history:read`, and gives you a live signal that your key works:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
@@ -76,7 +76,7 @@ A successful response looks like:
 
 The `data` array holds one item per asset that has ever been scanned. Each item carries both forms of the asset and location identifiers as flat scalar fields: integer `id` (server-assigned, canonical for path params and FK joins) and string `external_key` (your handle, useful for joining back to your system of record). See [Resource identifiers](../api/resource-identifiers).
 
-If you get a `401`, the key is malformed or not being sent in the header. If you get a `403`, the body names the missing scope — for this endpoint it'll be `"Missing required scope: scans:read"`. If you get a `429`, you're being rate-limited — see [Rate limits](../api/rate-limits). If you're calling from browser JavaScript and getting a CORS error with no body, the API is server-to-server only ([details](../api/authentication#server-to-server)).
+If you get a `401`, the key is malformed or not being sent in the header. If you get a `403`, the body names the missing scope — for this endpoint it'll be `"Missing required scope: history:read"`. If you get a `429`, you're being rate-limited — see [Rate limits](../api/rate-limits). If you're calling from browser JavaScript and getting a CORS error with no body, the API is server-to-server only ([details](../api/authentication#server-to-server)).
 
 All error bodies are wrapped in an `error` key — a `403` looks like:
 
@@ -86,7 +86,7 @@ All error bodies are wrapped in an `error` key — a `403` looks like:
     "type": "forbidden",
     "title": "Forbidden",
     "status": 403,
-    "detail": "Missing required scope: scans:read",
+    "detail": "Missing required scope: history:read",
     "instance": "/api/v1/locations/current",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
   }
