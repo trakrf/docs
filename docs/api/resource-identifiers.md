@@ -143,7 +143,7 @@ Locations follow the same flat-scalar pattern for their parent reference. A loca
     "name": "Back storage, bay 2",
     "parent_id": 7,
     "parent_external_key": "WAREHOUSE-WEST",
-    "path": "WAREHOUSE-WEST.BACK-STORAGE-2",
+    "path": "warehouse_west.back_storage_2",
     "depth": 2
   }
 }
@@ -158,7 +158,11 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/locations/42/ancestors"
 ```
 
-`path` is a derived label-path helper (`WAREHOUSE-WEST.BACK-STORAGE-2`) useful for sorting or indenting flat lists. It's not an identifier — you can't look a location up by its `path`.
+`path` is a derived label-path helper, useful for sorting or indenting flat lists. Its segments are derived from each ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' paths. The path is **not** guaranteed to round-trip back to `external_key` — splitting `path` on `.` recovers the normalized segments, not the original natural keys.
+
+If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`. Don't try to reverse the lowercasing or underscore substitution from `path`; the transformation is lossy on `external_key`s that already contain underscores or that differ only in case.
+
+`path` is also not an identifier — you can't look a location up by its `path`. Use `GET /api/v1/locations/lookup?external_key=...` for natural-key lookups.
 
 ## Asset `external_key` is optional
 
