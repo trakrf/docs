@@ -148,7 +148,7 @@ All list endpoints take a `sort` parameter. Comma-separated for multi-key sorts,
 ?sort=-created_at,external_key
 ```
 
-Sortable fields vary per resource; the interactive reference at [`/api`](/api) lists the exact set each endpoint accepts. Unknown sort fields return `400 validation_error`. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending).
+Sortable fields vary per resource; the interactive reference at [`/api`](/api) lists the exact set each endpoint accepts. Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending).
 
 ## Worked examples per resource
 
