@@ -94,7 +94,7 @@ The general rule: **any field present in the GET response but not in the request
 {
   "error": {
     "type": "validation_error",
-    "title": "Invalid request",
+    "title": "Validation failed",
     "status": 400,
     "detail": "unknown field 'id' in request body",
     "instance": "/api/v1/assets/4287",
