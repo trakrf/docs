@@ -33,7 +33,7 @@ For server-to-server or scripted integrations, the supported credential is an **
 
 ## Response shape: `/orgs/me` {#orgs-me}
 
-`GET /api/v1/orgs/me` is excluded from rate limiting (see [Rate limits → Exclusions](./rate-limits#exclusions)) and is commonly used as an API-key liveness probe. It uses the same `{"data": ...}` envelope as every other endpoint on the public surface:
+`GET /api/v1/orgs/me` is rate-limited like every other public endpoint (see [Rate limits → All endpoints participate in the bucket](./rate-limits#all-endpoints-participate-in-the-bucket)) and is commonly used as an API-key liveness probe. It uses the same `{"data": ...}` envelope as every other endpoint on the public surface:
 
 ```json
 {
