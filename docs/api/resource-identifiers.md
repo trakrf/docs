@@ -84,20 +84,43 @@ That makes three response-shape behaviors that coexist on these resources, and i
 
 The omit-when-unset set is small and explicit. When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs, and any field not called out in either is in the always-present row.
 
-## Round-trip consistency
+## Read shape vs. write shape
 
-Request and response field names match, so generated clients can `GET` a resource, mutate fields, and `PUT` it back without remapping. Read `current_location_external_key` off an asset, edit it, and send it back under the same name:
+Request and response field _names_ match (e.g., `current_location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include four fields that the server rejects on write — `id`, `created_at`, `updated_at`, and `tags`. A naive `GET` → mutate → `PUT` of the entire response object returns:
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "title": "Validation failed",
+    "status": 400,
+    "detail": "unknown field 'id' in request body",
+    "instance": "/api/v1/assets/4287",
+    "request_id": "01J..."
+  }
+}
+```
+
+Strip the four read-only fields before `PUT`. The minimal pattern with `jq`:
 
 ```bash
 # Move an asset to a new location by its external_key
-curl -X PUT \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     -H "Content-Type: application/json" \
-     -d '{"current_location_external_key": "PORTABLE-1437"}' \
-     "$BASE_URL/api/v1/assets/4287"
+curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/assets/4287" \
+| jq '.data | del(.id, .created_at, .updated_at, .tags)
+       | .current_location_external_key = "PORTABLE-1437"' \
+| curl -X PUT \
+       -H "Authorization: Bearer $TRAKRF_API_KEY" \
+       -H "Content-Type: application/json" \
+       -d @- \
+       "$BASE_URL/api/v1/assets/4287"
 ```
 
-Either form is accepted on write. Send `current_location_id` if you have it; send `current_location_external_key` if that's what the user typed. Don't send both for the same relationship in one request.
+In a generated TypeScript client with strict typing, the read response type and the write request type are distinct, so the compiler enforces the strip — there's no manual deletion to do. In a generated Python or Go client without strict input types, you'll need to pop the four fields explicitly before sending, or wrap the API in a typed model that excludes them at the call site.
+
+Either form of the FK pair is accepted on write. Send `current_location_id` if you have it; send `current_location_external_key` if that's what the user typed. Don't send both for the same relationship in one request — the server validates them as mutually exclusive.
+
+The same four-field strip applies to `PUT /api/v1/locations/{id}`: `id`, `created_at`, `updated_at`, plus the read-only derived `path` and `depth` (those are computed from the parent chain and are not accepted on write).
 
 ## Locations: `parent_id` and `parent_external_key`
 
