@@ -144,8 +144,8 @@ All list endpoints take a `sort` parameter. Comma-separated for multi-key sorts,
 # By name ascending
 ?sort=name
 
-# Active status descending, then external_key ascending
-?sort=-is_active,external_key
+# Newest first, then external_key as tiebreaker
+?sort=-created_at,external_key
 ```
 
 Sortable fields vary per resource; the interactive reference at [`/api`](/api) lists the exact set each endpoint accepts. Unknown sort fields return `400 validation_error`. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending).
