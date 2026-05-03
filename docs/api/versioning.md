@@ -57,6 +57,8 @@ These are designed to grow:
 - **Validation field codes** (`fields[i].code` on `validation_error` responses) — current set is `required`, `invalid_value`, `too_short`, `too_long`, `too_small`, `too_large`. New codes may appear. Treat unknown codes as generic invalid-value and surface the `message` field.
 - **Scope strings** (keys on API-key responses, scope columns in the UI) — TrakRF may introduce new scopes (e.g. `reports:read`, `webhooks:write`) in any v1 release. Clients that display the list of scopes available to a key must render unknown scope strings as-is rather than filtering them out.
 
+The `x-extensible-enum: true` annotation captures intent but is not honored by today's mainstream OpenAPI codegen. `openapi-typescript@7.x` and `openapi-generator-cli` (Go, Java, Python targets among others) emit these as closed unions or fixed enum types; generated clients reject unknown values at parse time. Treat the annotation as documentation of TrakRF's stability contract, not as a generator hint — write client code against the [unknown-value pattern below](#how-to-handle-unknown-values-in-client-code), and bypass the generated enum type when surfacing the raw `type` / `code` / scope string to your own logic.
+
 ### How to handle unknown values in client code
 
 The golden rule: **never treat an unknown enum value as a server bug**. Typical patterns:

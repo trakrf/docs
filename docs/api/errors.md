@@ -80,6 +80,8 @@ One quirk worth noting: sending the wrong JSON type for a body field (for exampl
 
 The `type` enum is **extensible** — TrakRF may add new error types in any v1 release. Clients should handle unknown `type` values gracefully (fall through to a generic error handler based on HTTP status code, which is a closed enum).
 
+The OpenAPI spec marks `error.type` with `x-extensible-enum: true`, but mainstream codegen tools don't honor that extension — see [Versioning → Open (extensible) enums in v1](./versioning#open-extensible-enums-in-v1) for the codegen caveat and recommended client-side pattern.
+
 ## Validation errors
 
 When `type` is `validation_error`, the envelope carries an additional `fields` array with one entry per invalid field:
