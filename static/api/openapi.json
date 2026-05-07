@@ -1,5 +1,25 @@
 {
   "components": {
+    "responses": {
+      "MethodNotAllowed": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/errors.ErrorResponse"
+            }
+          }
+        },
+        "description": "Method not allowed",
+        "headers": {
+          "Allow": {
+            "description": "Comma-separated list of HTTP methods supported on this resource (RFC 7231 §6.5.5).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "schemas": {
       "asset.CreateAssetWithTagsRequest": {
         "properties": {
@@ -60,6 +80,7 @@
         "properties": {
           "created_at": {
             "format": "date-time",
+            "readOnly": true,
             "type": "string"
           },
           "description": {
@@ -69,6 +90,7 @@
             "type": "string"
           },
           "id": {
+            "readOnly": true,
             "type": "integer"
           },
           "is_active": {
@@ -93,10 +115,12 @@
             "items": {
               "$ref": "#/components/schemas/shared.Tag"
             },
+            "readOnly": true,
             "type": "array"
           },
           "updated_at": {
             "format": "date-time",
+            "readOnly": true,
             "type": "string"
           },
           "valid_from": {
@@ -381,9 +405,11 @@
         "properties": {
           "created_at": {
             "format": "date-time",
+            "readOnly": true,
             "type": "string"
           },
           "depth": {
+            "readOnly": true,
             "type": "integer"
           },
           "description": {
@@ -393,6 +419,7 @@
             "type": "string"
           },
           "id": {
+            "readOnly": true,
             "type": "integer"
           },
           "is_active": {
@@ -413,13 +440,16 @@
             "items": {
               "$ref": "#/components/schemas/shared.Tag"
             },
+            "readOnly": true,
             "type": "array"
           },
           "tree_path": {
+            "readOnly": true,
             "type": "string"
           },
           "updated_at": {
             "format": "date-time",
+            "readOnly": true,
             "type": "string"
           },
           "valid_from": {
