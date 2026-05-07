@@ -105,9 +105,9 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?is_active=true"
 ```
 
-### Fuzzy search
+### Substring search
 
-`q` performs a fuzzy search across the resource's most commonly queried fields:
+`q` performs a substring search (case-insensitive) across the resource's most commonly queried fields:
 
 | Endpoint                        | Fields matched                                          |
 | ------------------------------- | ------------------------------------------------------- |
@@ -120,8 +120,6 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?q=forklift"
 ```
-
-`q` is case-insensitive and matches substrings.
 
 ### Time range (history)
 
