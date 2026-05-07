@@ -45,7 +45,7 @@ Full detail: [Authentication → Mint your first API key](./authentication#mint-
 
 ## 3. Verify your key works
 
-`GET /api/v1/orgs/me` returns the organization the API key is scoped to. It's the canonical "tell me about myself" endpoint, requires no specific scope, and confirms end-to-end that your key authenticates against the right environment:
+`GET /api/v1/orgs/me` returns the organization the API key is scoped to. It's the canonical "tell me about myself" endpoint, requires no specific scope, and confirms end-to-end that your key authenticates against the right environment. **Use an API key here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](./private-endpoints#orgs-me) for the precise rule.
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
