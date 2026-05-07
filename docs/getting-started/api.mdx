@@ -11,11 +11,11 @@ import EnvSwitcher from "@site/src/components/EnvSwitcher";
 
 # Getting started — using the API
 
-This page takes you from "I just signed up" to "I called the TrakRF API and got a `200` back" in about 10 minutes, using only standard HTTP tools. It mirrors the [UI quickstart](./ui) — pick whichever track matches your integration plan.
+This page takes you from "I have an API key" to "I called the TrakRF API and got a `200` back" in about 10 minutes, using only standard HTTP tools. It mirrors the [UI quickstart](./ui) — pick whichever track matches your integration plan.
 
 ## What you'll need
 
-- A TrakRF account. If you were given preview credentials, you already have one — skip to step 1. Otherwise <EnvSignInLink>sign up at the <EnvLabel /> app</EnvSignInLink>.
+- A TrakRF account and an API key. <EnvSignInLink>Sign in (or sign up) at the <EnvLabel /> app</EnvSignInLink>, then mint a key from the **avatar menu → API Keys → New Key** ([detail](../api/authentication#mint-your-first-api-key)). The token is shown once at creation — copy it immediately.
 - An API client of your choice — `curl`, Postman, HTTPie, or your language's standard HTTP library. This guide uses `curl` in examples.
 - 10 minutes.
 
@@ -31,24 +31,15 @@ If your account lives on the other environment, use the switcher above — the e
 
 Preview-scoped keys will not authenticate against production and vice versa; the switcher above keeps the curl snippets aligned with whichever world your key was minted on.
 
-## 2. Mint your first API key
+## 2. Make your first call
 
-1. Sign in at the <EnvSignInLink><EnvLabel /> web app</EnvSignInLink>.
-2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page configures devices — not keys.)
-3. Keys are scoped to the org selected in the avatar menu. If you admin multiple orgs, check the switcher first. ([details](../api/authentication#mint-your-first-api-key))
-4. Click **New key**. Give it a descriptive name (e.g. "local dev"), choose scopes (`history:read` alone is enough for this quickstart — the `/locations/current` endpoint is gated by `history:read`; grant `assets:read` and `locations:read` if you plan to hit the other read endpoints), and submit.
-5. **Copy the JWT immediately.** It's shown once at creation time and can't be recovered later.
-6. Save it to an environment variable for the next steps:
+Save your API key to an environment variable for the rest of this page:
 
-   ```bash
-   export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-   ```
+```bash
+export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
 
-Full detail: [Authentication → Mint your first API key](../api/authentication#mint-your-first-api-key).
-
-## 3. Make your first call
-
-The `/api/v1/locations/current` endpoint returns a snapshot of where TrakRF last saw each asset. It's cheap, requires `history:read`, and gives you a live signal that your key works:
+The `/api/v1/locations/current` endpoint returns a snapshot of where TrakRF last saw each asset. It's cheap, requires `history:read`, and gives you a live signal that your key works. If your key was minted without `history:read`, [mint a new one](../api/authentication#mint-your-first-api-key) — scopes can't be edited after creation.
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
@@ -95,14 +86,14 @@ All error bodies are wrapped in an `error` key — a `403` looks like:
 
 Write handlers against `body.error.type` and `body.error.detail`, not top-level fields. Full catalog: [Errors](../api/errors).
 
-## 4. Interpret the response
+## 3. Interpret the response
 
 The two key concepts integrators trip on:
 
 - **Two identifiers per resource** — every asset and location has an integer `id` (server-assigned, used in URL path params and FK fields) and a string `external_key` (your handle for joining TrakRF records back to a SKU, asset tag, or ERP code). Both are first-class — pick whichever fits the context. Full convention: [Resource identifiers](../api/resource-identifiers).
 - **Response envelope** — every endpoint on the public surface wraps payloads in `{ "data": ..., ... }`, including `GET /api/v1/orgs/me`. List endpoints add pagination metadata (`limit`, `offset`, `total_count`) — see [Pagination, filtering, sorting](../api/pagination-filtering-sorting).
 
-## 5. Next steps
+## 4. Next steps
 
 - **[API docs landing](../api/)** — concept-guide map and starting points.
 - **[Interactive reference](/api)** — every endpoint, request/response shape, try-it-now widget.
