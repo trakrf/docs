@@ -6,11 +6,17 @@ sidebar_position: 1
 
 The TrakRF API uses **API keys** to authenticate every request. API keys are JSON Web Tokens (JWTs) scoped to a single organization and a set of permissions.
 
+## Where keys come from
+
+TrakRF API keys are minted from the SPA's **avatar menu → API Keys → New Key**. The token is shown once at creation — save it immediately.
+
+This is by design. We don't offer programmatic key minting because possession of an API-creating API would defeat the trust boundary: any compromised key could be used to mint a more-privileged one. The SPA's session-authenticated mint flow keeps key issuance tied to user identity, consistent with how Stripe gates dashboard-only key issuance.
+
+If you have a use case that genuinely requires programmatic provisioning (per-tenant SaaS automation, CI rigs that need ephemeral keys), [contact us](mailto:support@trakrf.id) — we'll consider it for v2 based on demand.
+
 ## Mint your first API key {#mint-your-first-api-key}
 
-API keys are minted through the TrakRF web app. v1 does not provide a programmatic key-mint endpoint — the flow is browser-mediated by design, consistent with how Stripe gates dashboard-only key issuance.
-
-1. Sign in with an admin account (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)). Both hosts run the same UI and flow — use the one that matches your account. See [Base URL](#base-url) for the matching API host.
+1. Sign in (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)). Both hosts run the same UI and flow — use the one that matches your account. See [Base URL](#base-url) for the matching API host.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — signal power, session, worker log level — not key management.)
 3. **If your account belongs to multiple organizations,** API keys are scoped to whichever org is currently selected in the avatar menu. Check the org switcher before clicking **New key** — a key minted under the wrong org cannot be reassigned.
 4. Click **New key**. Give it a descriptive name (e.g. `"prod-integration"` or `"local-dev"`) and pick the scopes the integration needs — only the scopes required for the endpoints you'll call. See the [Scopes](#scopes) table below.
@@ -18,8 +24,6 @@ API keys are minted through the TrakRF web app. v1 does not provide a programmat
 6. Use it as the `Authorization: Bearer <key>` header on every API request. See [Request header](#request-header) for the exact format.
 
 <!-- TODO: screenshot of avatar menu → API Keys → New key dialog; capture via scripts/refresh-screenshots.sh pattern. -->
-
-If your integration requires automated key provisioning (for example, headless CI environments without an interactive admin), [contact us](mailto:support@trakrf.id) — we'll handle provisioning manually for v1. There is no roadmap commitment to a programmatic mint endpoint; webhooks, OAuth, and client credentials are out of scope for v1.
 
 ## Request header
 
