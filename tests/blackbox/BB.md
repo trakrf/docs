@@ -48,7 +48,7 @@ Verify every claim in the docs against the live service. When the docs and the s
 
 After your exploratory evaluation, run a mechanical pass against the published OpenAPI spec. An integration partner will auto-generate a connector from this spec — if the spec and the service disagree, the connector breaks.
 
-1. **Fetch the spec.** The OpenAPI spec is published at `$API_TEST_DOCS_URL/redocusaurus/trakrf-api.yaml`. If that path 404s, that is itself a finding worth reporting. If the docs don't link to it from a discoverable location, that's also a finding.
+1. **Fetch the spec.** The OpenAPI spec is published at `$API_TEST_DOCS_URL/api/openapi.yaml` (JSON variant: `$API_TEST_DOCS_URL/api/openapi.json`). If that path 404s, that is itself a finding worth reporting. If the docs don't link to it from a discoverable location, that's also a finding.
 
 2. **Walk every path.** For each endpoint in the spec, make a real call (with your API key) and verify:
    - Does the endpoint respond at all? (404 = spec lies about the route)

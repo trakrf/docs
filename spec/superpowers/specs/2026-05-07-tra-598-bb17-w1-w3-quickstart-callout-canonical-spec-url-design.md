@@ -71,7 +71,7 @@ Per ticket, run two grep sweeps and document findings in a Linear comment.
 1. **Residual non-canonical refs.** After the redirect lands, grep:
    - `redocusaurus/` across `docs/`, `static/`, `src/`, `tests/`, `*.md`, `*.ts`, `*.mdx`
    - `assets/files/openapi-` across the same surfaces
-   Expect zero hits in `docs/` after the BB.md edit. Hits inside `node_modules/`, build output, or the `_redirects` file itself are fine.
+     Expect zero hits in `docs/` after the BB.md edit. Hits inside `node_modules/`, build output, or the `_redirects` file itself are fine.
 
 2. **SPA-only steps that hand-wave.** Scan Quickstart and Authentication for other actions that silently require the browser: key revocation, scope changes, key rotation, organization switching. The Authentication page already documents the lifecycle (`Key lifecycle` section) but doesn't explicitly say "all of these are SPA-only." Worth a small umbrella callout if the audit confirms the pattern.
 
