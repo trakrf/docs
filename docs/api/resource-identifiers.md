@@ -21,7 +21,7 @@ This is the conventional REST shape and the URL stays valid even if the asset's 
 
 The integer `id` field on each schema is unique only within that resource type. Numeric values can collide across types — an asset and a tag may share the same integer `id`. (BB16 testing observed `790505327` as both an asset id and a location-tag id within a single org.)
 
-When passing ids between systems, qualify them with the resource type (`asset_id`, `location_id`, `tag_id`). The string `external_key` field is unique within an org *and* carries no cross-type ambiguity, so it's the safer cross-resource identifier when types may be mixed in flight.
+When passing ids between systems, qualify them with the resource type (`asset_id`, `location_id`, `tag_id`). The string `external_key` field is unique within an org _and_ carries no cross-type ambiguity, so it's the safer cross-resource identifier when types may be mixed in flight.
 
 ## Natural-key lookup uses `/lookup?external_key=`
 
@@ -82,10 +82,10 @@ Both fields are populated whenever the relationship exists — no nested object,
 
 That makes three response-shape behaviors that coexist on these resources, and it's worth knowing which is which:
 
-| Behavior               | Fields                                                                                                 | Test for                     |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------- |
-| **Always present**     | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars) | the value itself             |
-| **Present as `null`**  | `location_id`, `location_external_key`, `parent_id`, `parent_external_key`                             | `field === null`             |
+| Behavior               | Fields                                                                                                  | Test for                     |
+| ---------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| **Always present**     | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)  | the value itself             |
+| **Present as `null`**  | `location_id`, `location_external_key`, `parent_id`, `parent_external_key`                              | `field === null`             |
 | **Omitted when unset** | `description`, `valid_to` (and any optional field documented as omit-when-unset on its individual page) | key presence (`'k' in resp`) |
 
 The omit-when-unset set is small and explicit. `description` and `valid_to` are the two on the asset and location response shapes today; both are absent from the response when no value is set, rather than emitted as `null`. When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs, and any field not called out elsewhere is in the always-present row.

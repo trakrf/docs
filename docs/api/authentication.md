@@ -53,13 +53,13 @@ The **New key** form in the web app lets you pick a resource (Assets / Locations
 
 Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
 
-| Scope             | Access | Endpoints (representative)                                                                                                   |
-| ----------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `assets:read`     | Read   | `GET /assets`, `GET /assets/{id}`, `GET /assets/lookup`                                                                      |
-| `assets:write`    | Write  | `POST /assets`, `PUT /assets/{id}`, `DELETE /assets/{id}`                                                                    |
-| `locations:read`  | Read   | `GET /locations`, `GET /locations/{id}`, `GET /locations/lookup`                                                             |
-| `locations:write` | Write  | `POST /locations`, `PUT /locations/{id}`, `DELETE /locations/{id}`                                                           |
-| `history:read`    | Read   | `GET /locations/current`, `GET /assets/{id}/history`                                                                         |
+| Scope             | Access | Endpoints (representative)                                         |
+| ----------------- | ------ | ------------------------------------------------------------------ |
+| `assets:read`     | Read   | `GET /assets`, `GET /assets/{id}`, `GET /assets/lookup`            |
+| `assets:write`    | Write  | `POST /assets`, `PUT /assets/{id}`, `DELETE /assets/{id}`          |
+| `locations:read`  | Read   | `GET /locations`, `GET /locations/{id}`, `GET /locations/lookup`   |
+| `locations:write` | Write  | `POST /locations`, `PUT /locations/{id}`, `DELETE /locations/{id}` |
+| `history:read`    | Read   | `GET /locations/current`, `GET /assets/{id}/history`               |
 
 A few non-obvious pairings worth calling out:
 

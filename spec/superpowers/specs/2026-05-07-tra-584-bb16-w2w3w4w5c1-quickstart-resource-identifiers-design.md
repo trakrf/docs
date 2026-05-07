@@ -15,13 +15,13 @@ Five docs-side fixes to the TrakRF API concept guides, surfaced by the BB16 dogf
 
 BB16 testing exposed five places where the docs site contradicts live service behavior. Each is a small prose edit against an existing concept page. The TRA-585 sibling ticket landed the spec-side cleanup; this one closes the prose-side gaps.
 
-| Finding | Page | Nature of fix |
-| ------- | ---- | ------------- |
-| W2 | `quickstart.mdx` (step 3) + `authentication.md` (server-to-server section) | Add inline note that `/orgs/me` rejects session JWTs and requires an API key |
-| W3 | `quickstart.mdx` (step 3 troubleshooting block) | Update 401 sample to match the canonical error catalog (`Unauthorized` / `Authorization header is required`) |
-| W4 | `resource-identifiers.md` (response-shape table) | Move `description` out of the "and most scalars" implicit always-present bucket; document it as omit-when-unset |
-| W5 | `pagination-filtering-sorting.md` (`q` section) | Replace "fuzzy search" wording with "substring search (case-insensitive)" to match spec and service |
-| C1 | `resource-identifiers.md` (new short subsection) | Add a callout: integer `id` is unique per resource type only; cross-type collisions can occur |
+| Finding | Page                                                                       | Nature of fix                                                                                                   |
+| ------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| W2      | `quickstart.mdx` (step 3) + `authentication.md` (server-to-server section) | Add inline note that `/orgs/me` rejects session JWTs and requires an API key                                    |
+| W3      | `quickstart.mdx` (step 3 troubleshooting block)                            | Update 401 sample to match the canonical error catalog (`Unauthorized` / `Authorization header is required`)    |
+| W4      | `resource-identifiers.md` (response-shape table)                           | Move `description` out of the "and most scalars" implicit always-present bucket; document it as omit-when-unset |
+| W5      | `pagination-filtering-sorting.md` (`q` section)                            | Replace "fuzzy search" wording with "substring search (case-insensitive)" to match spec and service             |
+| C1      | `resource-identifiers.md` (new short subsection)                           | Add a callout: integer `id` is unique per resource type only; cross-type collisions can occur                   |
 
 ## Verified state (pre-edit)
 
