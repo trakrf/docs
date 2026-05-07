@@ -31,6 +31,10 @@ Preview-scoped keys will not authenticate against production and vice versa; the
 
 If you don't already have an API key, sign in to the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>, open the **avatar menu → API Keys → New Key**, name the key, and submit. The full JWT is shown once at creation — copy it immediately; it cannot be shown again. Full walkthrough (scope picker, expiration, multi-org switcher): [Authentication → Mint your first API key](./authentication#mint-your-first-api-key).
 
+:::note Browser required to mint a key
+Minting an API key requires an interactive browser session — there is no programmatic mint endpoint by design. CI/headless setups should mint a key out-of-band, paste it into a secret store (env var, vault, GitHub Actions secret), and reference it from there. See [Authentication → Where keys come from](./authentication#where-keys-come-from) for the design rationale and a contact path if your use case genuinely needs programmatic provisioning.
+:::
+
 Save the key to an environment variable for the rest of this page:
 
 ```bash

@@ -109,6 +109,8 @@ const data = await res.json();
 
 ## Key lifecycle
 
+All lifecycle actions — creation, listing, rotation, revocation — happen in the SPA. There is no programmatic API for key management; see [Where keys come from](#where-keys-come-from) for the design rationale.
+
 - **Creation:** keys are minted by an organization administrator. The full JWT is shown **once** at creation time — copy it immediately to your secrets store.
 - **Listing:** the key's prefix and metadata (name, scopes, created / last-used timestamps) remain visible to administrators; the full JWT is never shown again.
 - **Rotation:** create a new key, update your integration, then revoke the old one. TrakRF does not support in-place key rotation; create-new-revoke-old keeps both keys valid during the cutover.
