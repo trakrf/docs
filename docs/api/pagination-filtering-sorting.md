@@ -33,10 +33,10 @@ Every list endpoint returns the same envelope:
 
 Offset-based. Two query params control the page:
 
-| Param    | Default | Max   | Notes                                                           |
-| -------- | ------- | ----- | --------------------------------------------------------------- |
+| Param    | Default | Max   | Notes                                                                                                                                                                                            |
+| -------- | ------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `limit`  | `50`    | `200` | Page size. Values over 200 are rejected with `400 validation_error` (`fields[].code = too_large`). See [Errors → Query-parameter validation errors](./errors#query-parameter-validation-errors). |
-| `offset` | `0`     | —     | Rows to skip. `offset=50&limit=50` gets the second page.        |
+| `offset` | `0`     | —     | Rows to skip. `offset=50&limit=50` gets the second page.                                                                                                                                         |
 
 Shell examples below use a `$BASE_URL` env var — set it to `https://app.trakrf.id` for production or `https://app.preview.trakrf.id` for preview. See [Authentication → Base URL](./authentication#base-url).
 
@@ -73,12 +73,12 @@ Offset pagination reflects the table state at each request. If rows are inserted
 
 Filter parameters are specific to each resource. All filters are query parameters; when a filter accepts multiple values, pass the parameter multiple times (not comma-separated).
 
-| Endpoint                          | Filter params                                                                                  |
-| --------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `GET /api/v1/assets`              | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`             |
-| `GET /api/v1/locations`           | `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`                  |
-| `GET /api/v1/locations/current`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted`, `q`       |
-| `GET /api/v1/assets/{id}/history` | `from`, `to` (RFC 3339 timestamps)                                                             |
+| Endpoint                          | Filter params                                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------------------- |
+| `GET /api/v1/assets`              | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`       |
+| `GET /api/v1/locations`           | `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`           |
+| `GET /api/v1/locations/current`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted`, `q` |
+| `GET /api/v1/assets/{id}/history` | `from`, `to` (RFC 3339 timestamps)                                                       |
 
 ### Repeatable filters
 
@@ -105,23 +105,21 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?is_active=true"
 ```
 
-### Fuzzy search
+### Substring search
 
-`q` performs a fuzzy search across the resource's most commonly queried fields:
+`q` performs a substring search (case-insensitive) across the resource's most commonly queried fields:
 
-| Endpoint                        | Fields matched                                          |
-| ------------------------------- | ------------------------------------------------------- |
+| Endpoint                        | Fields matched                                           |
+| ------------------------------- | -------------------------------------------------------- |
 | `GET /api/v1/assets`            | `name`, `external_key`, `description`, active tag values |
 | `GET /api/v1/locations`         | `name`, `external_key`, `description`, active tag values |
-| `GET /api/v1/locations/current` | asset `name`, asset `external_key`, active tag values   |
+| `GET /api/v1/locations/current` | asset `name`, asset `external_key`, active tag values    |
 
 ```bash
 # Find assets whose name, external_key, description, or tag value matches "forklift"
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?q=forklift"
 ```
-
-`q` is case-insensitive and matches substrings.
 
 ### Time range (history)
 

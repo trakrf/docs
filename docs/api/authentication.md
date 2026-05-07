@@ -53,13 +53,13 @@ The **New key** form in the web app lets you pick a resource (Assets / Locations
 
 Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
 
-| Scope             | Access | Endpoints (representative)                                                                                                   |
-| ----------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------- |
-| `assets:read`     | Read   | `GET /assets`, `GET /assets/{id}`, `GET /assets/lookup`                                                                      |
-| `assets:write`    | Write  | `POST /assets`, `PUT /assets/{id}`, `DELETE /assets/{id}`                                                                    |
-| `locations:read`  | Read   | `GET /locations`, `GET /locations/{id}`, `GET /locations/lookup`                                                             |
-| `locations:write` | Write  | `POST /locations`, `PUT /locations/{id}`, `DELETE /locations/{id}`                                                           |
-| `history:read`    | Read   | `GET /locations/current`, `GET /assets/{id}/history`                                                                         |
+| Scope             | Access | Endpoints (representative)                                         |
+| ----------------- | ------ | ------------------------------------------------------------------ |
+| `assets:read`     | Read   | `GET /assets`, `GET /assets/{id}`, `GET /assets/lookup`            |
+| `assets:write`    | Write  | `POST /assets`, `PUT /assets/{id}`, `DELETE /assets/{id}`          |
+| `locations:read`  | Read   | `GET /locations`, `GET /locations/{id}`, `GET /locations/lookup`   |
+| `locations:write` | Write  | `POST /locations`, `PUT /locations/{id}`, `DELETE /locations/{id}` |
+| `history:read`    | Read   | `GET /locations/current`, `GET /assets/{id}/history`               |
 
 A few non-obvious pairings worth calling out:
 
@@ -132,7 +132,7 @@ Preview-scoped keys will not authenticate against production and vice versa — 
 
 The TrakRF API is intended for **server-to-server** integration. Responses do not include `Access-Control-Allow-Origin` headers, so browser-based JavaScript calls are blocked by the browser's CORS policy. Call the API from a backend service and never ship API keys in client-side code — the CORS block is also a guardrail against leaking keys to end-user devices.
 
-**Session JWTs are also accepted** on public endpoints (same `Authorization: Bearer <jwt>` form), because the web app and the API share a router. A session JWT is effectively unscoped for its 1-hour lifetime and is only convenient for ad-hoc UI-driven requests; integrators should use API keys so that auth is durable and scope-limited.
+**Session JWTs are also accepted** on public endpoints (same `Authorization: Bearer <jwt>` form), because the web app and the API share a router. A session JWT is effectively unscoped for its 1-hour lifetime and is only convenient for ad-hoc UI-driven requests; integrators should use API keys so that auth is durable and scope-limited. (One exception: `/orgs/me` accepts API keys only — see [Private endpoints → Response shape: `/orgs/me`](./private-endpoints#orgs-me).)
 
 ## Environment variables
 
