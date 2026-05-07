@@ -80,9 +80,9 @@ That makes three response-shape behaviors that coexist on these resources, and i
 | ---------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------- |
 | **Always present**     | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars) | the value itself             |
 | **Present as `null`**  | `location_id`, `location_external_key`, `parent_id`, `parent_external_key`                             | `field === null`             |
-| **Omitted when unset** | `valid_to` (and any optional field documented as omit-when-unset on its individual page)               | key presence (`'k' in resp`) |
+| **Omitted when unset** | `description`, `valid_to` (and any optional field documented as omit-when-unset on its individual page) | key presence (`'k' in resp`) |
 
-The omit-when-unset set is small and explicit. When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs, and any field not called out in either is in the always-present row.
+The omit-when-unset set is small and explicit. `description` and `valid_to` are the two on the asset and location response shapes today; both are absent from the response when no value is set, rather than emitted as `null`. When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs, and any field not called out elsewhere is in the always-present row.
 
 ## Read shape vs. write shape
 
