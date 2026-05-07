@@ -1,24 +1,25 @@
 # trakrf API — black-box evaluation
 
-Your manager saw TrakRF on LinkedIn and dropped you the creds: "see if this tool is any good and if it can connect to our systems."
+You have a TrakRF login at `$API_TEST_APP_URL` (`$API_TEST_LOGIN` / `$API_TEST_PASS`). See if this tool can connect to your systems.
 
 You know nothing about TrakRF. Everything you report comes from what you can
 verify — not prior knowledge.
 
 **Allowed tools — work only from what a customer developer has:**
-- The API itself (the URL in `API_TEST_APP_URL`)
-- The public docs site (the URL in `API_TEST_DOCS_URL`)
+
+- The SPA at `$API_TEST_APP_URL` (log in with the credentials in `$API_TEST_LOGIN` / `$API_TEST_PASS`)
+- The public docs site at `$API_TEST_DOCS_URL`
+- The API itself (same base URL as the SPA)
 - HTTP clients you'd reach for naturally — curl, Postman, or any language's
   HTTP library
 - Standard OpenAPI codegen tools (openapi-generator-cli, openapi-typescript,
   swagger-codegen) operating on the public spec
-- The credentials in `API_TEST_LOGIN` / `API_TEST_PASS`
 - File operations in your current working directory (for notes, scratch files,
   and the final FINDINGS.md)
 
-**Everything else is out of scope.** If you're about to use a tool that isn't
-on the list above, stop. A developer who saw TrakRF on LinkedIn 10 minutes ago
-doesn't have it.
+**Everything else is out of scope.** If you're about to use a tool that isn't on the list above, stop.
+
+If you find yourself blocked by a UI step during onboarding, document the friction but don't try to circumvent it (e.g., by reverse-engineering the SPA bundle to find internal endpoints). The SPA flow is the supported onboarding path; reverse-engineering Internal endpoints generates findings about contracts we've explicitly disowned.
 
 ## Environment
 
