@@ -110,12 +110,12 @@ $ awk 'NR==34' docs/api/private-endpoints.md
 
 ## Files
 
-| File                              | Change                                                                                                                                                                |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `docs/api/quickstart.mdx`         | Collapse `## 2. Mint` into `## 3. Verify`, becoming the new `## 2. Verify your key works`. Renumber 4–6 → 3–5. Update TL;DR paragraph. Persona-neutral phrasing.      |
-| `docs/getting-started/api.mdx`    | Collapse `## 2. Mint` into `## 3. Make your first call`, becoming the new `## 2. Make your first call`. Renumber 4–5 → 3–4. Tighten the "What you'll need" preamble. |
-| `docs/api/authentication.md`      | Insert `## Where keys come from` after the page intro, before `## Mint your first API key`. Tighten existing `## Mint…` (drop redundant lead sentence + trailing v2 paragraph + persona-neutral phrasing). Preserve `{#mint-your-first-api-key}` anchor. |
-| `docs/api/private-endpoints.md`   | Remove all 3 api-keys table rows (POST/GET, DELETE by key_id, DELETE by jti). No other changes.                                                                       |
+| File                            | Change                                                                                                                                                                                                                                                   |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/api/quickstart.mdx`       | Collapse `## 2. Mint` into `## 3. Verify`, becoming the new `## 2. Verify your key works`. Renumber 4–6 → 3–5. Update TL;DR paragraph. Persona-neutral phrasing.                                                                                         |
+| `docs/getting-started/api.mdx`  | Collapse `## 2. Mint` into `## 3. Make your first call`, becoming the new `## 2. Make your first call`. Renumber 4–5 → 3–4. Tighten the "What you'll need" preamble.                                                                                     |
+| `docs/api/authentication.md`    | Insert `## Where keys come from` after the page intro, before `## Mint your first API key`. Tighten existing `## Mint…` (drop redundant lead sentence + trailing v2 paragraph + persona-neutral phrasing). Preserve `{#mint-your-first-api-key}` anchor. |
+| `docs/api/private-endpoints.md` | Remove all 3 api-keys table rows (POST/GET, DELETE by key_id, DELETE by jti). No other changes.                                                                                                                                                          |
 
 ## Verification plan
 
