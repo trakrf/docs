@@ -77,9 +77,9 @@ Every error response is wrapped in an `error` key — a `401` looks like:
 {
   "error": {
     "type": "unauthorized",
-    "title": "Authentication required",
+    "title": "Unauthorized",
     "status": 401,
-    "detail": "Use Authorization: Bearer <token>",
+    "detail": "Authorization header is required",
     "instance": "/api/v1/orgs/me",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
   }
