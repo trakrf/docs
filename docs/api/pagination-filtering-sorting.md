@@ -73,12 +73,12 @@ Offset pagination reflects the table state at each request. If rows are inserted
 
 Filter parameters are specific to each resource. All filters are query parameters; when a filter accepts multiple values, pass the parameter multiple times (not comma-separated).
 
-| Endpoint                          | Filter params                                                                            |
-| --------------------------------- | ---------------------------------------------------------------------------------------- |
-| `GET /api/v1/assets`              | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`       |
-| `GET /api/v1/locations`           | `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`           |
-| `GET /api/v1/locations/current`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted`, `q` |
-| `GET /api/v1/assets/{id}/history` | `from`, `to` (RFC 3339 timestamps)                                                       |
+| Endpoint                                | Filter params                                                                            |
+| --------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `GET /api/v1/assets`                    | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`       |
+| `GET /api/v1/locations`                 | `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`           |
+| `GET /api/v1/locations/current`         | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted`, `q` |
+| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps)                                                       |
 
 ### Repeatable filters
 
@@ -123,7 +123,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 ### Time range (history)
 
-`GET /api/v1/assets/{id}/history` accepts `from` and `to` as [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) timestamps (a subset of ISO 8601). The server validates the RFC 3339 profile — e.g. `2026-04-01T00:00:00Z` or `2026-04-01T09:00:00-04:00`. Either bound may be omitted:
+`GET /api/v1/assets/{asset_id}/history` accepts `from` and `to` as [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) timestamps (a subset of ISO 8601). The server validates the RFC 3339 profile — e.g. `2026-04-01T00:00:00Z` or `2026-04-01T09:00:00-04:00`. Either bound may be omitted:
 
 ```bash
 # Since the start of 2026-04
@@ -168,7 +168,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/locations?parent_external_key=WAREHOUSE-A&sort=external_key&limit=200"
 ```
 
-For explicit ancestor/descendant traversal, use the dedicated endpoints: `GET /api/v1/locations/{id}/ancestors`, `/children`, `/descendants`.
+For explicit ancestor/descendant traversal, use the dedicated endpoints: `GET /api/v1/locations/{location_id}/ancestors`, `/children`, `/descendants`.
 
 ### Current locations
 

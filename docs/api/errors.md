@@ -214,7 +214,7 @@ The TrakRF v1 API does **not** support the `Idempotency-Key` header. Retry safet
 
 - **`POST /assets`, `POST /locations`** — retrying with the same `external_key` hits the partial unique index `(org_id, external_key) WHERE deleted_at IS NULL` and returns `409 conflict`. Detect the 409, then `GET /api/v1/{resource}/lookup?external_key=...` to recover the canonical `id` and `PUT` to reconcile. **If you omit `external_key` on a POST `/assets` retry, you may create duplicates** — the server will mint a fresh `ASSET-NNNN` each time. For retry-critical workflows, always supply an `external_key`.
 - **`PUT`** — HTTP-semantically idempotent. Safe to retry.
-- **`DELETE /api/v1/assets/{id}`, `DELETE /api/v1/locations/{id}`** — idempotent in the "ends up gone" sense. A second delete returns `404 not_found` (not `204`) so you can detect state drift; both outcomes are fine to treat as "deleted."
+- **`DELETE /api/v1/assets/{asset_id}`, `DELETE /api/v1/locations/{location_id}`** — idempotent in the "ends up gone" sense. A second delete returns `404 not_found` (not `204`) so you can detect state drift; both outcomes are fine to treat as "deleted."
 - **`DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`, `DELETE /api/v1/locations/{location_id}/tags/{tag_id}`** — tag-association delete is fully idempotent: returns `204` whether or not the tag was associated. No 404-suppression retry logic needed.
 
 Explicit `Idempotency-Key` header support is on the v1.x roadmap if customer pain materializes.
