@@ -168,7 +168,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 `tree_path` is a derived label-path helper, useful for sorting or indenting flat lists. Its segments are derived from each ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' tree paths. The value is **not** guaranteed to round-trip back to `external_key` — splitting `tree_path` on `.` is unreliable in general, and outright wrong if any ancestor's `external_key` contains a literal period (those pass through the transformation untouched and become indistinguishable from segment separators).
 
-If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`. Don't try to reverse the lowercasing or underscore substitution from `tree_path`; the transformation is lossy on `external_key`s that already contain underscores or that differ only in case.
+If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{location_id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`. Don't try to reverse the lowercasing or underscore substitution from `tree_path`; the transformation is lossy on `external_key`s that already contain underscores or that differ only in case.
 
 `tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use `GET /api/v1/locations/lookup?external_key=...` for natural-key lookups.
 
@@ -219,4 +219,4 @@ Tag responses still carry a canonical integer `id` for path-param access (e.g., 
 }
 ```
 
-There's no top-level `/api/v1/tags/lookup` endpoint — tags are discovered through their parent resource, either embedded in an asset or location response or via `GET /api/v1/assets/{id}/tags`.
+There's no top-level `/api/v1/tags/lookup` endpoint — tags are discovered through their parent resource, either embedded in an asset or location response or via `GET /api/v1/assets/{asset_id}/tags`.

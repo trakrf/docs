@@ -47,7 +47,7 @@ Each event payload will include the full logical context — both forms of the a
 
 Until webhooks ship, the equivalent patterns on the existing REST API:
 
-- **Poll `GET /api/v1/assets/{id}/history?from=<last-high-water-mark>`** per asset you're tracking, to get scan events for that asset since your last pull.
+- **Poll `GET /api/v1/assets/{asset_id}/history?from=<last-high-water-mark>`** per asset you're tracking, to get scan events for that asset since your last pull.
 - **Poll `GET /api/v1/locations/current`** for the current asset-at-location snapshot (cheaper than replaying the full scan stream).
 
 See the [interactive reference](/api) for the available endpoints and [Authentication](./authentication) for how to authenticate the polling calls.
