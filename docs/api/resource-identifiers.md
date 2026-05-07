@@ -94,7 +94,7 @@ The omit-when-unset set is small and explicit. `description` and `valid_to` are 
 
 Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields the server rejects on write — server-managed metadata (`id`, `created_at`, `updated_at`), derived fields (`tree_path`, `depth` on locations), and embedded sub-resources (`tags`). The exact set varies by resource.
 
-The general rule: **any field present in the GET response but not in the request schema is read-only and must be stripped before `PUT`.** A naive `GET` → mutate → `PUT` of the entire response object returns:
+The general rule: **any field present in the GET response but not in the request schema is read-only and must be stripped before `PUT`.** These fields are flagged with `readOnly: true` in the OpenAPI spec; generated SDKs (typescript-fetch, openapi-generator) honor that marker and split read and write into distinct types, so the strip is enforced at the type-system level. A naive `GET` → mutate → `PUT` of the entire response object returns:
 
 ```json
 {
@@ -133,7 +133,9 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-Locations have a larger read-only set (notably the derived `tree_path` and `depth` in addition to the metadata fields), and future resources may have their own. Don't memorize per-resource lists — derive the strip set from the schema diff between the response object and the request body shape. In a generated TypeScript client with strict typing, the read response type and the write request type are distinct, so the compiler enforces the strip — there's no manual deletion to do. In a generated Python or Go client without strict input types, you'll need to pop the read-only fields explicitly before sending, or wrap the API in a typed model that excludes them at the call site.
+For locations the read-only set is larger: `id`, `created_at`, `updated_at`, `tree_path`, `depth`, and `tags`. The two location-specific additions (`tree_path`, `depth`) are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe.
+
+Future resources may have their own read-only sets. Don't memorize per-resource lists — derive the strip from the spec's `readOnly: true` markers, or rely on a generated client to do it for you. In a generated Python or Go client without strict input types, you'll need to pop the read-only fields explicitly before sending, or wrap the API in a typed model that excludes them at the call site.
 
 Either form of the FK pair is accepted on write. Send `location_id` if you have it; send `location_external_key` if that's what the user typed. Don't send both for the same relationship in one request — the server validates them as mutually exclusive.
 
