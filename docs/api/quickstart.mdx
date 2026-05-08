@@ -86,7 +86,7 @@ Write error handlers against `body.error.type` and `body.error.detail`, not top-
 
 ## 3. Round-trip: create, read, update, delete
 
-This walks through the write path end-to-end with an asset. It needs `assets:write` on the key (and `assets:read` if you want to verify via GET). If your key was minted without those scopes, [mint a new one](./authentication#mint-your-first-api-key) — scopes can't be edited after creation. For the other read endpoints you'll see referenced elsewhere on the docs site, you'll want `locations:read` and `history:read`; see [Authentication → Scopes](./authentication#scopes) for the full matrix.
+This walks through the write path end-to-end with an asset. It needs `assets:write` on the key (and `assets:read` if you want to verify via GET) — in the **New API Key** dialog, that's the **Assets** dropdown set to **Read+Write**. If your key was minted without those scopes, [mint a new one](./authentication#mint-your-first-api-key) — scopes can't be edited after creation. For the other read endpoints you'll see referenced elsewhere on the docs site, you'll want `locations:read` (Locations → Read) and `history:read` (History → Read); see [Authentication → Scopes](./authentication#scopes) and [UI labels vs scope strings](./authentication#ui-labels) for the full matrix.
 
 ```bash
 # Create — capture the assigned id from the response
