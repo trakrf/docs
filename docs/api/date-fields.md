@@ -8,16 +8,16 @@ Every timestamped resource in the TrakRF v1 API uses the same two effective-date
 
 ## The two fields at a glance
 
-| Field        | Always present?         | Type on response | Meaning                                                                    |
-| ------------ | ----------------------- | ---------------- | -------------------------------------------------------------------------- |
-| `valid_from` | Yes                     | RFC3339 UTC      | When the record became effective. Defaults to the creation time on insert. |
-| `valid_to`   | No — omitted when unset | RFC3339 UTC      | When the record expires. **Absent key = no expiry.**                       |
+| Field        | Always present? | Type on response       | Meaning                                                                    |
+| ------------ | --------------- | ---------------------- | -------------------------------------------------------------------------- |
+| `valid_from` | Yes             | RFC3339 UTC            | When the record became effective. Defaults to the creation time on insert. |
+| `valid_to`   | Yes             | RFC3339 UTC, or `null` | When the record expires. **`null` = no expiry.**                           |
 
-The API never returns `0001-01-01T00:00:00Z` zero-time, never returns a `2099-12-31` far-future sentinel, and never returns `"valid_to": null`. If a client sees any of these, it's a bug — please [report it](mailto:support@trakrf.id).
+The API never returns `0001-01-01T00:00:00Z` zero-time and never returns a `2099-12-31` far-future sentinel. The unset signal for `valid_to` is JSON `null`, not an absent key and not a sentinel value. If a client sees a sentinel, it's a bug — please [report it](mailto:support@trakrf.id).
 
-## Outbound: always RFC3339
+## Outbound: always RFC3339 or `null`
 
-Every `valid_from` / `valid_to` on the response is RFC3339 in UTC — clients can parse with a single formatter without branching on shape. Two records from the same list endpoint, one with an expiry and one without:
+Every `valid_from` on the response is RFC3339 in UTC. `valid_to` is either RFC3339 in UTC or JSON `null` — clients can parse the populated value with a single formatter and branch only on null vs. non-null. Two records from the same list endpoint, one with an expiry and one without:
 
 ```json
 {
@@ -33,13 +33,14 @@ Every `valid_from` / `valid_to` on the response is RFC3339 in UTC — clients ca
       "id": 8,
       "external_key": "LOC-0002",
       "name": "Warehouse B",
-      "valid_from": "2026-02-01T00:00:00Z"
+      "valid_from": "2026-02-01T00:00:00Z",
+      "valid_to": null
     }
   ]
 }
 ```
 
-Note that the second record has **no `valid_to` key at all** — not `"valid_to": null`, not `"valid_to": ""`. Test for the key's presence, not its value.
+Note that the second record's `valid_to` is **`null`, not absent** — the field is always emitted, with the OpenAPI spec marking it `nullable: true` and required. Null-check the value, don't key-check.
 
 ## Inbound: RFC3339 only
 
@@ -74,9 +75,10 @@ Response:
     "id": 4287,
     "external_key": "ASSET-0042",
     "name": "Pallet jack",
-    "valid_from": "2026-04-24T00:00:00Z"
+    "valid_from": "2026-04-24T00:00:00Z",
+    "valid_to": null
   }
 }
 ```
 
-The response **omits `valid_to`** because the asset has no expiry. If a later `PUT` sets `valid_to`, subsequent reads will return it as RFC3339.
+The response carries `"valid_to": null` because the asset has no expiry. If a later `PUT` sets `valid_to`, subsequent reads will return it as RFC3339.
