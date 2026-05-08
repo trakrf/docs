@@ -21,6 +21,16 @@ verify — not prior knowledge.
 
 If you find yourself blocked by a UI step during onboarding, document the friction but don't try to circumvent it (e.g., by reverse-engineering the SPA bundle to find internal endpoints). The SPA flow is the supported onboarding path; reverse-engineering Internal endpoints generates findings about contracts we've explicitly disowned.
 
+## Out-of-scope workflow observations
+
+The following are acknowledged design state, not workflow gaps. Do not flag as findings:
+
+- **No programmatic API key mint.** Key issuance is bound to user identity through the SPA, by design. The SPA mint flow is the supported onboarding path for both human and automated/headless callers — automated callers mint a key out-of-band and store it in their secrets infrastructure (this matches how Stripe API keys work). A programmatic seam is YAGNI for v1; the team will revisit if a customer surfaces real demand.
+- **`/auth/login` is Internal.** Listed in `private-endpoints.md` as Internal / subject to change without notice. Do not investigate, integrate against, or report on it. Treat as out-of-scope even though it appears in the docs.
+- **No session-only key list/revoke endpoints in the API.** Listing and revocation are SPA-side affordances only. Documented as session-only, not exposed to the API surface.
+
+Document the existence of these constraints in your environment summary if relevant for context, but they should not appear in the findings sections.
+
 ## Environment
 
 `.envrc` + `.env.local` expose four vars via direnv:
@@ -70,6 +80,10 @@ After your exploratory evaluation, run a mechanical pass against the published O
 Report spec-vs-service mismatches separately from the doc-vs-service findings in the exploratory pass. These are two different source-of-truth documents that can disagree with each other and with the live service.
 
 ## Report findings
+
+### Before flagging a docs gap
+
+If you're about to write "X is never documented," search the docs site for X first and read at least the first hit. The docs span multiple pages — absence in `quickstart.mdx` doesn't mean absence in `resource-identifiers.md` or elsewhere. The motivating example: a recent cycle reported `tree_path` as undocumented while `resource-identifiers.md` carries the canonical definition.
 
 Write up findings to FINDINGS.md at the end of the session. Lead with documentation and workflow gaps; treat API bugs as supporting evidence tied to the workflow step that surfaced them. Report spec contract mismatches in their own section.
 
