@@ -36,7 +36,7 @@ Authorization: Bearer <your-api-key-jwt>
 The header name is `Authorization`; the scheme is `Bearer`. A JWT directly follows the scheme with a single space separator.
 
 :::caution `X-API-Key` is not accepted
-Despite the credential being called an "API key," the server only honors the `Authorization: Bearer` form. Sending the JWT as `X-API-Key: <jwt>` (or any other header) returns `401 unauthorized` with title `"Authentication required"` and detail `"Use Authorization: Bearer <token>"`. If you see that detail, check the header name and scheme before rotating the key.
+Despite the credential being called an "API key," the server only honors the `Authorization: Bearer` form. Sending the JWT as `X-API-Key: <jwt>` (or any other header) returns `401 unauthorized` with title `"Unauthorized"` and detail `"Use Authorization: Bearer <token>"`. If you see that detail, check the header name and scheme before rotating the key.
 :::
 
 ## Scopes

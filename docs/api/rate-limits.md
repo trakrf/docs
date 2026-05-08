@@ -55,7 +55,7 @@ Throttled requests get a `429` with the standard error envelope:
 {
   "error": {
     "type": "rate_limited",
-    "title": "Rate limit exceeded",
+    "title": "Rate limited",
     "status": 429,
     "detail": "Retry after 30 seconds",
     "instance": "/api/v1/assets",
