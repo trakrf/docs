@@ -138,7 +138,9 @@ For assets the read-only set today is `id`, `created_at`, `updated_at`, and `tag
 
 Future resources may grow their own read-only fields. Don't memorize per-resource lists — derive them from the spec's `readOnly: true` markers, or rely on a generated client. The server's silent-ignore rule means existing clients keep working as the readOnly set grows.
 
-Either form of the FK pair is accepted on write. Send `location_id` if you have it; send `location_external_key` if that's what the user typed. Don't send both for the same relationship in one request — the server validates them as mutually exclusive.
+Either form of the FK pair is accepted on write. Send `location_id` if you have it; send `location_external_key` if that's what the user typed. **Sending both is allowed when they agree** — the server cross-validates the pair and rejects disagreement (e.g., one set, the other `null`, or the two values pointing at different rows) with `400 invalid_value` and `detail: "location_id and location_external_key disagree"`. The same rule covers `parent_id` / `parent_external_key` on locations.
+
+To **clear** a relationship, send `null` on either form (or both — they agree). The other writable-nullable fields work the same way: PUT `{"description": null}` clears the description; PUT `{"valid_to": null}` clears the expiry. Asset writable-nullables are `description`, `location_id`, `location_external_key`, `valid_to`; location writable-nullables are `description`, `parent_id`, `parent_external_key`, `valid_to`. After a clear, the field reads back as `null` (see [Always present vs. present-as-null](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs) above; for `valid_to` specifically see [Date fields](./date-fields)).
 
 ## Locations: `parent_id` and `parent_external_key`
 
@@ -167,9 +169,11 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/locations/42/ancestors"
 ```
 
-`tree_path` is a derived label-path helper, useful for sorting or indenting flat lists. Its segments are derived from each ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' tree paths. The value is **not** guaranteed to round-trip back to `external_key` — splitting `tree_path` on `.` is unreliable in general, and outright wrong if any ancestor's `external_key` contains a literal period (those pass through the transformation untouched and become indistinguishable from segment separators).
+`tree_path` is a derived label-path helper, useful for sorting or indenting flat lists. Segments are joined by `.` and each segment is derived from the corresponding ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' tree paths. The pattern on `external_key` (see [`external_key` value rules](#external_key-value-rules)) keeps `.` and `_` reserved for these roles, so `tree_path` is well-formed by construction. The transformation is still **lossy on case** — `WAREHOUSE-WEST` and `warehouse-west` are distinct `external_key`s but produce the same segment — so don't try to reverse it.
 
-If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{location_id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`. Don't try to reverse the lowercasing or underscore substitution from `tree_path`; the transformation is lossy on `external_key`s that already contain underscores or that differ only in case.
+If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{location_id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`.
+
+**Don't cache `tree_path`.** The value is derived, and renaming an `external_key` rewrites the `tree_path` on that location *and every descendant* in one transaction. A client that pinned `tree_path` for hierarchy queries will silently desync after a rename. If you need stable hierarchy state, store the chain of `external_key`s (or the `id` chain via `/ancestors`) and re-derive on demand.
 
 `tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use the [`?external_key=` filter](#natural-key-lookup-uses-external_key) on the locations list endpoint for natural-key lookups.
 
@@ -194,6 +198,34 @@ curl -X POST \
 ```
 
 A caller-supplied `external_key` that collides with an existing live asset returns `409 conflict`. Once an asset is soft-deleted its `external_key` becomes immediately available for reuse. Full create flows live in the [Quickstart](./quickstart).
+
+## `external_key` value rules {#external_key-value-rules}
+
+`external_key` is constrained by the regex `^[A-Za-z0-9-]+$` — alphanumerics and hyphen only, length 1–255. The OpenAPI spec declares this `pattern` on every write schema (`POST` and `PUT` on assets and locations, plus the `*_external_key` foreign-key fields). Invalid input returns `400 validation_error` with `code: invalid_value`.
+
+The reserved characters and why they're reserved:
+
+| Character | Reason it's reserved |
+| --------- | -------------------- |
+| `.` (period) | `tree_path` segment separator |
+| `_` (underscore) | segment-internal separator after `tree_path` normalization (each hyphen in `external_key` becomes an underscore in `tree_path`) |
+| ` ` (space), `/`, `:` | URL-, log-, and path-hostile; reserved to avoid surprise quoting |
+
+Practical examples:
+
+| Value | Verdict |
+| ----- | ------- |
+| `SKU-7421-A` | ✓ accepted |
+| `BACK-STORAGE-2` | ✓ accepted |
+| `MyAsset123` | ✓ accepted (case is preserved on the key) |
+| `BB With Spaces` | ✗ `400 invalid_value` |
+| `BB/slash` | ✗ `400 invalid_value` |
+| `BB:colon` | ✗ `400 invalid_value` |
+| `BB.dotted` | ✗ `400 invalid_value` |
+| `BB_underscored` | ✗ `400 invalid_value` |
+| `BB漢字` | ✗ `400 invalid_value` (non-ASCII) |
+
+`external_key` is **case-preserving** on storage — `MyAsset` and `myasset` are distinct keys for uniqueness purposes — but `tree_path` lowercases every segment, so two location keys differing only in case will collide on `tree_path` even though they coexist as distinct rows. Pick a casing convention and stick to it.
 
 ## `is_active` is authoritative
 

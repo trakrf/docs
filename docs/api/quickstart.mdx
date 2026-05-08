@@ -138,6 +138,8 @@ If you'd rather generate a typed client, the OpenAPI spec is available in both f
 
 Feed either into `openapi-generator-cli`, NSwag, `oapi-codegen`, etc. to scaffold client code in your language. The spec is regenerated from the Go handlers on every platform release, so the generated client stays in sync with the running service.
 
+The spec declares its security scheme as `BearerAuth` (HTTP Bearer, JWT format), so class-emitting generators surface the credential as a Bearer access token — `openapi-generator-cli`'s `typescript-fetch` target produces a `Configuration` with an `accessToken` field, and the Java/Python targets follow the same shape. The wire format remains `Authorization: Bearer <jwt>`; pass the API key minted in step 2 wherever the generated client expects an access token.
+
 ## Next steps
 
 - [Interactive reference](/api) — every endpoint, request/response shape, try-it-now widget
