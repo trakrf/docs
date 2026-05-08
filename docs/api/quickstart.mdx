@@ -114,7 +114,7 @@ curl -X DELETE "$BASE_URL/api/v1/assets/$ASSET_ID" \
   -H "Authorization: Bearer $TRAKRF_API_KEY"
 ```
 
-Each request echoes back the resource (or `204 No Content` on delete) wrapped in the standard `{ "data": ... }` envelope. The path-param routes take the canonical integer `id`; if you only have the natural key, look it up first with `GET /api/v1/assets/lookup?external_key=ASSET-QUICKSTART` and read the `id` off the response. Full convention: [Resource identifiers](./resource-identifiers).
+Each request echoes back the resource (or `204 No Content` on delete) wrapped in the standard `{ "data": ... }` envelope. The path-param routes take the canonical integer `id`; if you only have the natural key, filter the list endpoint first with `GET /api/v1/assets?external_key=ASSET-QUICKSTART` and read `id` off `.data[0]` (empty array on a miss). Full convention: [Resource identifiers](./resource-identifiers).
 
 ## 4. Alternative: Postman
 
@@ -143,7 +143,7 @@ Feed either into `openapi-generator-cli`, NSwag, `oapi-codegen`, etc. to scaffol
 - [Interactive reference](/api) — every endpoint, request/response shape, try-it-now widget
 - [Authentication](./authentication) — scopes, key lifecycle, rotation
 - [Pagination, filtering, sorting](./pagination-filtering-sorting) — conventions for list endpoints
-- [Resource identifiers](./resource-identifiers) — canonical `id`, natural-key `external_key`, and `/lookup`
+- [Resource identifiers](./resource-identifiers) — canonical `id`, natural-key `external_key`, and the `?external_key=` list filter
 - [Errors](./errors) — envelope, catalog, retry guidance
 - [Rate limits](./rate-limits) — budgets, headers, `Retry-After`
 - [Versioning](./versioning) — v1 stability commitment

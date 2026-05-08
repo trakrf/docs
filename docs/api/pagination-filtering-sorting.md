@@ -191,6 +191,6 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 ## Related
 
 - [Quickstart](./quickstart) — first successful call
-- [Resource identifiers](./resource-identifiers) — canonical `id`, natural-key `external_key`, and `/lookup`
+- [Resource identifiers](./resource-identifiers) — canonical `id`, natural-key `external_key`, and the `?external_key=` list filter
 - [Errors](./errors) — what `400 bad_request` on a malformed filter or sort looks like
 - [Interactive reference](/api) — per-endpoint parameter catalog
