@@ -29,7 +29,7 @@ So that BB21+ stops re-raising the same final-design constraints and stops false
 - Add **Before flagging a docs gap** section near "Report findings" or as a callout there.
 - Phrasing per ticket draft is acceptable; final phrasing can vary as long as the three out-of-scope items are explicitly named (SPA-only mint, Internal `/auth/login`, session-only key list/revoke) and the cross-reference rule names "search the docs site" + "read at least the first hit."
 - Audit pass per the ticket's "Audit adjacent" list:
-  - Rest of BB.md for framing that conflicts with new "out-of-scope" language (the existing "document the friction" line about UI blocks should remain coherent — friction-during-onboarding is still a finding, but the SPA-only mint as a *design choice* is not).
+  - Rest of BB.md for framing that conflicts with new "out-of-scope" language (the existing "document the friction" line about UI blocks should remain coherent — friction-during-onboarding is still a finding, but the SPA-only mint as a _design choice_ is not).
   - `docs/api/private-endpoints.md` — verify no "temporary state" framing on Internal endpoints (already permanent: "subject to change without notice"; classification policy says Public vs Internal, no transitional bucket).
   - `.envrc` / `.env.local` template comments referencing auth setup — verify no stale guidance.
   - The BLACKBOX.md template referenced in project memory — confirm whether it lives in this repo or is platform/superpowers; document audit outcome in PR.

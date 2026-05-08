@@ -25,7 +25,7 @@ The following are acknowledged design state, not workflow gaps. Do not flag as f
 Document the existence of these constraints in your environment summary if relevant for context, but they should not appear in the findings sections.
 ```
 
-**Coherence with L22 paragraph**: The L22 line already tells the tester not to reverse-engineer Internal endpoints and to "document the friction but don't try to circumvent it." That stays — UI friction during onboarding (e.g., a broken signup page, an unclear API-keys screen) is still a valid finding. What the new section disowns is treating the *existence* of an SPA-only mint flow, or the *existence* of `/auth/login` as Internal, as workflow gaps.
+**Coherence with L22 paragraph**: The L22 line already tells the tester not to reverse-engineer Internal endpoints and to "document the friction but don't try to circumvent it." That stays — UI friction during onboarding (e.g., a broken signup page, an unclear API-keys screen) is still a valid finding. What the new section disowns is treating the _existence_ of an SPA-only mint flow, or the _existence_ of `/auth/login` as Internal, as workflow gaps.
 
 ## Edit 2 — Cross-reference guardrail
 
@@ -41,16 +41,16 @@ Document the existence of these constraints in your environment summary if relev
 If you're about to write "X is never documented," search the docs site for X first and read at least the first hit. The docs span multiple pages — absence in `quickstart.mdx` doesn't mean absence in `resource-identifiers.md` or elsewhere. The motivating example: a recent cycle reported `tree_path` as undocumented while `resource-identifiers.md` carries the canonical definition.
 ```
 
-The motivating-example sentence cites the BB20 F7 case so future testers see *why* the rule exists.
+The motivating-example sentence cites the BB20 F7 case so future testers see _why_ the rule exists.
 
 ## Audit findings (will be reported in PR body, not edited here)
 
-| Target | Outcome |
-| --- | --- |
-| Rest of BB.md | L22 onboarding-friction paragraph remains coherent with new section. No conflicts. |
-| `docs/api/private-endpoints.md` | Already frames Internal endpoints as permanent (lines 7-11, 53-60: "subject to change without notice"; classification policy is Public vs Internal with no transitional bucket). No change needed. |
-| `tests/blackbox/.envrc` + `.env.local` | Minimal — only env-var loading and four credentials. No auth-setup guidance to align. No change needed. |
-| Top-level `.envrc` + `.env.example` | Loads `.env.local`; vars are deploy URL + docs-tour user creds. No tester-facing auth guidance to align. No change needed. |
+| Target                                      | Outcome                                                                                                                                                                                            |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rest of BB.md                               | L22 onboarding-friction paragraph remains coherent with new section. No conflicts.                                                                                                                 |
+| `docs/api/private-endpoints.md`             | Already frames Internal endpoints as permanent (lines 7-11, 53-60: "subject to change without notice"; classification policy is Public vs Internal with no transitional bucket). No change needed. |
+| `tests/blackbox/.envrc` + `.env.local`      | Minimal — only env-var loading and four credentials. No auth-setup guidance to align. No change needed.                                                                                            |
+| Top-level `.envrc` + `.env.example`         | Loads `.env.local`; vars are deploy URL + docs-tour user creds. No tester-facing auth guidance to align. No change needed.                                                                         |
 | BLACKBOX.md template (referenced in memory) | Not present in this repo (`find` returns no match). Lives in superpowers/platform infrastructure. Out of scope for trakrf/docs PR — flag in PR body for follow-up if a copy needs alignment there. |
 
 ## Verification
