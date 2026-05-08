@@ -89,48 +89,40 @@ When a resource references another resource, the response includes both forms as
 
 Both fields are populated whenever the relationship exists — no nested object, no follow-up call to resolve the related resource's natural key. If you need the `id` for a downstream API call, it's there; if you need the `external_key` to write back to your system of record, it's there too. When the relationship is unset (an asset that has never been scanned, a root location with no parent), both fields are still **present in the response, set to `null`**. The OpenAPI spec declares them `nullable: true` and the service emits them on every response; clients should null-check, not key-presence-check.
 
-That makes three response-shape behaviors that coexist on these resources, and it's worth knowing which is which:
+That makes two response-shape behaviors that coexist on these resources, and it's worth knowing which is which:
 
-| Behavior               | Fields                                                                                                  | Test for                     |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| **Always present**     | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)  | the value itself             |
-| **Present as `null`**  | `location_id`, `location_external_key`, `parent_id`, `parent_external_key`                              | `field === null`             |
-| **Omitted when unset** | `description`, `valid_to` (and any optional field documented as omit-when-unset on its individual page) | key presence (`'k' in resp`) |
+| Behavior              | Fields                                                                                                                                | Test for         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| **Always present**    | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)                                | the value itself |
+| **Present as `null`** | `location_id`, `location_external_key`, `parent_id`, `parent_external_key`, `description`, `valid_to` (and other unset-but-emitted fields) | `field === null` |
 
-The omit-when-unset set is small and explicit. `description` and `valid_to` are the two on the asset and location response shapes today; both are absent from the response when no value is set, rather than emitted as `null`. When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs, and any field not called out elsewhere is in the always-present row.
+Every field on `PublicAssetView` and `PublicLocationView` is **required** in the OpenAPI spec — generated SDKs will surface them as non-optional with a nullable type. Null-check, don't key-check. The same pattern holds on `report.PublicCurrentLocationItem` (`asset_deleted_at` is always present, `null` for live assets, populated for soft-deleted assets). When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs.
 
 ## Read shape vs. write shape
 
-Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields the server rejects on write — server-managed metadata (`id`, `created_at`, `updated_at`), derived fields (`tree_path`, `depth` on locations), and embedded sub-resources (`tags`). The exact set varies by resource.
+Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields that aren't part of the request schema — server-managed metadata (`id`, `created_at`, `updated_at`), derived fields (`tree_path`, `depth` on locations), and embedded sub-resources (`tags`). The exact set varies by resource.
 
-The general rule: **any field present in the GET response but not in the request schema is read-only and must be stripped before `PUT`.** These fields are flagged with `readOnly: true` in the OpenAPI spec; generated SDKs (typescript-fetch, openapi-generator) honor that marker and split read and write into distinct types, so the strip is enforced at the type-system level. A naive `GET` → mutate → `PUT` of the entire response object returns:
+The server **silently ignores** these read-only fields on `PUT`. A naive `GET` → mutate → `PUT` of the entire response object succeeds, so codegen-derived clients that re-send the full read shape don't have to strip first. The fields are flagged with `readOnly: true` in the OpenAPI spec; generated SDKs (typescript-fetch, openapi-generator) honor that marker and split read and write into distinct types, which keeps the request payload minimal at the type-system level.
 
-```json
-{
-  "error": {
-    "type": "validation_error",
-    "title": "Validation failed",
-    "status": 400,
-    "detail": "unknown field 'id' in request body",
-    "instance": "/api/v1/assets/4287",
-    "request_id": "01J...",
-    "fields": [
-      {
-        "field": "id",
-        "code": "invalid_value",
-        "message": "unknown field"
-      }
-    ]
-  }
-}
-```
-
-A naive PUT of every read-only field produces one `fields[]` entry per offending key — see [Errors → Validation errors](./errors#validation-errors) for the complete envelope shape.
-
-For assets the read-only set today is `id`, `created_at`, `updated_at`, and `tags`. The minimal pattern with `jq`:
+Strict-unknown-field validation still applies for fields that are **not** declared on either the read or the write schema — a typo'd or off-resource field name returns `400 validation_error` with `fields[].field` naming the offender. See [Errors → Validation errors](./errors#validation-errors) for the envelope shape.
 
 ```bash
-# Move an asset to a new location by its external_key
+# Naive round-trip — the entire GET response is sent back; readOnly fields
+# (id, created_at, updated_at, tags, ...) are silently ignored by the server.
+curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/assets/4287" \
+| jq '.data | .location_external_key = "PORTABLE-1437"' \
+| curl -X PUT \
+       -H "Authorization: Bearer $TRAKRF_API_KEY" \
+       -H "Content-Type: application/json" \
+       -d @- \
+       "$BASE_URL/api/v1/assets/4287"
+```
+
+For a smaller request body — and for hand-rolled clients that want to be explicit about what they're updating — strip the read-only fields with `jq`:
+
+```bash
+# Smaller payload: drop the readOnly fields explicitly before PUT.
 curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/4287" \
 | jq '.data | del(.id, .created_at, .updated_at, .tags)
@@ -142,9 +134,9 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-For locations the read-only set is larger: `id`, `created_at`, `updated_at`, `tree_path`, `depth`, and `tags`. The two location-specific additions (`tree_path`, `depth`) are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe.
+For assets the read-only set today is `id`, `created_at`, `updated_at`, and `tags`. For locations the set is larger: `id`, `created_at`, `updated_at`, `tree_path`, `depth`, and `tags`. The two location-specific additions (`tree_path`, `depth`) are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe.
 
-Future resources may have their own read-only sets. Don't memorize per-resource lists — derive the strip from the spec's `readOnly: true` markers, or rely on a generated client to do it for you. In a generated Python or Go client without strict input types, you'll need to pop the read-only fields explicitly before sending, or wrap the API in a typed model that excludes them at the call site.
+Future resources may grow their own read-only fields. Don't memorize per-resource lists — derive them from the spec's `readOnly: true` markers, or rely on a generated client. The server's silent-ignore rule means existing clients keep working as the readOnly set grows.
 
 Either form of the FK pair is accepted on write. Send `location_id` if you have it; send `location_external_key` if that's what the user typed. Don't send both for the same relationship in one request — the server validates them as mutually exclusive.
 
