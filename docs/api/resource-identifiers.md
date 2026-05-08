@@ -23,25 +23,34 @@ The integer `id` field on each schema is unique only within that resource type. 
 
 When passing ids between systems, qualify them with the resource type (`asset_id`, `location_id`, `tag_id`). The string `external_key` field is unique within an org _and_ carries no cross-type ambiguity, so it's the safer cross-resource identifier when types may be mixed in flight.
 
-## Natural-key lookup uses `/lookup?external_key=`
+## Natural-key lookup uses `?external_key=`
 
-When you have the natural key but not the canonical `id`, look the resource up by its `external_key`:
+When you have the natural key but not the canonical `id`, filter the list endpoint by `external_key`:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/lookup?external_key=SKU-7421-A"
+     "$BASE_URL/api/v1/assets?external_key=SKU-7421-A"
 ```
 
-Returns the matching asset (`200`) or `404` if no live asset has that key. Equality match only — no globs, no prefix, no regex. Multiple natural-key parameters or none returns `400`. Soft-deleted rows are not addressable through this endpoint; if you need to inspect a deleted record, look it up by `id`.
+The list envelope returns 0 or 1 matches in `data` (the partial unique index `(org_id, external_key) WHERE deleted_at IS NULL` caps live rows at one per key). An empty array is the miss signal — there is no `404` for a natural-key miss on this filter. Soft-deleted rows are not addressable through it; if you need to inspect a deleted record, look it up by `id`.
+
+```bash
+ASSET_ID=$(curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/assets?external_key=SKU-7421-A" \
+     | jq -r '.data[0].id // empty')
+[ -z "$ASSET_ID" ] && echo "no asset with that external_key"
+```
 
 The same shape is available on locations:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/locations/lookup?external_key=BACK-STORAGE-2"
+     "$BASE_URL/api/v1/locations?external_key=BACK-STORAGE-2"
 ```
 
-Use `/lookup` when an integrator pastes an `external_key` directly (a barcode scan, a CSV row, an ERP record) and you need to resolve it to a TrakRF resource. Cache the returned `id` if you'll touch the resource again — subsequent path-param reads avoid the `/lookup` round trip.
+Use the `?external_key=` filter when an integrator pastes an `external_key` directly (a barcode scan, a CSV row, an ERP record) and you need to resolve it to a TrakRF resource. Cache the returned `id` if you'll touch the resource again — subsequent path-param reads avoid the filter round trip.
+
+Repeat the parameter to fetch any-of: `?external_key=SKU-A&external_key=SKU-B` returns up to one match per key (still capped by the live-row uniqueness rule), which is more efficient than N parallel single-key requests when you're resolving a batch.
 
 ## List filters accept both forms
 
@@ -170,7 +179,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{location_id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`. Don't try to reverse the lowercasing or underscore substitution from `tree_path`; the transformation is lossy on `external_key`s that already contain underscores or that differ only in case.
 
-`tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use `GET /api/v1/locations/lookup?external_key=...` for natural-key lookups.
+`tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use the [`?external_key=` filter](#natural-key-lookup-uses-external_key) on the locations list endpoint for natural-key lookups.
 
 ## Asset `external_key` is optional
 
@@ -198,7 +207,7 @@ A caller-supplied `external_key` that collides with an existing live asset retur
 
 Assets and locations carry both an `is_active` boolean and a pair of `valid_from` / `valid_to` timestamps. The API treats `is_active` as the source of truth for whether the resource is usable right now. `valid_from` and `valid_to` are informational metadata — the v1 service does not compute effective state from them.
 
-Concretely: an asset with `is_active: true` and `valid_to: "2024-01-01T00:00:00Z"` (a `valid_to` already in the past) is still treated as active by the API. List filters on `is_active=true` will return it; `/lookup` will resolve it; `PUT`s will succeed.
+Concretely: an asset with `is_active: true` and `valid_to: "2024-01-01T00:00:00Z"` (a `valid_to` already in the past) is still treated as active by the API. List filters on `is_active=true` will return it; the `?external_key=` filter will resolve it; `PUT`s will succeed.
 
 If your business logic needs time-based filtering ("active and within its validity window"), apply that filter client-side. A computed `is_active_effective` field is on the v1.x roadmap if customer pain materializes; do not depend on the service deriving it today.
 
@@ -219,4 +228,4 @@ Tag responses still carry a canonical integer `id` for path-param access (e.g., 
 }
 ```
 
-There's no top-level `/api/v1/tags/lookup` endpoint — tags are discovered through their parent resource, either embedded in an asset or location response or via `GET /api/v1/assets/{asset_id}/tags`.
+There's no top-level `/api/v1/tags?value=...` discovery endpoint — tags are discovered through their parent resource, either embedded in an asset or location response or via `GET /api/v1/assets/{asset_id}/tags`.
