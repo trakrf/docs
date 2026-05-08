@@ -54,8 +54,9 @@ The **New key** form in the web app lets you pick a resource (Assets / Locations
 | Locations → Read           | `locations:read`                    |
 | Locations → Read+Write     | `locations:read`, `locations:write` |
 | History → Read             | `history:read`                      |
+| Key management → Admin     | `keys:admin`                        |
 
-Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today.
+Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today. Key management has only **None** and **Admin** (no Read / Write split); Admin is reserved for a future capability — see [Key management is reserved](#key-management-reserved) below.
 
 | Scope             | Access | Endpoints (representative)                                                           |
 | ----------------- | ------ | ------------------------------------------------------------------------------------ |
@@ -64,11 +65,21 @@ Selecting **None** for a resource grants no scope for that resource. Selecting *
 | `locations:read`  | Read   | `GET /locations`, `GET /locations/{location_id}`                                     |
 | `locations:write` | Write  | `POST /locations`, `PUT /locations/{location_id}`, `DELETE /locations/{location_id}` |
 | `history:read`    | Read   | `GET /locations/current`, `GET /assets/{asset_id}/history`                           |
+| `keys:admin`      | Admin  | (reserved — see [Key management is reserved](#key-management-reserved) below)        |
 
 A few non-obvious pairings worth calling out:
 
 - **`/locations/current`** is gated by **`history:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the history scope.
 - **`/assets/{asset_id}/history`** is gated by **`history:read`** for the same reason — it's a projection of scan events, not a property of the asset.
+
+### Key management is reserved {#key-management-reserved}
+
+The `keys:admin` scope appears in the **New API Key** dialog as **Key management → Admin**, but **gates no endpoint in the v1 public surface**. API-key issuance, listing, rotation, and revocation are browser-mediated by design — see [Where keys come from](#where-keys-come-from) for the rationale. The scope is reserved for a future programmatic key-minting capability that's planned for a later major version, not v1.
+
+Practical guidance for v1 integrators:
+
+- **Leave Key management at None** when minting a key. Selecting Admin grants no additional capability against the documented v1 endpoints, and a key minted with `keys:admin` is functionally equivalent on the public surface to one minted without it.
+- The scope-string `keys:admin` may appear in `scopes` arrays returned by future tooling (e.g., a `/keys` listing endpoint when it lands) — clients should tolerate it, same general rule as below.
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).
 
