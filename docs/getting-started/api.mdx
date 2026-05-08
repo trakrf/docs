@@ -39,7 +39,7 @@ Save your API key to an environment variable for the rest of this page:
 export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-The `/api/v1/locations/current` endpoint returns a snapshot of where TrakRF last saw each asset. It's cheap, requires `history:read`, and gives you a live signal that your key works. If your key was minted without `history:read`, [mint a new one](../api/authentication#mint-your-first-api-key) — scopes can't be edited after creation.
+The `/api/v1/locations/current` endpoint returns a snapshot of where TrakRF last saw each asset. It's cheap, requires `history:read`, and gives you a live signal that your key works. In the **New API Key** dialog, `history:read` corresponds to the **History** dropdown set to **Read** — see [Authentication → UI labels vs scope strings](../api/authentication#ui-labels) for the complete scope-string ↔ UI label mapping. If your key was minted without `history:read`, [mint a new one](../api/authentication#mint-your-first-api-key) — scopes can't be edited after creation.
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
