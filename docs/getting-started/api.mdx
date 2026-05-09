@@ -39,47 +39,38 @@ Save your API key to an environment variable for the rest of this page:
 export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-The `/api/v1/locations/current` endpoint returns a snapshot of where TrakRF last saw each asset. It's cheap, requires `history:read`, and gives you a live signal that your key works. In the **New API Key** dialog, `history:read` corresponds to the **History** dropdown set to **Read** — see [Authentication → UI labels vs scope strings](../api/authentication#ui-labels) for the complete scope-string ↔ UI label mapping. If your key was minted without `history:read`, [mint a new one](../api/authentication#mint-your-first-api-key) — scopes can't be edited after creation.
+The `/api/v1/orgs/me` endpoint returns the organization the API key is scoped to. It's the canonical "tell me about myself" probe — requires no specific scope, depends on no prior data, and confirms end-to-end that your key authenticates against the right environment. **Use an API key here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](../api/private-endpoints#orgs-me) for the precise rule.
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/locations/current"
+     "$BASE_URL/api/v1/orgs/me"
 ```
 
 A successful response looks like:
 
 ```json
 {
-  "data": [
-    {
-      "asset_id": 4287,
-      "asset_external_key": "ASSET-0001",
-      "location_id": 42,
-      "location_external_key": "LOC-0001",
-      "last_seen": "2026-04-20T14:32:18Z",
-      "asset_deleted_at": null
-    }
-  ],
-  "limit": 50,
-  "offset": 0,
-  "total_count": 1
+  "data": {
+    "id": 42,
+    "name": "Acme Logistics"
+  }
 }
 ```
 
-The `data` array holds one item per asset that has ever been scanned. Each item carries both forms of the asset and location identifiers as flat scalar fields: integer `id` (server-assigned, canonical for path params and FK joins) and string `external_key` (your handle, useful for joining back to your system of record). See [Resource identifiers](../api/resource-identifiers).
+If the `name` matches the organization you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface. See [Resource identifiers](../api/resource-identifiers) for the integer `id` / string `external_key` convention you'll see on every other resource.
 
-If you get a `401`, the key is malformed or not being sent in the header. If you get a `403`, the body names the missing scope — for this endpoint it'll be `"Missing required scope: history:read"`. If you get a `429`, you're being rate-limited — see [Rate limits](../api/rate-limits). If you're calling from browser JavaScript and getting a CORS error with no body, the API is server-to-server only ([details](../api/authentication#server-to-server)).
+If you get a `401`, the key is missing, malformed, revoked, or scoped to the other environment (preview vs production) — re-check the `Authorization` header and the [Base URL](../api/authentication#base-url). If you get a `429`, you're being rate-limited — see [Rate limits](../api/rate-limits). If you're calling from browser JavaScript and getting a CORS error with no body, the API is server-to-server only ([details](../api/authentication#server-to-server)).
 
-All error bodies are wrapped in an `error` key — a `403` looks like:
+All error bodies are wrapped in an `error` key — a `401` looks like:
 
 ```json
 {
   "error": {
-    "type": "forbidden",
-    "title": "Forbidden",
-    "status": 403,
-    "detail": "Missing required scope: history:read",
-    "instance": "/api/v1/locations/current",
+    "type": "unauthorized",
+    "title": "Unauthorized",
+    "status": 401,
+    "detail": "Authorization header is required",
+    "instance": "/api/v1/orgs/me",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
   }
 }

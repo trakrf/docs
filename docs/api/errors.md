@@ -123,6 +123,10 @@ The OpenAPI spec marks `error.type` with `x-extensible-enum: true`, but mainstre
 
 ## Validation errors
 
+:::tip Branch on `fields[].code`, not `title` or `detail`
+For `validation_error` responses, the stable contract for programmatic handling is `fields[].code` per offending field — that's the extensible-enum value codegen and validation UIs should switch on. `title` is fixed per `error.type` ([canonical titles](#canonical-titles)) and carries no per-field information; `detail` summarizes the first problem in human prose and is safe to log or surface, but its wording is not a contract. When the offending field matters (which it usually does for `validation_error`), iterate `fields[]` and branch on `code`.
+:::
+
 When `type` is `validation_error`, the envelope carries an additional `fields` array with one entry per invalid field:
 
 ```json
