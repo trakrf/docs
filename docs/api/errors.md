@@ -154,9 +154,9 @@ Field entries:
 
 Current `code` values (extensible):
 
-- `required` — the field is missing and mandatory
+- `required` — a mandatory field was omitted on a request that needed it (no length-bearing minimum applies — see `too_short` for empty length-bearing fields)
 - `invalid_value` — the value is not one of the allowed values, fails a format check (email, URL, UUID), or fails a validation TrakRF has not mapped to a more specific code
-- `too_short` — string or collection length below the minimum
+- `too_short` — string or collection length below the minimum. Length-bearing fields with a non-zero minimum (e.g. `minLength: 1`) report `too_short` when sent as empty **or** when omitted — `"name": ""` and an absent `name` both surface as `too_short`, not `required`
 - `too_long` — string or collection length above the maximum
 - `too_small` — numeric value below the minimum
 - `too_large` — numeric value above the maximum
