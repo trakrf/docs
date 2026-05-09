@@ -4,7 +4,17 @@ sidebar_position: 3
 
 # Resource identifiers
 
-Every asset and location has two identifiers, and both are first-class. The integer `id` is server-assigned, immutable, and used in URL paths, foreign-key fields, and response keys — the canonical handle for everything inside the API. The string `external_key` is your handle, and the natural key for joining TrakRF records back to your system of record (a SKU, an asset tag, a manufacturer serial number, an ERP code). Each form has its own access path; both are fluently supported. Pick whichever fits the context — neither is a fallback for the other.
+Every asset and location has two identifiers. The integer `id` is **canonical at the URL surface** — server-assigned, immutable, and the form path-param routes and foreign-key fields use. The string `external_key` is **canonical for partner-side joins** — your handle, the natural key for tying a TrakRF record to a row in your system of record (a SKU, an asset tag, a manufacturer serial number, an ERP code). Both are durable; both round-trip on every response; neither is a fallback for the other. They are not equivalent, though: an `id` is unique to TrakRF storage and meaningless outside it; an `external_key` is yours and is the only form your warehouse software, ERP, or operator will recognize. Pick the form the next system over recognizes.
+
+## String-handle concepts at a glance
+
+Three string-handle concepts appear across these resources, and they show up close enough together to blur. Briefly:
+
+- **`external_key`** — the resource's own natural key (this page, top-to-bottom).
+- **`*_external_key` foreign-key fields** — flat-scalar references _to_ another resource's `external_key` from a record that holds the relationship. Examples: `location_external_key` on assets, `parent_external_key` on locations. Covered under [Foreign-key fields in responses](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs).
+- **`tree_path`** — a derived label-path on locations only, useful for sorting / breadcrumbs / indenting flat lists. Not an identifier and not a natural key. Covered under [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key).
+
+The first two are partner-supplied and write-routable; the third is server-derived and read-only. The asymmetry is deliberate.
 
 ## Path-param lookup uses `id`
 
@@ -269,7 +279,15 @@ If your business logic needs to surface an expired record (e.g., to render a "de
 
 ## Tags use a composite natural key
 
+:::note "Tag" is a noun with two senses
+In the API surface (and this page), **tag** is a typed data primitive: the `(tag_type, value)` pair attached to an asset or a location. In RFID-domain prose elsewhere on the docs site (and in user-facing UI copy), "tag" can also mean the physical hardware label being read by a scanner. Both senses are valid; this page operates on the data-primitive sense, and `tag_type` is what disambiguates which kind of physical artifact a given record represents (`rfid`, `ble`, or `barcode`).
+:::
+
 Tags follow the same principle as assets and locations, with a composite shape: a tag's natural key is the `(tag_type, value)` pair within an organization, enforced by the partial unique index `(org_id, tag_type, value) WHERE deleted_at IS NULL`. Inserting a duplicate live `(tag_type, value)` for the same organization returns `409 conflict`.
+
+Don't conflate `external_key` with `tags[].value`: assets and locations have a single string natural key (`external_key`); tags have a composite one. The `value` field _inside_ a tag is the tag's own partner-supplied handle (an EPC, a beacon ID, a barcode), scoped by `tag_type`. The `external_key` _on_ an asset or location is the resource's partner-supplied handle, scoped by resource type. They sit at different levels and are not interchangeable — an asset's `external_key` and one of its tags' `value` answer different questions.
+
+`tag_type` defaults to `rfid` when omitted on a write — the OpenAPI spec carries `default: rfid`, so a `POST /api/v1/assets/{asset_id}/tags` body of `{"value": "E2-..."}` is equivalent to `{"tag_type": "rfid", "value": "E2-..."}`. Codegen-derived clients surface the same default at the type-system level. Send `tag_type` explicitly when the tag is `ble` or `barcode`.
 
 Tag responses still carry a canonical integer `id` for path-param access (e.g., `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`):
 

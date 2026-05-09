@@ -13,16 +13,16 @@ Close the long tail of "1-line callout missing" findings re-raised across BB12�
 
 A non-trivial number of items in the ticket were addressed by earlier polish drops since the finding was first written. Verified before drafting copy:
 
-| Item                                       | Status before this PR                                                                         | Verdict        |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------- | -------------- |
-| BB20 §F5 — strike NFC from prose           | Platform PR #286 merged 2026-05-09; spec mirror sync covers this PR                           | Refresh only   |
-| BB20 §F6 / §2.7 — server-minted `external_key` format in resource-identifiers prose | resource-identifiers.md L197 already documents `ASSET-NNNN` from per-org sequence | Already done   |
-| BB20 §F7 — `tree_path` derivation rule (lowercase + hyphen→underscore)              | resource-identifiers.md L187 already documents both transforms                    | Already done   |
-| §1.9 — idempotent tag-association DELETE   | errors.md L278 already says "returns 204 whether or not the tag was associated"               | Already done   |
-| D-3 — both FK fields together is consistency-checked, not mutually exclusive | resource-identifiers.md L156 already says "Sending both is allowed when they agree"; "mutually exclusive" no longer appears in any docs page | Already done |
-| D-12 — `/lookup` no-params bad_request vs validation_error | `/lookup` endpoint was removed in TRA-600; no references remain in spec or docs              | Moot           |
-| O-3 — concept-guide slug case sweep        | Every entry in `sidebars.ts` and every file under `docs/api/` is lowercase; TRA-635 fixed CHANGELOG | Already done |
-| S3 — `parent_id: null` on PUT              | UpdateLocationRequest declares `parent_id: nullable`; resource-identifiers.md L158 already documents PUT-null clears the parent | Already done |
+| Item                                                                                | Status before this PR                                                                                                                        | Verdict      |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| BB20 §F5 — strike NFC from prose                                                    | Platform PR #286 merged 2026-05-09; spec mirror sync covers this PR                                                                          | Refresh only |
+| BB20 §F6 / §2.7 — server-minted `external_key` format in resource-identifiers prose | resource-identifiers.md L197 already documents `ASSET-NNNN` from per-org sequence                                                            | Already done |
+| BB20 §F7 — `tree_path` derivation rule (lowercase + hyphen→underscore)              | resource-identifiers.md L187 already documents both transforms                                                                               | Already done |
+| §1.9 — idempotent tag-association DELETE                                            | errors.md L278 already says "returns 204 whether or not the tag was associated"                                                              | Already done |
+| D-3 — both FK fields together is consistency-checked, not mutually exclusive        | resource-identifiers.md L156 already says "Sending both is allowed when they agree"; "mutually exclusive" no longer appears in any docs page | Already done |
+| D-12 — `/lookup` no-params bad_request vs validation_error                          | `/lookup` endpoint was removed in TRA-600; no references remain in spec or docs                                                              | Moot         |
+| O-3 — concept-guide slug case sweep                                                 | Every entry in `sidebars.ts` and every file under `docs/api/` is lowercase; TRA-635 fixed CHANGELOG                                          | Already done |
+| S3 — `parent_id: null` on PUT                                                       | UpdateLocationRequest declares `parent_id: nullable`; resource-identifiers.md L158 already documents PUT-null clears the parent              | Already done |
 
 That leaves the items below as the actual scope of this PR.
 

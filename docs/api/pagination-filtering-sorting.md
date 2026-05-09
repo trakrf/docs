@@ -33,10 +33,10 @@ Every list endpoint returns the same envelope:
 
 Offset-based. Two query params control the page:
 
-| Param    | Default | Max   | Notes                                                                                                                                                                                            |
-| -------- | ------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Param    | Default | Max   | Notes                                                                                                                                                                                                               |
+| -------- | ------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `limit`  | `50`    | `200` | Page size. Values over 200 are rejected with `400 validation_error` (`fields[].code = too_large`). See [Errors → Path- and query-parameter validation errors](./errors#path-and-query-parameter-validation-errors). |
-| `offset` | `0`     | —     | Rows to skip. `offset=50&limit=50` gets the second page.                                                                                                                                         |
+| `offset` | `0`     | —     | Rows to skip. `offset=50&limit=50` gets the second page.                                                                                                                                                            |
 
 Shell examples below use a `$BASE_URL` env var — set it to `https://app.trakrf.id` for production or `https://app.preview.trakrf.id` for preview. See [Authentication → Base URL](./authentication#base-url).
 
@@ -75,12 +75,12 @@ Filter parameters are specific to each resource. All filters are query parameter
 
 **Default scope.** Every list endpoint applies a [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) on top of any filter you pass — rows with `valid_to` in the past or `valid_from` in the future are excluded by default. The path-param read paths (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) do not apply this predicate; use them to inspect a record you already hold an `id` for.
 
-| Endpoint                                | Filter params                                                                            |
-| --------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `GET /api/v1/assets`                    | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`       |
-| `GET /api/v1/locations`                 | `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`           |
-| `GET /api/v1/locations/current`         | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted`, `q` |
-| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps)                                                       |
+| Endpoint                                | Filter params                                                                                              |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/assets`                    | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`                         |
+| `GET /api/v1/locations`                 | `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`                             |
+| `GET /api/v1/locations/current`         | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted` (default `false`), `q` |
+| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps)                                                                         |
 
 ### Repeatable filters
 
@@ -132,6 +132,8 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z"
 ```
+
+`from` / `to` (history query parameters) and `valid_from` / `valid_to` (resource schema fields) share a similar shape but answer different questions. `from` / `to` bound the **observation window** for the history query — which scan events to include in the response. `valid_from` / `valid_to` are the resource's **effective-dating bounds** ([Date fields](./date-fields)) — when the asset itself became and stops being effective. The history endpoint applies the [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) to the joined location and embedded tags inside each event, but the `from` / `to` query params are independent of that — they're scan timestamps, not effective dates.
 
 ## Sorting
 
