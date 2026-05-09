@@ -25,6 +25,10 @@ If you have a use case that genuinely requires programmatic provisioning (per-te
 
 <!-- TODO: screenshot of avatar menu → API Keys → New key dialog; capture via scripts/refresh-screenshots.sh pattern. -->
 
+:::tip Misminted scopes? Revoke and re-mint
+Scopes are baked into the JWT at creation and cannot be edited afterward — there is no "edit key" flow. If you mint a key with the wrong scopes (or against the wrong organization, or with the wrong expiration), [revoke it](#listing-revocation-spa-side) from the same **avatar menu → API Keys** view and mint a fresh one. Both keys remain valid until you revoke, so the cutover is non-disruptive: mint the new key, swap it into your secrets store, then revoke the old one.
+:::
+
 ## Request header
 
 Every authenticated request must include the API key as a Bearer token in the `Authorization` header:
@@ -115,7 +119,7 @@ All lifecycle actions — creation, listing, rotation, revocation — happen in 
 - **Listing:** the key's prefix and metadata (name, scopes, created / last-used timestamps) remain visible to administrators; the full JWT is never shown again.
 - **Rotation:** create a new key, update your integration, then revoke the old one. TrakRF does not support in-place key rotation; create-new-revoke-old keeps both keys valid during the cutover.
 - **Revocation:** an administrator can revoke a key at any time. Revoked keys produce `401 unauthorized` on every subsequent request.
-- **Expiration:** keys do not expire by default — leaving the field blank (the **Never** option in the SPA picker) mints a permanent credential with no `exp` claim. Generated clients that auto-refresh on `exp` will treat such a key as immortal and never trigger their own rotation logic. For any key beyond a throwaway local-dev credential, set an explicit expiration (e.g. 90 days) and schedule the rotation. Expired keys return `401 unauthorized`.
+- **Expiration:** keys do not expire by default — leaving the field blank (the **Never** option in the SPA picker) mints a permanent credential with **no `exp` claim** in the JWT. Picking an explicit expiration populates `exp` as a numeric Unix timestamp; the absence of the claim is the "no expiry" signal, not a sentinel value or a `null`. Generated clients that auto-refresh on `exp` will treat a no-`exp` key as immortal and never trigger their own rotation logic. For any key beyond a throwaway local-dev credential, set an explicit expiration (e.g. 90 days) and schedule the rotation. Expired keys return `401 unauthorized`.
 
 ### Listing and revocation are SPA-side {#listing-revocation-spa-side}
 
