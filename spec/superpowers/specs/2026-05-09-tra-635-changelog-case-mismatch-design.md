@@ -26,12 +26,12 @@ Option B (keep uppercase, add a redirect) was rejected: it leaves the file incon
 
 Per the standing audit-immediate-category rule, I swept the rest of the docs tree for the same review pattern (uppercase doc filename in an otherwise-lowercase sidebar):
 
-| File | Status | Reason |
-|---|---|---|
-| `docs/api/CHANGELOG.md` | **In scope** | The named target. |
-| `docs/app-tour/AUTHORING.md` | **In scope** | Same pattern: uppercase filename sitting in `appTourSidebar` next to `home`, `inventory`, `locate`, … all lowercase. No incoming links to break. Folding in costs one rename and one sidebar edit. |
-| `docs/api/README.md` | Out of scope (intentional) | Docusaurus convention for category root pages. Renaming would break the `apiSidebar` `link: { type: "doc", id: "api/README" }` entry and is not the same review pattern. |
-| `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `README.md` (repo root) | Out of scope | Repo-root files, not part of the Docusaurus `docs/` tree. They follow GitHub convention, not URL-slug convention. |
+| File                                                                                            | Status                     | Reason                                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/api/CHANGELOG.md`                                                                         | **In scope**               | The named target.                                                                                                                                                                                  |
+| `docs/app-tour/AUTHORING.md`                                                                    | **In scope**               | Same pattern: uppercase filename sitting in `appTourSidebar` next to `home`, `inventory`, `locate`, … all lowercase. No incoming links to break. Folding in costs one rename and one sidebar edit. |
+| `docs/api/README.md`                                                                            | Out of scope (intentional) | Docusaurus convention for category root pages. Renaming would break the `apiSidebar` `link: { type: "doc", id: "api/README" }` entry and is not the same review pattern.                           |
+| `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `README.md` (repo root) | Out of scope               | Repo-root files, not part of the Docusaurus `docs/` tree. They follow GitHub convention, not URL-slug convention.                                                                                  |
 
 I also re-verified the BB15 concept-guide slugs flagged in the ticket description (`identifiers` vs `resource-identifiers`, `pagination` vs `pagination-filtering-sorting`). Both were corrected upstream; every current `[…](./resource-identifiers)` and `[…](./pagination-filtering-sorting)` reference round-trips correctly. No remaining concept-guide case mismatches.
 
