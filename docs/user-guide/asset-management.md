@@ -31,7 +31,7 @@ The new location shows up in the tree on the left; the right pane becomes a deta
 
 Assets are the records TrakRF checks scans against. Each asset has at least one RFID tag number (EPC), plus optional metadata — name, description, home location, active window.
 
-1. Open **Assets** from the left nav. On a fresh org you'll see a "No assets yet" empty state with a **Create Asset** button.
+1. Open **Assets** from the left nav. On a new organization you'll see a "No assets yet" empty state with a **Create Asset** button.
 
    ![Empty Assets page — No assets yet, Create Asset CTA, and footer cards](/img/user-guide/assets-page.png)
 

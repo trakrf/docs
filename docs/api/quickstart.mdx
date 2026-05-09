@@ -29,7 +29,7 @@ Preview-scoped keys will not authenticate against production and vice versa; the
 
 ## 2. Verify your key works
 
-If you don't already have an API key, sign in to the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>, open the **avatar menu → API Keys → New Key**, name the key, and submit. The full JWT is shown once at creation — copy it immediately; it cannot be shown again. Full walkthrough (scope picker, expiration, multi-org switcher): [Authentication → Mint your first API key](./authentication#mint-your-first-api-key).
+If you don't already have an API key, sign in to the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>, open the **avatar menu → API Keys → New Key**, name the key, and submit. The full JWT is shown once at creation — copy it immediately; it cannot be shown again. Full walkthrough (scope picker, expiration, organization switcher): [Authentication → Mint your first API key](./authentication#mint-your-first-api-key).
 
 :::note Browser required to mint a key
 Minting an API key requires an interactive browser session — there is no programmatic mint endpoint by design. CI/headless setups should mint a key out-of-band, paste it into a secret store (env var, vault, GitHub Actions secret), and reference it from there. See [Authentication → Where keys come from](./authentication#where-keys-come-from) for the design rationale and a contact path if your use case genuinely needs programmatic provisioning.
@@ -59,7 +59,7 @@ A successful response:
 }
 ```
 
-If the `name` matches the org you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface.
+If the `name` matches the organization you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface.
 
 Troubleshooting:
 
@@ -86,7 +86,7 @@ Write error handlers against `body.error.type` and `body.error.detail`, not top-
 
 ## 3. Round-trip: create, read, update, delete
 
-This walks through the write path end-to-end with an asset. It needs `assets:write` on the key (and `assets:read` if you want to verify via GET) — in the **New API Key** dialog, that's the **Assets** dropdown set to **Read+Write**. If your key was minted without those scopes, [mint a new one](./authentication#mint-your-first-api-key) — scopes can't be edited after creation. For the other read endpoints you'll see referenced elsewhere on the docs site, you'll want `locations:read` (Locations → Read) and `history:read` (History → Read); see [Authentication → Scopes](./authentication#scopes) and [UI labels vs scope strings](./authentication#ui-labels) for the full matrix.
+This walks through the write path end-to-end with an asset. It needs `assets:write` on the key (and `assets:read` if you want to verify via GET) — in the **New API Key** dialog, that's the **Assets** dropdown set to **Read + Write**. If your key was minted without those scopes, [mint a new one](./authentication#mint-your-first-api-key) — scopes can't be edited after creation. For the other read endpoints you'll see referenced elsewhere on the docs site, you'll want `locations:read` (Locations → Read) and `history:read` (History → Read); see [Authentication → Scopes](./authentication#scopes) and [UI labels vs scope strings](./authentication#ui-labels) for the full matrix.
 
 ```bash
 # Create — capture the assigned id from the response

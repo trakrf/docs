@@ -14,22 +14,22 @@ If you need functionality not available via the documented public API, [email su
 
 For server-to-server or scripted integrations, the supported credential is an **API key** issued via the in-app **avatar menu → API Keys** flow (see [Authentication](./authentication)). Session JWTs minted by `POST /api/v1/auth/login` exist to keep the first-party SPA logged in and may change without notice — they are not a public auth path.
 
-**SSO and per-user OAuth are not currently exposed** as public auth paths. If your integration needs human-on-behalf-of credentials rather than an org-scoped API key, [email support](mailto:support@trakrf.id) so we can prioritize the request.
+**SSO and per-user OAuth are not currently exposed** as public auth paths. If your integration needs human-on-behalf-of credentials rather than an organization-scoped API key, [email support](mailto:support@trakrf.id) so we can prioritize the request.
 
 ## Endpoint list
 
-| Endpoint                       | Method(s) | Used by               | Status                      | Classification |
-| ------------------------------ | --------- | --------------------- | --------------------------- | -------------- |
-| `/api/v1/auth/login`           | POST      | SPA login form        | Internal                    | Internal       |
-| `/api/v1/auth/signup`          | POST      | SPA signup form       | Internal                    | Internal       |
-| `/api/v1/auth/forgot-password` | POST      | SPA password recovery | Internal                    | Internal       |
-| `/api/v1/auth/reset-password`  | POST      | SPA password recovery | Internal                    | Internal       |
-| `/api/v1/auth/accept-invite`   | POST      | SPA invite acceptance | Internal                    | Internal       |
-| `/api/v1/users/me`             | GET       | SPA user context      | Internal                    | Internal       |
-| `/api/v1/users/me/current-org` | POST      | SPA org switcher      | Internal                    | Internal       |
-| `/api/v1/orgs`                 | GET       | SPA org picker        | Internal                    | Internal       |
-| `/api/v1/orgs/{id}`            | GET       | SPA org detail        | Internal                    | Internal       |
-| `/api/v1/orgs/me`              | GET       | API-key health check  | Public (see [`/api`](/api)) | Public         |
+| Endpoint                       | Method(s) | Used by                   | Status                      | Classification |
+| ------------------------------ | --------- | ------------------------- | --------------------------- | -------------- |
+| `/api/v1/auth/login`           | POST      | SPA login form            | Internal                    | Internal       |
+| `/api/v1/auth/signup`          | POST      | SPA signup form           | Internal                    | Internal       |
+| `/api/v1/auth/forgot-password` | POST      | SPA password recovery     | Internal                    | Internal       |
+| `/api/v1/auth/reset-password`  | POST      | SPA password recovery     | Internal                    | Internal       |
+| `/api/v1/auth/accept-invite`   | POST      | SPA invite acceptance     | Internal                    | Internal       |
+| `/api/v1/users/me`             | GET       | SPA user context          | Internal                    | Internal       |
+| `/api/v1/users/me/current-org` | POST      | SPA organization switcher | Internal                    | Internal       |
+| `/api/v1/orgs`                 | GET       | SPA organization picker   | Internal                    | Internal       |
+| `/api/v1/orgs/{id}`            | GET       | SPA organization detail   | Internal                    | Internal       |
+| `/api/v1/orgs/me`              | GET       | API-key health check      | Public (see [`/api`](/api)) | Public         |
 
 ## Response shape: `/orgs/me` {#orgs-me}
 
@@ -39,7 +39,7 @@ For server-to-server or scripted integrations, the supported credential is an **
 {
   "data": {
     "id": 123,
-    "name": "Example Org"
+    "name": "Example Organization"
   }
 }
 ```

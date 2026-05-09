@@ -18,7 +18,7 @@ If you have a use case that genuinely requires programmatic provisioning (per-te
 
 1. Sign in (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)). Both hosts run the same UI and flow — use the one that matches your account. See [Base URL](#base-url) for the matching API host.
 2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — signal power, session, worker log level — not key management.)
-3. **If your account belongs to multiple organizations,** API keys are scoped to whichever org is currently selected in the avatar menu. Check the org switcher before clicking **New key** — a key minted under the wrong org cannot be reassigned.
+3. **If your account belongs to multiple organizations,** API keys are scoped to whichever organization is currently selected in the avatar menu. Check the organization switcher before clicking **New key** — a key minted under the wrong organization cannot be reassigned.
 4. Click **New key**. Give it a descriptive name (e.g. `"prod-integration"` or `"local-dev"`) and pick the scopes the integration needs — only the scopes required for the endpoints you'll call. See the [Scopes](#scopes) table below.
 5. Submit. The full JWT is displayed **once** at creation. Copy it to your secrets store immediately; it cannot be shown again.
 6. Use it as the `Authorization: Bearer <key>` header on every API request. See [Request header](#request-header) for the exact format.
@@ -45,18 +45,18 @@ Each key is issued with one or more scopes. The API rejects requests whose key l
 
 ### UI labels vs scope strings {#ui-labels}
 
-The **New key** form in the web app lets you pick a resource (Assets / Locations / History) and an access level (None / Read / Read+Write). Each combination maps to one or two of the scope strings used throughout these docs and in API responses.
+The **New key** form in the web app lets you pick a resource (Assets / Locations / History) and an access level (None / Read / Read + Write). Each combination maps to one or two of the scope strings used throughout these docs and in API responses.
 
 | UI form (resource × level) | Scopes granted                      |
 | -------------------------- | ----------------------------------- |
 | Assets → Read              | `assets:read`                       |
-| Assets → Read+Write        | `assets:read`, `assets:write`       |
+| Assets → Read + Write      | `assets:read`, `assets:write`       |
 | Locations → Read           | `locations:read`                    |
-| Locations → Read+Write     | `locations:read`, `locations:write` |
+| Locations → Read + Write   | `locations:read`, `locations:write` |
 | History → Read             | `history:read`                      |
 | Key management → Admin     | `keys:admin`                        |
 
-Selecting **None** for a resource grants no scope for that resource. Selecting **Read+Write** always grants both the read and the write scope — there is no write-only level today. Key management has only **None** and **Admin** (no Read / Write split); Admin is reserved for a future capability — see [Key management is reserved](#key-management-reserved) below.
+Selecting **None** for a resource grants no scope for that resource. Selecting **Read + Write** always grants both the read and the write scope — there is no write-only level today. Key management has only **None** and **Admin** (no Read / Write split); Admin is reserved for a future capability — see [Key management is reserved](#key-management-reserved) below.
 
 | Scope             | Access | Endpoints (representative)                                                           |
 | ----------------- | ------ | ------------------------------------------------------------------------------------ |
@@ -126,7 +126,13 @@ All lifecycle actions — creation, listing, rotation, revocation — happen in 
 - **Listing:** the key's prefix and metadata (name, scopes, created / last-used timestamps) remain visible to administrators; the full JWT is never shown again.
 - **Rotation:** create a new key, update your integration, then revoke the old one. TrakRF does not support in-place key rotation; create-new-revoke-old keeps both keys valid during the cutover.
 - **Revocation:** an administrator can revoke a key at any time. Revoked keys produce `401 unauthorized` on every subsequent request.
-- **Expiration:** keys do not expire by default — leaving the field blank at creation mints a permanent credential with no `exp` claim. For any key beyond a throwaway local-dev credential, set an explicit expiration (e.g. 90 days) and schedule the rotation. Expired keys return `401 unauthorized`.
+- **Expiration:** keys do not expire by default — leaving the field blank (the **Never** option in the SPA picker) mints a permanent credential with no `exp` claim. Generated clients that auto-refresh on `exp` will treat such a key as immortal and never trigger their own rotation logic. For any key beyond a throwaway local-dev credential, set an explicit expiration (e.g. 90 days) and schedule the rotation. Expired keys return `401 unauthorized`.
+
+### Listing and revocation are SPA-side {#listing-revocation-spa-side}
+
+Listing existing keys, viewing key metadata (name, scopes, created / last-used / expires timestamps), and revoking a key are all browser affordances in the SPA's **avatar menu → API Keys** view, not API endpoints. There is no `GET /api/v1/keys` or `DELETE /api/v1/keys/{id}` on the public surface in v1 — see [Where keys come from](#where-keys-come-from) for the design rationale (the same trust-boundary argument that gates programmatic key minting also gates programmatic key listing and revocation).
+
+**Practical implication for partners automating rotation:** any rotation workflow that needs to enumerate or revoke prior keys has to drive the SPA flow (manual or scripted via a session login), or maintain its own out-of-band record of which key handles map to which integrations. If you have a use case that genuinely requires programmatic listing or revocation, [contact us](mailto:support@trakrf.id) — same evaluation track as programmatic key minting.
 
 ## Base URL
 
