@@ -59,7 +59,7 @@ Per-call specifics (the offending field, the unparseable value, the resource id 
 | `type`                   | HTTP status | When you'll see it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Retry?                                          |
 | ------------------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
 | `validation_error`       | 400         | A specific field in the request was invalid — a body field, a query parameter, or an unknown JSON / query key. Carries `fields[]`; see [validation errors](#validation-errors).                                                                                                                                                                                                                                                                                                                                               | No — fix the request                            |
-| `bad_request`            | 400         | Request was malformed in a way the API can't attribute to a specific field — invalid JSON syntax, or a JSON-type mismatch (e.g. a number where the schema expects a string). No `fields[]`.                                                                                                                                                                                                                                                                                                                                   | No — fix the request                            |
+| `bad_request`            | 400         | Request was malformed at decode time — invalid JSON syntax, or a JSON value that didn't match the expected type for a body field. No `fields[]`; the offending field name (when known) is in `detail`. See [validation_error vs bad_request](#validation_error-vs-bad_request).                                                                                                                                                                                                                                               | No — fix the request                            |
 | `unauthorized`           | 401         | Missing, malformed, revoked, or expired API key. The specific cause (missing header, wrong scheme, expired token, revoked key) is in `detail`.                                                                                                                                                                                                                                                                                                                                                                                | No — re-auth                                    |
 | `forbidden`              | 403         | Valid key but insufficient scope for this endpoint                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | No — needs a key with the right scope           |
 | `not_found`              | 404         | Resource lookup failed — an in-range path-param `id` that doesn't resolve (`GET /api/v1/assets/99999`) or a sub-resource path doesn't exist (`GET /api/v1/assets/99999/history`). An out-of-range or non-numeric path-param `id` (e.g. `0`, `-5`, `2147483648`, `abc`) returns `400 validation_error` against the spec's path-param bounds, not 404 — see [path-parameter validation errors](#path-and-query-parameter-validation-errors). A list filter that resolves to zero rows returns 200 with empty `data[]`, not 404. | No — check the identifier                       |
@@ -74,7 +74,37 @@ Per-call specifics (the offending field, the unparseable value, the resource id 
 
 The split between the two 400-class types is whether the API can name the offending input. Anything the schema validator catches — body-field violations, query-parameter violations, path-parameter violations against the declared schema bounds, plus unknown JSON keys and unknown query parameters — returns `validation_error` with a populated `fields[]` array. Anything the API rejects at a structural level — invalid JSON syntax, or a value the decoder rejects before knowing which field it belongs to — returns `bad_request` with no `fields[]`.
 
-One quirk worth noting: sending the wrong JSON type for a body field (for example, a number where the schema expects a string) returns `bad_request`, not `validation_error` — the JSON decoder fails before per-field reporting is reliable. If you see `bad_request` on a body that looks well-formed, this is the most likely cause.
+Type mismatches on body fields take this `bad_request` path because they fail at decode time, before the schema validator runs that would otherwise produce `fields[]`. The offending field name is surfaced in `detail` when the decoder can identify it:
+
+```json
+{
+  "error": {
+    "type": "bad_request",
+    "title": "Bad request",
+    "status": 400,
+    "detail": "Body field \"external_key\" could not be decoded as the expected type",
+    "instance": "/api/v1/assets",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
+  }
+}
+```
+
+When the mismatch is at the top level (the request body itself is the wrong JSON type — for example an array where an object is expected), `detail` falls back to a generic message:
+
+```json
+{
+  "error": {
+    "type": "bad_request",
+    "title": "Bad request",
+    "status": 400,
+    "detail": "Request body could not be decoded as the expected type",
+    "instance": "/api/v1/assets",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
+  }
+}
+```
+
+Genuinely malformed JSON (truncated input, syntax errors, EOF mid-token) returns the same envelope with `detail: "Request body is not valid JSON"`.
 
 ### Extensibility
 
