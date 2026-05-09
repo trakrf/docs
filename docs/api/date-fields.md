@@ -15,6 +15,8 @@ Every timestamped resource in the TrakRF v1 API uses the same two effective-date
 
 The API never returns `0001-01-01T00:00:00Z` zero-time and never returns a `2099-12-31` far-future sentinel. The unset signal for `valid_to` is JSON `null`, not an absent key and not a sentinel value. If a client sees a sentinel, it's a bug — please [report it](mailto:support@trakrf.id).
 
+`valid_from` / `valid_to` drive the **currently-effective** predicate that list endpoints apply by default. See [Effective dating and `is_active`](./resource-identifiers#effective-dating-and-is-active) for the rule and the list-vs-path-param distinction.
+
 ## Outbound: always RFC3339 or `null`
 
 Every `valid_from` on the response is RFC3339 in UTC. `valid_to` is either RFC3339 in UTC or JSON `null` — clients can parse the populated value with a single formatter and branch only on null vs. non-null. Two records from the same list endpoint, one with an expiry and one without:
