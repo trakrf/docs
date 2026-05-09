@@ -37,7 +37,7 @@ Each event payload will include the full logical context — both forms of the a
 
 ## Planned mechanics
 
-- **Registration:** register a target URL per org, with optional per-event filters.
+- **Registration:** register a target URL per organization, with optional per-event filters.
 - **Delivery guarantees:** at-least-once. Your handler must be idempotent (TrakRF sends a stable event ID in each payload so you can deduplicate).
 - **Retry:** exponential backoff with jitter over ~24 hours. Persistent failures eventually stop retrying; you'll see the failures in the delivery log.
 - **Signature verification:** every payload includes an HMAC signature header so you can verify the request originated from TrakRF and wasn't tampered with in flight. A secret is generated per registered webhook.
