@@ -70,6 +70,15 @@ Per-call specifics (the offending field, the unparseable value, the resource id 
 | `rate_limited`           | 429         | You've hit the rate limit — see [Rate limits](./rate-limits)                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Yes, after `Retry-After` seconds                |
 | `internal_error`         | 500         | Unhandled server failure                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Yes, with exponential backoff                   |
 
+### HTTP method coverage
+
+The catalog above covers `405 method_not_allowed`, but two HTTP methods are intentionally **not** enumerated per path in the OpenAPI reference — they're handled uniformly across every endpoint:
+
+- **`HEAD`** — supported on every endpoint that declares `GET`. The server transparently strips the response body and returns the same status and headers as the matching `GET`. Use it for cheap existence/auth probes that don't need the payload.
+- **`OPTIONS`** — reserved for CORS preflight. Returns `204 No Content` with `Access-Control-*` headers when a browser origin is allowed; otherwise `204` with no CORS headers. OPTIONS is not part of the resource API surface — server-to-server clients won't normally invoke it.
+
+To probe which methods a path supports without consulting the spec, send any request that triggers a `405` and read the `Allow` header on the response (per [RFC 7231 §6.5.5](https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.5)) — the same value also lands in the error envelope's `detail` (e.g. `Allowed methods: GET, HEAD, POST`).
+
 ### `validation_error` vs `bad_request`
 
 The split between the two 400-class types is whether the API can name the offending input. Anything the schema validator catches — body-field violations, query-parameter violations, path-parameter violations against the declared schema bounds, plus unknown JSON keys and unknown query parameters — returns `validation_error` with a populated `fields[]` array. Anything the API rejects at a structural level — invalid JSON syntax, or a value the decoder rejects before knowing which field it belongs to — returns `bad_request` with no `fields[]`.
