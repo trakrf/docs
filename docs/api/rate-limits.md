@@ -28,13 +28,15 @@ Tier-specific allowances keyed to subscription plans are on the roadmap. If your
 
 ## Response headers
 
-Every API response — successful or throttled — includes three headers describing the current state of your bucket:
+Every API response on the public surface — including 4xx and 5xx errors (`401`, `403`, `404`, `409`, `415`, `429`, `500`) — includes three headers describing the current state of your bucket:
 
 | Header                  | Units              | Meaning                                                                                                                    |
 | ----------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
 | `X-RateLimit-Limit`     | integer requests   | Your steady-state budget per 60-second window (e.g. `60`).                                                                 |
 | `X-RateLimit-Remaining` | integer requests   | Requests you can make before throttling, bounded by `Limit`. Stays at `Limit` while you're inside the burst safety margin. |
 | `X-RateLimit-Reset`     | Unix epoch seconds | Wall-clock time at which `Remaining` will next equal `Limit`. Equal to "now" when you already have full quota.             |
+
+The headers ride on every response status the public surface emits, so clients can read `X-RateLimit-Remaining` even when the request itself failed — error responses are not a blind spot for budget tracking.
 
 You can watch `X-RateLimit-Remaining` to pace requests preemptively rather than waiting to hit `429`. A well-behaved client pattern is:
 
