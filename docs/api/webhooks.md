@@ -14,7 +14,7 @@ If webhooks are on your integration path, [email support](mailto:support@trakrf.
 
 ## Why webhooks
 
-Today, integrations using the TrakRF API pull scan and location data on a schedule — typically a cron job hitting `GET /api/v1/scans` every few minutes. That works, but:
+Today, integrations pull scan-derived data on a schedule — typically a cron job that hits `GET /api/v1/locations/current` for the latest snapshot or `GET /api/v1/assets/{asset_id}/history` per asset of interest. ([Scan events are a domain concept](./resource-identifiers#scan-event-vocabulary), not a top-level API resource — those two endpoints are the projections.) Polling works, but:
 
 - You pay for the request traffic even when nothing has happened.
 - The latency between a physical scan and your system seeing it is at best one polling interval.
