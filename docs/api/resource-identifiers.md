@@ -100,6 +100,8 @@ Every field on `PublicAssetView` and `PublicLocationView` is **required** in the
 
 `PublicAssetView` carries an open-ended `metadata` object (`additionalProperties: true`) for partner-side annotations the API does not interpret — a CRM record id, an ERP cost-center code, a partner SKU. Locations do **not** have a `metadata` field; the asymmetry is intentional for v1.
 
+On write, `metadata` must be a JSON object. Scalars, arrays, and booleans (e.g. `"metadata": "x"`, `"metadata": [1, 2]`, `"metadata": true`) are rejected at the validator boundary with `400 validation_error` / `invalid_value`. The `additionalProperties: true` declaration governs what's allowed _inside_ the object; the wrapper itself is type-restricted.
+
 The pattern we recommend mirrors the schemas:
 
 | Surface       | Where to put partner-side data                                                                   |
@@ -114,6 +116,8 @@ Locations were not given an open `metadata` field because the practical "what wo
 Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields that aren't part of the request schema — server-managed metadata (`id`, `created_at`, `updated_at`), derived fields (`tree_path`, `depth` on locations), and embedded sub-resources (`tags`). The exact set varies by resource.
 
 The server **silently ignores** these read-only fields on `PUT`. A naive `GET` → mutate → `PUT` of the entire response object succeeds, so codegen-derived clients that re-send the full read shape don't have to strip first. The fields are flagged with `readOnly: true` in the OpenAPI spec; generated SDKs (typescript-fetch, openapi-generator) honor that marker and split read and write into distinct types, which keeps the request payload minimal at the type-system level.
+
+A request body that resolves to **no writable fields** — `{}`, or a body containing only readOnly fields like `{"id":999}`, `{"created_at":"…"}`, or `{"tags":[]}` — returns `200` with the unchanged record. A verbatim `GET` → `PUT` round-trip with no edits in between is a legal no-op, not an error, so a "save" button that re-PUTs the loaded form without diffing against the original is fine.
 
 Strict-unknown-field validation still applies for fields that are **not** declared on either the read or the write schema — a typo'd or off-resource field name returns `400 validation_error` with `fields[].field` naming the offender. See [Errors → Validation errors](./errors#validation-errors) for the envelope shape.
 
