@@ -12,7 +12,7 @@ This section will cover the non-REST-API integration paths into TrakRF.
 None of the integration surfaces below are documented yet for self-service. Early deployments are handled as direct engagements — [email support](mailto:support@trakrf.id) if one of these describes your use case.
 
 - **[MQTT message format](./mqtt-message-format)** — the ingest path used by prior fixed-reader deployments; schema and pipeline live, docs pending.
-- **[Fixed reader setup](./fixed-reader-setup)** — deploying CS463 and similar fixed RFID readers against a TrakRF org.
+- **[Fixed reader setup](./fixed-reader-setup)** — deploying CS463 and similar fixed RFID readers against a TrakRF organization.
 
 ## What's documented today
 
