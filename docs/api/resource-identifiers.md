@@ -17,11 +17,9 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 This is the conventional REST shape and the URL stays valid even if the asset's `external_key` changes. Use it when you have an `id` already in hand — typically because you got it from a list response, a previous create, or a record cached in your own database.
 
-### Numeric `id` collides across resource types
+### Numeric `id` is a surrogate key
 
-Each integer `id` is unique only within its resource type. The same integer can appear as both an `asset_id` and a `tag_id` (or asset and location, etc.) within a single organization — they're independent sequences, and a low-millions value can show up on either surface.
-
-When passing ids between systems, qualify them with the resource type (`asset_id`, `location_id`, `tag_id`) so a downstream consumer never has to guess which sequence the integer came from. The string `external_key` is unique within an organization _and_ carries no cross-type ambiguity, so it's the safer cross-resource identifier when types may be mixed in flight (audit logs, partner exports, ETL pipelines).
+Numeric `id` values are surrogate keys — unique within their entity type, not across types. The same integer can exist as both an asset id and a tag id; that's expected behavior. The API disambiguates by URL position (`/assets/{asset_id}`, `/locations/{location_id}/tags/{tag_id}`) or query-parameter name (`location_id`, `parent_id`), so an id is never passed without its entity context at the API boundary. Client code matches ids to entity type — standard surrogate-key discipline.
 
 ## Natural-key lookup uses `?external_key=`
 
