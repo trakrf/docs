@@ -19,9 +19,9 @@ This is the conventional REST shape and the URL stays valid even if the asset's 
 
 ### Numeric `id` collides across resource types
 
-The integer `id` field on each schema is unique only within that resource type. Numeric values can collide across types — an asset and a tag may share the same integer `id`. (BB16 testing observed `790505327` as both an asset id and a location-tag id within a single org.)
+Each integer `id` is unique only within its resource type. The same integer can appear as both an `asset_id` and a `tag_id` (or asset and location, etc.) within a single organization — they're independent sequences, and a low-millions value can show up on either surface.
 
-When passing ids between systems, qualify them with the resource type (`asset_id`, `location_id`, `tag_id`). The string `external_key` field is unique within an org _and_ carries no cross-type ambiguity, so it's the safer cross-resource identifier when types may be mixed in flight.
+When passing ids between systems, qualify them with the resource type (`asset_id`, `location_id`, `tag_id`) so a downstream consumer never has to guess which sequence the integer came from. The string `external_key` is unique within an organization _and_ carries no cross-type ambiguity, so it's the safer cross-resource identifier when types may be mixed in flight (audit logs, partner exports, ETL pipelines).
 
 ## Natural-key lookup uses `?external_key=`
 
@@ -91,12 +91,25 @@ Both fields are populated whenever the relationship exists — no nested object,
 
 That makes two response-shape behaviors that coexist on these resources, and it's worth knowing which is which:
 
-| Behavior              | Fields                                                                                                                                | Test for         |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
-| **Always present**    | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)                                | the value itself |
+| Behavior              | Fields                                                                                                                                     | Test for         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------- |
+| **Always present**    | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)                                     | the value itself |
 | **Present as `null`** | `location_id`, `location_external_key`, `parent_id`, `parent_external_key`, `description`, `valid_to` (and other unset-but-emitted fields) | `field === null` |
 
 Every field on `PublicAssetView` and `PublicLocationView` is **required** in the OpenAPI spec — generated SDKs will surface them as non-optional with a nullable type. Null-check, don't key-check. The same pattern holds on `report.PublicCurrentLocationItem` (`asset_deleted_at` is always present, `null` for live assets, populated for soft-deleted assets). When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs.
+
+## Asset `metadata` vs. location `tags`: side-channel data {#asset-metadata-vs-location-tags}
+
+`PublicAssetView` carries an open-ended `metadata` object (`additionalProperties: true`) for partner-side annotations the API does not interpret — a CRM record id, an ERP cost-center code, a partner SKU. Locations do **not** have a `metadata` field; the asymmetry is intentional for v1.
+
+The pattern we recommend mirrors the schemas:
+
+| Surface       | Where to put partner-side data                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------ |
+| **Assets**    | `metadata` — free-form key/value, no schema, round-trips through `GET` → `PUT`.                  |
+| **Locations** | `tags` — typed natural-key pairs (`tag_type`, `value`), enforced unique within the organization. |
+
+Locations were not given an open `metadata` field because the practical "what would I stuff in here" use cases on a location (a CRM site id, a partner facility code) are already addressable through `tags` with a partner-defined `tag_type`. If you have a use case that genuinely needs schemaless side-channel data on a location, [contact us](mailto:support@trakrf.id) — same evaluation track as the v2 capability requests.
 
 ## Read shape vs. write shape
 
@@ -173,7 +186,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{location_id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`.
 
-**Don't cache `tree_path`.** The value is derived, and renaming an `external_key` rewrites the `tree_path` on that location *and every descendant* in one transaction. A client that pinned `tree_path` for hierarchy queries will silently desync after a rename. If you need stable hierarchy state, store the chain of `external_key`s (or the `id` chain via `/ancestors`) and re-derive on demand.
+**Don't cache `tree_path`.** The value is derived, and renaming an `external_key` rewrites the `tree_path` on that location _and every descendant_ in one transaction. A client that pinned `tree_path` for hierarchy queries will silently desync after a rename. If you need stable hierarchy state, store the chain of `external_key`s (or the `id` chain via `/ancestors`) and re-derive on demand.
 
 `tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use the [`?external_key=` filter](#natural-key-lookup-uses-external_key) on the locations list endpoint for natural-key lookups.
 
@@ -205,25 +218,25 @@ A caller-supplied `external_key` that collides with an existing live asset retur
 
 The reserved characters and why they're reserved:
 
-| Character | Reason it's reserved |
-| --------- | -------------------- |
-| `.` (period) | `tree_path` segment separator |
-| `_` (underscore) | segment-internal separator after `tree_path` normalization (each hyphen in `external_key` becomes an underscore in `tree_path`) |
-| ` ` (space), `/`, `:` | URL-, log-, and path-hostile; reserved to avoid surprise quoting |
+| Character             | Reason it's reserved                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `.` (period)          | `tree_path` segment separator                                                                                                   |
+| `_` (underscore)      | segment-internal separator after `tree_path` normalization (each hyphen in `external_key` becomes an underscore in `tree_path`) |
+| ` ` (space), `/`, `:` | URL-, log-, and path-hostile; reserved to avoid surprise quoting                                                                |
 
 Practical examples:
 
-| Value | Verdict |
-| ----- | ------- |
-| `SKU-7421-A` | ✓ accepted |
-| `BACK-STORAGE-2` | ✓ accepted |
-| `MyAsset123` | ✓ accepted (case is preserved on the key) |
-| `BB With Spaces` | ✗ `400 invalid_value` |
-| `BB/slash` | ✗ `400 invalid_value` |
-| `BB:colon` | ✗ `400 invalid_value` |
-| `BB.dotted` | ✗ `400 invalid_value` |
-| `BB_underscored` | ✗ `400 invalid_value` |
-| `BB漢字` | ✗ `400 invalid_value` (non-ASCII) |
+| Value            | Verdict                                   |
+| ---------------- | ----------------------------------------- |
+| `SKU-7421-A`     | ✓ accepted                                |
+| `BACK-STORAGE-2` | ✓ accepted                                |
+| `MyAsset123`     | ✓ accepted (case is preserved on the key) |
+| `BB With Spaces` | ✗ `400 invalid_value`                     |
+| `BB/slash`       | ✗ `400 invalid_value`                     |
+| `BB:colon`       | ✗ `400 invalid_value`                     |
+| `BB.dotted`      | ✗ `400 invalid_value`                     |
+| `BB_underscored` | ✗ `400 invalid_value`                     |
+| `BB漢字`         | ✗ `400 invalid_value` (non-ASCII)         |
 
 `external_key` is **case-preserving** on storage — `MyAsset` and `myasset` are distinct keys for uniqueness purposes — but `tree_path` lowercases every segment, so two location keys differing only in case will collide on `tree_path` even though they coexist as distinct rows. Pick a casing convention and stick to it.
 
