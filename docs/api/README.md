@@ -23,7 +23,7 @@ This page is the map. The pages linked below are the territory.
 - **[Errors](./errors)** — error envelope, error-type catalog, retry guidance
 - **[Rate limits](./rate-limits)** — per-key token bucket, `X-RateLimit-*` headers, `Retry-After`
 - **[Versioning](./versioning)** — v1 stability commitment, deprecation policy, open vs closed enums
-- **[Changelog](./CHANGELOG)** — release-by-release record of added / deprecated / removed
+- **[Changelog](./changelog)** — release-by-release record of added / deprecated / removed
 - **[Webhooks](./webhooks)** — status of outbound delivery and the interim polling pattern
 - **[Postman collection](./postman)** — ready-to-import collection
 - **[Private endpoints](./private-endpoints)** — session-cookie-only endpoints used by the first-party web app (not part of the public API surface)

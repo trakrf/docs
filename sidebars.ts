@@ -31,7 +31,7 @@ const sidebars: SidebarsConfig = {
     "app-tour/reports",
     "app-tour/settings",
     "app-tour/help",
-    "app-tour/AUTHORING",
+    "app-tour/authoring",
   ],
   apiSidebar: [
     {
@@ -47,7 +47,7 @@ const sidebars: SidebarsConfig = {
         "api/errors",
         "api/rate-limits",
         "api/versioning",
-        "api/CHANGELOG",
+        "api/changelog",
         "api/webhooks",
         "api/postman",
         "api/private-endpoints",

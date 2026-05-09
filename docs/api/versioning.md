@@ -9,7 +9,7 @@ The TrakRF API uses URL-path versioning (`/api/v1/`) with a strong stability com
 
 ## Stability commitment (v1)
 
-The v1 stability commitment begins at public launch. Field renames and shape adjustments that landed before launch — including the canonical `id` + `external_key` rename ([CHANGELOG](./CHANGELOG)) — are pre-stability vocabulary cleanup, not v1 breaks. Once launched, `/api/v1/` is stable per the rules below.
+The v1 stability commitment begins at public launch. Field renames and shape adjustments that landed before launch — including the canonical `id` + `external_key` rename ([Changelog](./changelog)) — are pre-stability vocabulary cleanup, not v1 breaks. Once launched, `/api/v1/` is stable per the rules below.
 
 Within `/api/v1/`, TrakRF commits to the following:
 
@@ -96,7 +96,7 @@ Sunset: Wed, 11 Nov 2026 23:59:59 GMT
 
 The six-month gap is a floor, not a target. Breaking changes that can wait longer, will.
 
-**How clients should respond:** log `Deprecation` / `Sunset` headers in your own monitoring so you get advance warning without constantly reading changelogs. When one appears, check the [CHANGELOG](./CHANGELOG) for migration guidance.
+**How clients should respond:** log `Deprecation` / `Sunset` headers in your own monitoring so you get advance warning without constantly reading changelogs. When one appears, check the [Changelog](./changelog) for migration guidance.
 
 **Current status:** no endpoints or fields are deprecated at v1 launch. This mechanism is in place so future deprecations don't surprise integrators.
 
@@ -106,7 +106,7 @@ A v2 would be introduced only for changes that genuinely can't be expressed addi
 
 - v1 continues to operate under the RFC 8594 deprecation schedule (6+ months overlap).
 - v2 is served at `/api/v2/` — paths never collide with v1.
-- The migration path is documented in [CHANGELOG](./CHANGELOG) before v2 ships.
+- The migration path is documented in [Changelog](./changelog) before v2 ships.
 
 No v2 is currently planned.
 
@@ -114,10 +114,10 @@ No v2 is currently planned.
 
 - **Interactive reference** — [`/api`](/api) is regenerated from the Go handlers on every platform release, so it always reflects the running surface.
 - **Raw spec** — [`/api/openapi.json`](/api/openapi.json) or [`.yaml`](/api/openapi.yaml) for diffing between releases with your own tooling.
-- **Changelog** — [CHANGELOG](./CHANGELOG) lists public-API-affecting changes with `added` / `deprecated` / `removed` categories.
+- **Changelog** — [Changelog](./changelog) lists public-API-affecting changes with `added` / `deprecated` / `removed` categories.
 
 ## Related
 
-- [CHANGELOG](./CHANGELOG) — release-by-release record of added / deprecated / removed
+- [Changelog](./changelog) — release-by-release record of added / deprecated / removed
 - [Errors](./errors) — error `type` catalog (an extensible enum in practice)
 - [Authentication](./authentication) — scope strings (another extensible enum)
