@@ -75,12 +75,22 @@ Filter parameters are specific to each resource. All filters are query parameter
 
 **Default scope.** Every list endpoint applies a [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) on top of any filter you pass — rows with `valid_to` in the past or `valid_from` in the future are excluded by default. The path-param read paths (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) do not apply this predicate; use them to inspect a record you already hold an `id` for.
 
-| Endpoint                                | Filter params                                                                                              |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `GET /api/v1/assets`                    | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`                         |
-| `GET /api/v1/locations`                 | `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`                             |
-| `GET /api/v1/locations/current`         | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted` (default `false`), `q` |
-| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps)                                                                         |
+| Endpoint                                | Filter params                                                                                                                        |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`                      |
+| `GET /api/v1/locations`                 | `external_key` (repeatable), `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`                          |
+| `GET /api/v1/locations/current`         | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted` (default `false`), `q`                           |
+| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps); also accepts the standard `limit` / `offset` / `sort` from the [Pagination](#pagination) section |
+
+The `external_key` filter on `/assets` and `/locations` is the [`?external_key=` natural-key lookup](./resource-identifiers#natural-key-lookup-uses-external_key) — repeatable as `?external_key=A&external_key=B` for batch resolution.
+
+### Paired-by-id-and-by-natural-key filters are mutually exclusive
+
+When a list endpoint accepts both an id form and a natural-key form for the same logical relationship — `location_id` / `location_external_key` on `/assets`, `parent_id` / `parent_external_key` on `/locations` — the two forms are **mutually exclusive in a single request**. Sending both returns `400 validation_error` with `fields[]` naming the conflicting params. State the rule once for all such pairs rather than per-parameter.
+
+To filter for the union of two values, repeat **one** form: `?location_id=42&location_id=43`. To filter for the union across both forms, resolve to one form first (typically `id`, since the natural-key lookup gives you the `id` for free).
+
+This is distinct from the FK pair on a **write body**, where both `location_id` and `location_external_key` may be sent and are cross-validated for agreement — see [Resource identifiers → foreign-key fields](./resource-identifiers#foreign-key-fields-in-responses-come-as-flat-scalar-pairs). The list-filter mutex and the write-body cross-validation are separate rules.
 
 ### Repeatable filters
 
@@ -150,7 +160,24 @@ All list endpoints take a `sort` parameter. Comma-separated for multi-key sorts,
 ?sort=-created_at,external_key
 ```
 
-Sortable fields vary per resource; the interactive reference at [`/api`](/api) lists the exact set each endpoint accepts. Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending).
+Sortable fields vary per resource. The exact enum each endpoint accepts:
+
+| Endpoint                                | Sort fields (each also accepts `-` prefix for descending)  |
+| --------------------------------------- | ---------------------------------------------------------- |
+| `GET /api/v1/assets`                    | `external_key`, `name`, `created_at`, `updated_at`         |
+| `GET /api/v1/locations`                 | `tree_path`, `external_key`, `name`, `created_at`          |
+| `GET /api/v1/locations/current`         | `last_seen`, `asset_external_key`, `location_external_key` |
+| `GET /api/v1/assets/{asset_id}/history` | `timestamp`                                                |
+
+Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending; `/locations/current` defaults to `-last_seen`).
+
+## Validator behavior on writes
+
+Two rules govern how the validator handles PUT/POST request bodies. They're separate from list-endpoint filters but they're the next thing partners ask about once they've done a `GET` and want to write back, so they live here:
+
+**Read-only response fields are silently ignored on write.** Server-managed fields like `id`, `created_at`, `updated_at`, and (on locations) `tree_path`, `depth` are part of every read response but are not part of any write schema. A naive `GET` → mutate → `PUT` of the entire response object succeeds — the read-only fields are accepted and discarded, not rejected. A verbatim `GET` → `PUT` round-trip with no edits is a legal no-op (200 with the unchanged record). The per-resource read-only set is documented in [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape).
+
+**Truly unknown fields are rejected.** A field name that doesn't appear on either the read or the write schema (a typo, an off-resource field, a `metadata`-on-locations attempt) returns `400 validation_error` with `fields[].field` naming the offender and `code: invalid_value`. The "silently accept" rule above applies only to fields the platform knows about and chose to mark `readOnly: true` — it isn't a general loose-mode.
 
 ## Worked examples per resource
 

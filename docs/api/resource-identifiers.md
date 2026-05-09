@@ -16,6 +16,8 @@ Three string-handle concepts appear across these resources, and they show up clo
 
 The first two are partner-supplied and write-routable; the third is server-derived and read-only. The asymmetry is deliberate.
 
+**Character set.** `external_key` (and every `*_external_key` foreign-key field) is constrained to alphanumerics and the hyphen — `^[A-Za-z0-9-]+$`, length 1–255. Underscore, period, slash, colon, and whitespace are reserved. See [`external_key` value rules](#external_key-value-rules) for the full table and the rationale for each reserved character.
+
 ## Path-param lookup uses `id`
 
 Single-resource endpoints take the canonical integer `id`:
@@ -104,7 +106,15 @@ That makes two response-shape behaviors that coexist on these resources, and it'
 | **Always present**    | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)                                     | the value itself |
 | **Present as `null`** | `location_id`, `location_external_key`, `parent_id`, `parent_external_key`, `description`, `valid_to` (and other unset-but-emitted fields) | `field === null` |
 
-Every field on `PublicAssetView` and `PublicLocationView` is **required** in the OpenAPI spec — generated SDKs will surface them as non-optional with a nullable type. Null-check, don't key-check. The same pattern holds on `report.PublicCurrentLocationItem` (`asset_deleted_at` is always present, `null` for live assets, populated for soft-deleted assets). When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs.
+Every field on `PublicAssetView` and `PublicLocationView` is **required** in the OpenAPI spec — generated SDKs will surface them as non-optional with a nullable type. Null-check, don't key-check. The same pattern holds on `report.PublicCurrentLocationItem`. When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs and the soft-delete model (below).
+
+### Soft-delete is not a general field {#soft-delete-visibility}
+
+Soft-deleted records drop out of list responses entirely — every list endpoint applies a `WHERE deleted_at IS NULL` predicate at the storage layer, and the API surface mirrors it. There is no general `deleted_at` field on assets, locations, or tags on the public surface.
+
+`asset_deleted_at` is the one exception, and it's narrowly scoped: it appears **only** on `report.PublicCurrentLocationItem` (the row shape returned by `GET /api/v1/locations/current`), and **only** when the request includes `?include_deleted=true`. Without that flag, deleted assets don't appear in the response at all and the field is absent from the row. With the flag, the field is always present — `null` for live assets, populated with the deletion timestamp for soft-deleted ones. This is the dedicated path for "show me what's been retired in this report."
+
+The other inspection path for a soft-deleted asset is the path-param read by `id` (`GET /api/v1/assets/{asset_id}`). It returns the record without a `*_deleted_at` field — the path-param read doesn't apply the currently-effective predicate (covered under [Effective dating and `is_active`](#effective-dating-and-is-active)) and doesn't surface the deletion timestamp either. If you need the deletion timestamp for a non-locations-current resource, the API doesn't expose one today.
 
 ## Asset `metadata` vs. location `tags`: side-channel data {#asset-metadata-vs-location-tags}
 
@@ -196,11 +206,44 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 `tree_path` is a derived label-path helper, useful for sorting or indenting flat lists. Segments are joined by `.` and each segment is derived from the corresponding ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' tree paths. The pattern on `external_key` (see [`external_key` value rules](#external_key-value-rules)) keeps `.` and `_` reserved for these roles, so `tree_path` is well-formed by construction. The transformation is still **lossy on case** — `WAREHOUSE-WEST` and `warehouse-west` are distinct `external_key`s but produce the same segment — so don't try to reverse it.
 
+Worked example, with two locations forming a parent / child pair:
+
+| `external_key`                  | `tree_path`        |
+| ------------------------------- | ------------------ |
+| `WHS-01` (root)                 | `whs_01`           |
+| `WHS-07-03` (child of `WHS-01`) | `whs_01.whs_07_03` |
+
+The root's `tree_path` is its own normalized segment. A child's `tree_path` is its parent's `tree_path` plus a `.` and the child's normalized segment. Renaming `WHS-01` to `WHS-MAIN` rewrites the segment for the root **and the prefix** of every descendant in one transaction.
+
+`depth` is the companion field. The root location has `depth: 1`; each child increments by 1 (`WHS-07-03` above has `depth: 2`). Like `tree_path`, `depth` is server-derived and read-only — clients can use it directly for indented rendering but should not try to set it on a write.
+
 If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{location_id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`.
 
 **Don't cache `tree_path`.** The value is derived, and renaming an `external_key` rewrites the `tree_path` on that location _and every descendant_ in one transaction. A client that pinned `tree_path` for hierarchy queries will silently desync after a rename. If you need stable hierarchy state, store the chain of `external_key`s (or the `id` chain via `/ancestors`) and re-derive on demand.
 
 `tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use the [`?external_key=` filter](#natural-key-lookup-uses-external_key) on the locations list endpoint for natural-key lookups.
+
+## Location tree endpoints {#location-tree-endpoints}
+
+Three endpoints traverse the location hierarchy from a starting node. All three return the standard list envelope (`data`, `limit`, `offset`, `total_count`) and are gated by `locations:read`:
+
+| Endpoint                                          | Returns                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `GET /api/v1/locations/{location_id}/ancestors`   | Parent chain to the root, ordered nearest-first (immediate parent → … → root).       |
+| `GET /api/v1/locations/{location_id}/children`    | Immediate children only. Single-level lookup.                                        |
+| `GET /api/v1/locations/{location_id}/descendants` | The full subtree rooted at this location. Multi-level, includes children's children. |
+
+```bash
+# Walk the parent chain for breadcrumbs
+curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/locations/42/ancestors"
+
+# Subtree scope — every location reachable below this node
+curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/locations/42/descendants"
+```
+
+These are distinct from the [`?parent_id=X` filter](./pagination-filtering-sorting#filtering) on `GET /api/v1/locations`. The filter is a single-level lookup against the parent reference — equivalent to `/{X}/children` for the immediate-child case. The dedicated endpoints are the right tool when you need explicit hierarchy traversal: `/ancestors` for breadcrumbs, `/descendants` for subtree scoping (e.g. "all assets anywhere under WAREHOUSE-WEST"), `/children` when you specifically want the one-level shape and don't want to think about whether the filter applies the [currently-effective predicate](#effective-dating-and-is-active) the same way.
 
 ## Asset `external_key` is optional
 
@@ -223,6 +266,8 @@ curl -X POST \
 ```
 
 A caller-supplied `external_key` that collides with an existing live asset returns `409 conflict`. Once an asset is soft-deleted its `external_key` becomes immediately available for reuse. Full create flows live in the [Quickstart](./quickstart).
+
+**When integrating with a system of record (an ERP, a WMS, a partner database), supply the partner-side handle on create** — don't rely on the auto-mint. Auto-minted `ASSET-NNNN` values are deterministic per organization but they won't join cleanly to a SKU, an ERP code, or any other handle a downstream system already uses. The auto-mint exists for ad-hoc creates (a one-off entry from the SPA, a quick smoke test) where no partner-side join is needed.
 
 ## `external_key` value rules {#external_key-value-rules}
 
@@ -303,6 +348,34 @@ Tag responses still carry a canonical integer `id` for path-param access (e.g., 
 ```
 
 There's no top-level `/api/v1/tags?value=...` discovery endpoint — tags are discovered through their parent resource, either embedded in an asset or location response or via `GET /api/v1/assets/{asset_id}/tags`.
+
+### Tag CRUD {#tag-crud}
+
+Tags are managed as subresources of their parent asset or location. Two write endpoints per parent type, both idempotent on the read side and gated by the parent's write scope:
+
+| Endpoint                                               | Required scope    | Behavior                                                                         |
+| ------------------------------------------------------ | ----------------- | -------------------------------------------------------------------------------- |
+| `POST /api/v1/assets/{asset_id}/tags`                  | `assets:write`    | Attach a tag to the asset. Body is `{tag_type, value}`; returns the new tag.     |
+| `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`       | `assets:write`    | Detach a tag from the asset. Returns 204 whether or not the tag was associated.  |
+| `POST /api/v1/locations/{location_id}/tags`            | `locations:write` | Attach a tag to the location. Same body and response shape as the asset variant. |
+| `DELETE /api/v1/locations/{location_id}/tags/{tag_id}` | `locations:write` | Detach a tag from the location. Same idempotent semantics.                       |
+
+Tag writes use the parent resource's write scope, not a separate `tags:write` — there is no per-tag scope.
+
+```bash
+# Attach an RFID tag to an asset
+curl -X POST \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"tag_type": "rfid", "value": "E2-8042-2D-19F0-AB10"}' \
+     "$BASE_URL/api/v1/assets/4287/tags"
+```
+
+`tag_type` is an open enum (`rfid`, `ble`, `barcode`); each maps to a different physical artifact. The API does **not** validate the per-type shape of `value` — there's no length check that rejects a 12-byte EPC sent as `tag_type: barcode`, no UUID check on `ble`. The constraints are the global ones: `value` must be 1–255 characters and the `(tag_type, value)` pair must be unique within the organization for live (non-deleted) rows. Inserting a duplicate live pair returns `409 conflict`; the [errors](./errors) page covers the response shape.
+
+`value` is matched **as an exact string** within `(org_id, tag_type)` for uniqueness, attach, and the embedded `tags[]` array on parent reads. There is no normalization (no case-folding, no whitespace stripping). Substring search across tag values is available only through the parent resource's [`?q=`](./pagination-filtering-sorting#substring-search) filter, which restricts to active and currently-effective tags.
+
+`tag_type` defaults to `rfid` (covered above), so a body of `{"value": "E2-..."}` on an asset POST is equivalent to `{"tag_type": "rfid", "value": "E2-..."}`. Send `tag_type` explicitly when attaching `ble` or `barcode`.
 
 ## "Scan event" is a domain concept, not an API resource {#scan-event-vocabulary}
 

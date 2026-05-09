@@ -4,7 +4,7 @@ sidebar_position: 4
 
 # Date fields
 
-Every timestamped resource in the TrakRF v1 API uses the same two effective-date fields: `valid_from` and `valid_to`. This page describes their shape on the wire and what the API accepts on input. Audit timestamps (`created_at`, `updated_at`, `deleted_at`) follow a different convention and are not covered here.
+Every timestamped resource in the TrakRF v1 API uses the same two effective-date fields: `valid_from` and `valid_to`. This page describes their shape on the wire and what the API accepts on input. Audit timestamps (`created_at`, `updated_at`) follow a different convention and are not covered here. Soft-deletion is not surfaced as a general timestamp field on the public API — see [Resource identifiers → soft-delete is not a general field](./resource-identifiers#soft-delete-visibility) for where `asset_deleted_at` does appear and the conditions that surface it.
 
 ## The two fields at a glance
 

@@ -15,19 +15,19 @@ The acceptance bar is that BB22 should be able to discover every finding above b
 
 The recent TRA-636 cluster-sweep covered several of these items in passing. Verified before drafting copy:
 
-| Item | Status before this PR | Verdict |
-| --- | --- | --- |
-| 1.4 — `external_key` character-set restriction | `resource-identifiers.md` §`external_key value rules` (L227+) documents the regex, the reserved-character table, and accepted/rejected examples | Partial — covered mid-page, ticket asks for it "up front" |
-| 1.5 — server-mints `ASSET-NNNN` when omitted | `resource-identifiers.md` §`Asset external_key is optional` (L205+) covers the auto-mint behavior | Partial — missing the "supply explicit keys for upstream-system joins" note |
-| 1.6 — `tree_path` derivation rule | `resource-identifiers.md` L197 documents lowercase + hyphen→underscore + `.`-join with a WAREHOUSE-WEST example | Partial — ticket asks for the specific WHS-01 / WHS-07-03 worked example |
-| 1.7 — `depth` field | `resource-identifiers.md` shows `depth: 2` in the locations JSON example (L183) and mentions `depth` as derived ancestor metadata (L162) | Partial — never explicitly states "root is 1, children increment" |
-| 1.3 — tag data primitive (composite natural key) | `resource-identifiers.md` §`Tags use a composite natural key` (L280+) covers the `(tag_type, value)` model, uniqueness, `tag_type` default, two-senses callout | Partial — CRUD endpoints, write scope, and value matching not stated |
-| 1.2 — `/ancestors` exists | `resource-identifiers.md` L191–195 mentions `/ancestors` for multi-hop traversal | Partial — `/children` and `/descendants` not mentioned in any prose page; relationship to `?parent_id=X` not explained |
-| 4.1 — `asset_deleted_at` visibility | `resource-identifiers.md` L107 mentions it as the present-as-null example on `report.PublicCurrentLocationItem` | Partial — neither page states the `include_deleted=true` precondition; `date-fields.md` L7 still implies a general `deleted_at` exists |
-| 2.4 docs side — mutex rule | Behavior is now symmetric on `/locations` and `/assets` after platform [#287](https://github.com/trakrf/platform/pull/287); no global rule documented | Net new |
-| 2.5 — round-tripping rule | `resource-identifiers.md` §`Read shape vs. write shape` (L124+) covers it well from the resource angle | Partial — ticket asks for a global callout on `pagination-filtering-sorting`, the natural lookup destination for "what does this list/PUT do with my fields" |
-| 1.1 — pagination filter tables | `pagination-filtering-sorting.md` filter table omits `external_key` (`/assets`, `/locations`); no per-endpoint sort-field table | Net new |
-| 2.6 sort enum rename | Spec mirror refreshed in this branch; pagination prose hasn't yet referenced the new enum names | Net new — add to the per-endpoint sort table |
+| Item                                             | Status before this PR                                                                                                                                          | Verdict                                                                                                                                                      |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.4 — `external_key` character-set restriction   | `resource-identifiers.md` §`external_key value rules` (L227+) documents the regex, the reserved-character table, and accepted/rejected examples                | Partial — covered mid-page, ticket asks for it "up front"                                                                                                    |
+| 1.5 — server-mints `ASSET-NNNN` when omitted     | `resource-identifiers.md` §`Asset external_key is optional` (L205+) covers the auto-mint behavior                                                              | Partial — missing the "supply explicit keys for upstream-system joins" note                                                                                  |
+| 1.6 — `tree_path` derivation rule                | `resource-identifiers.md` L197 documents lowercase + hyphen→underscore + `.`-join with a WAREHOUSE-WEST example                                                | Partial — ticket asks for the specific WHS-01 / WHS-07-03 worked example                                                                                     |
+| 1.7 — `depth` field                              | `resource-identifiers.md` shows `depth: 2` in the locations JSON example (L183) and mentions `depth` as derived ancestor metadata (L162)                       | Partial — never explicitly states "root is 1, children increment"                                                                                            |
+| 1.3 — tag data primitive (composite natural key) | `resource-identifiers.md` §`Tags use a composite natural key` (L280+) covers the `(tag_type, value)` model, uniqueness, `tag_type` default, two-senses callout | Partial — CRUD endpoints, write scope, and value matching not stated                                                                                         |
+| 1.2 — `/ancestors` exists                        | `resource-identifiers.md` L191–195 mentions `/ancestors` for multi-hop traversal                                                                               | Partial — `/children` and `/descendants` not mentioned in any prose page; relationship to `?parent_id=X` not explained                                       |
+| 4.1 — `asset_deleted_at` visibility              | `resource-identifiers.md` L107 mentions it as the present-as-null example on `report.PublicCurrentLocationItem`                                                | Partial — neither page states the `include_deleted=true` precondition; `date-fields.md` L7 still implies a general `deleted_at` exists                       |
+| 2.4 docs side — mutex rule                       | Behavior is now symmetric on `/locations` and `/assets` after platform [#287](https://github.com/trakrf/platform/pull/287); no global rule documented          | Net new                                                                                                                                                      |
+| 2.5 — round-tripping rule                        | `resource-identifiers.md` §`Read shape vs. write shape` (L124+) covers it well from the resource angle                                                         | Partial — ticket asks for a global callout on `pagination-filtering-sorting`, the natural lookup destination for "what does this list/PUT do with my fields" |
+| 1.1 — pagination filter tables                   | `pagination-filtering-sorting.md` filter table omits `external_key` (`/assets`, `/locations`); no per-endpoint sort-field table                                | Net new                                                                                                                                                      |
+| 2.6 sort enum rename                             | Spec mirror refreshed in this branch; pagination prose hasn't yet referenced the new enum names                                                                | Net new — add to the per-endpoint sort table                                                                                                                 |
 
 # In-scope changes
 
@@ -37,12 +37,12 @@ The recent TRA-636 cluster-sweep covered several of these items in passing. Veri
 
 **Per-endpoint sort fields — new subsection under `## Sorting` (1.1, 2.6).** Today the Sorting section says "Sortable fields vary per resource; the interactive reference at `/api` lists the exact set each endpoint accepts." Add an explicit per-endpoint table so a prose-led reader doesn't have to bounce to the spec viewer:
 
-| Endpoint | Sort fields |
-| --- | --- |
-| `GET /api/v1/assets` | `external_key`, `name`, `created_at`, `updated_at` (each with `-` prefix for descending) |
-| `GET /api/v1/locations` | `external_key`, `name`, `tree_path`, `created_at`, `updated_at` |
-| `GET /api/v1/locations/current` | `last_seen`, `asset_external_key`, `location_external_key` (post-[TRA-641](https://linear.app/trakrf/issue/TRA-641) names) |
-| `GET /api/v1/assets/{asset_id}/history` | `timestamp` |
+| Endpoint                                | Sort fields                                                                                                                |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/assets`                    | `external_key`, `name`, `created_at`, `updated_at` (each with `-` prefix for descending)                                   |
+| `GET /api/v1/locations`                 | `external_key`, `name`, `tree_path`, `created_at`, `updated_at`                                                            |
+| `GET /api/v1/locations/current`         | `last_seen`, `asset_external_key`, `location_external_key` (post-[TRA-641](https://linear.app/trakrf/issue/TRA-641) names) |
+| `GET /api/v1/assets/{asset_id}/history` | `timestamp`                                                                                                                |
 
 Cross-check the actual enum sets against the refreshed spec mirror before committing — table is the source-of-truth view, not a guess.
 
@@ -70,9 +70,9 @@ Note: this is distinct from the FK pair on a write body, where both `location_id
 
 **1.6 — WHS-01 / WHS-07-03 worked example.** The current paragraph uses `WAREHOUSE-WEST` to illustrate the per-segment transformation, but never shows a multi-segment path. Add the explicit two-row table the ticket asks for, immediately after the prose rule:
 
-| `external_key` | `tree_path` |
-| --- | --- |
-| `WHS-01` (root) | `whs_01` |
+| `external_key`                  | `tree_path`        |
+| ------------------------------- | ------------------ |
+| `WHS-01` (root)                 | `whs_01`           |
 | `WHS-07-03` (child of `WHS-01`) | `whs_01.whs_07_03` |
 
 Keep the WAREHOUSE-WEST sentence — it explains the per-segment derivation; the WHS table shows the multi-segment join. Both are doing different work.
