@@ -17,11 +17,9 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 This is the conventional REST shape and the URL stays valid even if the asset's `external_key` changes. Use it when you have an `id` already in hand — typically because you got it from a list response, a previous create, or a record cached in your own database.
 
-### Numeric `id` collides across resource types
+### Numeric `id` is a surrogate key
 
-Each integer `id` is unique only within its resource type. The same integer can appear as both an `asset_id` and a `tag_id` (or asset and location, etc.) within a single organization — they're independent sequences, and a low-millions value can show up on either surface.
-
-When passing ids between systems, qualify them with the resource type (`asset_id`, `location_id`, `tag_id`) so a downstream consumer never has to guess which sequence the integer came from. The string `external_key` is unique within an organization _and_ carries no cross-type ambiguity, so it's the safer cross-resource identifier when types may be mixed in flight (audit logs, partner exports, ETL pipelines).
+Numeric `id` values are surrogate keys — unique within their entity type, not across types. The same integer can exist as both an asset id and a tag id; that's expected behavior. The API disambiguates by URL position (`/assets/{asset_id}`, `/locations/{location_id}/tags/{tag_id}`) or query-parameter name (`location_id`, `parent_id`), so an id is never passed without its entity context at the API boundary. Client code matches ids to entity type — standard surrogate-key discipline.
 
 ## Natural-key lookup uses `?external_key=`
 
@@ -240,13 +238,30 @@ Practical examples:
 
 `external_key` is **case-preserving** on storage — `MyAsset` and `myasset` are distinct keys for uniqueness purposes — but `tree_path` lowercases every segment, so two location keys differing only in case will collide on `tree_path` even though they coexist as distinct rows. Pick a casing convention and stick to it.
 
-## `is_active` is authoritative
+## Effective dating and `is_active` {#effective-dating-and-is-active}
 
-Assets and locations carry both an `is_active` boolean and a pair of `valid_from` / `valid_to` timestamps. The API treats `is_active` as the source of truth for whether the resource is usable right now. `valid_from` and `valid_to` are informational metadata — the v1 service does not compute effective state from them.
+Assets and locations carry both an `is_active` boolean and a pair of `valid_from` / `valid_to` timestamps. They cover two independent dimensions:
 
-Concretely: an asset with `is_active: true` and `valid_to: "2024-01-01T00:00:00Z"` (a `valid_to` already in the past) is still treated as active by the API. List filters on `is_active=true` will return it; the `?external_key=` filter will resolve it; `PUT`s will succeed.
+- **`is_active`** — soft-delete / hide-from-list flag. An admin or automation toggles it directly.
+- **`valid_from` / `valid_to`** — bitemporal effective dating, typically driven by lifecycle events (a vehicle entering service, an asset being decommissioned). See [Date fields](./date-fields) for the wire shape and input rules.
 
-If your business logic needs time-based filtering ("active and within its validity window"), apply that filter client-side. A computed `is_active_effective` field is on the v1.x roadmap if customer pain materializes; do not depend on the service deriving it today.
+A row is **currently effective** when:
+
+> (`valid_from` IS NULL OR `valid_from` ≤ now) AND (`valid_to` IS NULL OR `valid_to` > now)
+
+The default scope on list endpoints applies this predicate — temporally inactive rows are filtered out regardless of `is_active`. The endpoints that filter:
+
+- `GET /api/v1/assets`
+- `GET /api/v1/locations`
+- `GET /api/v1/locations/current`
+- `GET /api/v1/assets/{asset_id}/history` (predicate applies to the joined location and to embedded tags)
+- Embedded `tags` arrays on asset and location responses
+
+Direct lookups by canonical `id` (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) **do not** apply the predicate — a path-param read returns any non-deleted row. Clients holding a stale `id` can still inspect the record they remember, even after `valid_to` has passed.
+
+`is_active` is an independent filter dimension. The default list scope returns currently-effective rows of either `is_active` value; pass `?is_active=true` (or `false`) to narrow further. The substring search (`?q=`) restricts tag-value matching to active and currently-effective tags — retired tags stay out of the search corpus by design.
+
+If your business logic needs to surface an expired record (e.g., to render a "decommissioned on …" row in your UI), use the path-param read path or your own client-side filter — the list endpoints will not surface temporally inactive rows.
 
 ## Tags use a composite natural key
 
@@ -266,3 +281,16 @@ Tag responses still carry a canonical integer `id` for path-param access (e.g., 
 ```
 
 There's no top-level `/api/v1/tags?value=...` discovery endpoint — tags are discovered through their parent resource, either embedded in an asset or location response or via `GET /api/v1/assets/{asset_id}/tags`.
+
+## "Scan event" is a domain concept, not an API resource {#scan-event-vocabulary}
+
+"Scan event" describes a reader-detected tag observation (RFID/BLE pings recorded by handhelds and fixed readers). The TrakRF docs and the TrakRF web app use the term throughout, but **scan events are not a top-level API resource**: there is no `scan_event` schema in the OpenAPI spec, no `/api/v1/scans` or `/api/v1/scan_events` endpoint, and no `scan_event_id` field on any response.
+
+Scan-event-derived data is projected through two endpoints:
+
+- `GET /api/v1/assets/{asset_id}/history` — the per-asset event timeline (timestamp, location, duration), authoritative for "what did this asset do over time?"
+- `GET /api/v1/locations/current` — the latest snapshot per asset, authoritative for "where is each asset right now?"
+
+Both are gated by the `history:read` scope (see [Authentication → Scopes](./authentication#scopes)) — the same scope, because both are projections of the same underlying event stream.
+
+When [webhooks](./webhooks) ship, events will fire on scan events but the payloads address **assets and locations**, not scan events directly — there's no scan-event id to subscribe to or look up. An ingestor planning a scan-driven workflow should think in terms of asset history and current location, not in terms of a scan-event resource.

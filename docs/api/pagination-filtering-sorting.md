@@ -35,7 +35,7 @@ Offset-based. Two query params control the page:
 
 | Param    | Default | Max   | Notes                                                                                                                                                                                            |
 | -------- | ------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `limit`  | `50`    | `200` | Page size. Values over 200 are rejected with `400 validation_error` (`fields[].code = too_large`). See [Errors → Query-parameter validation errors](./errors#query-parameter-validation-errors). |
+| `limit`  | `50`    | `200` | Page size. Values over 200 are rejected with `400 validation_error` (`fields[].code = too_large`). See [Errors → Path- and query-parameter validation errors](./errors#path-and-query-parameter-validation-errors). |
 | `offset` | `0`     | —     | Rows to skip. `offset=50&limit=50` gets the second page.                                                                                                                                         |
 
 Shell examples below use a `$BASE_URL` env var — set it to `https://app.trakrf.id` for production or `https://app.preview.trakrf.id` for preview. See [Authentication → Base URL](./authentication#base-url).
@@ -73,6 +73,8 @@ Offset pagination reflects the table state at each request. If rows are inserted
 
 Filter parameters are specific to each resource. All filters are query parameters; when a filter accepts multiple values, pass the parameter multiple times (not comma-separated).
 
+**Default scope.** Every list endpoint applies a [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) on top of any filter you pass — rows with `valid_to` in the past or `valid_from` in the future are excluded by default. The path-param read paths (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) do not apply this predicate; use them to inspect a record you already hold an `id` for.
+
 | Endpoint                                | Filter params                                                                            |
 | --------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `GET /api/v1/assets`                    | `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`       |
@@ -98,7 +100,7 @@ Comma-separated values in a single `location_external_key=LOC-A,LOC-B` parameter
 
 ### Boolean filters
 
-Pass `true` or `false`. Omitting the filter returns all values (active and inactive):
+Pass `true` or `false`. Omitting `is_active` returns rows of either value (the default scope still applies the [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) — `is_active` is an independent dimension):
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
