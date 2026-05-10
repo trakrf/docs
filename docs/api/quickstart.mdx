@@ -11,7 +11,7 @@ import EnvSwitcher from "@site/src/components/EnvSwitcher";
 
 # Quickstart
 
-Goes from "I have an API key" to "I called the TrakRF API and got a `200` back" in about ten minutes, with nothing but an HTTP client. If you don't have a key yet, mint one from the SPA's **avatar menu → API Keys → New Key** ([detail](./authentication#mint-your-first-api-key)) and come back.
+Goes from "I have an API key" to "I called the TrakRF API and got a `200` back" in about ten minutes, with nothing but an HTTP client. If you don't have a key yet, mint one from the SPA's **Account menu → API Keys → New Key** ([detail](./authentication#mint-your-first-api-key)) and come back.
 
 If you're already familiar with API-key-authenticated REST APIs, the TL;DR is: send your key as `Authorization: Bearer <jwt>` and hit `$BASE_URL/api/v1/...`. The full walkthrough follows.
 
@@ -29,7 +29,7 @@ Preview-scoped keys will not authenticate against production and vice versa; the
 
 ## 2. Verify your key works
 
-If you don't already have an API key, sign in to the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>, open the **avatar menu → API Keys → New Key**, name the key, and submit. The full JWT is shown once at creation — copy it immediately; it cannot be shown again. Full walkthrough (scope picker, expiration, organization switcher): [Authentication → Mint your first API key](./authentication#mint-your-first-api-key).
+If you don't already have an API key, sign in to the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>, open the **Account menu → API Keys → New Key**, name the key, and submit. The full JWT is shown once at creation — copy it immediately; it cannot be shown again. Full walkthrough (scope picker, expiration, organization switcher): [Authentication → Mint your first API key](./authentication#mint-your-first-api-key).
 
 :::note Browser required to mint a key
 Minting an API key requires an interactive browser session — there is no programmatic mint endpoint by design. CI/headless setups should mint a key out-of-band, paste it into a secret store (env var, vault, GitHub Actions secret), and reference it from there. See [Authentication → Where keys come from](./authentication#where-keys-come-from) for the design rationale and a contact path if your use case genuinely needs programmatic provisioning.

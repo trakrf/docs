@@ -8,7 +8,7 @@ The TrakRF API uses **API keys** to authenticate every request. API keys are JSO
 
 ## Where keys come from
 
-TrakRF API keys are minted from the SPA's **avatar menu → API Keys → New Key**. The token is shown once at creation — save it immediately.
+TrakRF API keys are minted from the SPA's **Account menu → API Keys → New Key**. The token is shown once at creation — save it immediately.
 
 This is by design. We don't offer programmatic key minting because possession of an API-creating API would defeat the trust boundary: any compromised key could be used to mint a more-privileged one. The SPA's session-authenticated mint flow keeps key issuance tied to user identity, consistent with how Stripe gates dashboard-only key issuance.
 
@@ -17,16 +17,16 @@ If you have a use case that genuinely requires programmatic provisioning (per-te
 ## Mint your first API key {#mint-your-first-api-key}
 
 1. Sign in (production: [app.trakrf.id](https://app.trakrf.id); preview: [app.preview.trakrf.id](https://app.preview.trakrf.id)). Both hosts run the same UI and flow — use the one that matches your account. See [Base URL](#base-url) for the matching API host.
-2. Open the **avatar menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — signal power, session, worker log level — not key management.)
-3. **If your account belongs to multiple organizations,** API keys are scoped to whichever organization is currently selected in the avatar menu. Check the organization switcher before clicking **New key** — a key minted under the wrong organization cannot be reassigned.
+2. Open the **Account menu** in the top-right corner and choose **API Keys**. (The left-nav **Settings** page is for device configuration — signal power, session, worker log level — not key management.)
+3. **If your account belongs to multiple organizations,** API keys are scoped to whichever organization is currently selected in the Account menu. Check the organization switcher before clicking **New key** — a key minted under the wrong organization cannot be reassigned.
 4. Click **New key**. Give it a descriptive name (e.g. `"prod-integration"` or `"local-dev"`) and pick the scopes the integration needs — only the scopes required for the endpoints you'll call. See the [Scopes](#scopes) table below.
 5. Submit. The full JWT is displayed **once** at creation. Copy it to your secrets store immediately; it cannot be shown again.
 6. Use it as the `Authorization: Bearer <key>` header on every API request. See [Request header](#request-header) for the exact format.
 
-<!-- TODO: screenshot of avatar menu → API Keys → New key dialog; capture via scripts/refresh-screenshots.sh pattern. -->
+<!-- TODO: screenshot of Account menu → API Keys → New key dialog; capture via scripts/refresh-screenshots.sh pattern. -->
 
 :::tip Misminted scopes? Revoke and re-mint
-Scopes are baked into the JWT at creation and cannot be edited afterward — there is no "edit key" flow. If you mint a key with the wrong scopes (or against the wrong organization, or with the wrong expiration), [revoke it](#listing-revocation-spa-side) from the same **avatar menu → API Keys** view and mint a fresh one. Both keys remain valid until you revoke, so the cutover is non-disruptive: mint the new key, swap it into your secrets store, then revoke the old one.
+Scopes are baked into the JWT at creation and cannot be edited afterward — there is no "edit key" flow. If you mint a key with the wrong scopes (or against the wrong organization, or with the wrong expiration), [revoke it](#listing-revocation-spa-side) from the same **Account menu → API Keys** view and mint a fresh one. Both keys remain valid until you revoke, so the cutover is non-disruptive: mint the new key, swap it into your secrets store, then revoke the old one.
 :::
 
 ## Request header
@@ -123,7 +123,7 @@ All lifecycle actions — creation, listing, rotation, revocation — happen in 
 
 ### Listing and revocation are SPA-side {#listing-revocation-spa-side}
 
-Listing existing keys, viewing key metadata (name, scopes, created / last-used / expires timestamps), and revoking a key are all browser affordances in the SPA's **avatar menu → API Keys** view, not API endpoints. There is no `GET /api/v1/keys` or `DELETE /api/v1/keys/{id}` on the public surface in v1 — see [Where keys come from](#where-keys-come-from) for the design rationale (the same trust-boundary argument that gates programmatic key minting also gates programmatic key listing and revocation).
+Listing existing keys, viewing key metadata (name, scopes, created / last-used / expires timestamps), and revoking a key are all browser affordances in the SPA's **Account menu → API Keys** view, not API endpoints. There is no `GET /api/v1/keys` or `DELETE /api/v1/keys/{id}` on the public surface in v1 — see [Where keys come from](#where-keys-come-from) for the design rationale (the same trust-boundary argument that gates programmatic key minting also gates programmatic key listing and revocation).
 
 **Practical implication for partners automating rotation:** any rotation workflow that needs to enumerate or revoke prior keys has to drive the SPA flow (manual or scripted via a session login), or maintain its own out-of-band record of which key handles map to which integrations. If you have a use case that genuinely requires programmatic listing or revocation, [contact us](mailto:support@trakrf.id) — same evaluation track as programmatic key minting.
 

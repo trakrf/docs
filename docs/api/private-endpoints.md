@@ -12,7 +12,7 @@ If you need functionality not available via the documented public API, [email su
 
 ## Programmatic access {#programmatic-access}
 
-For server-to-server or scripted integrations, the supported credential is an **API key** issued via the in-app **avatar menu → API Keys** flow (see [Authentication](./authentication)). Session JWTs minted by `POST /api/v1/auth/login` exist to keep the first-party SPA logged in and may change without notice — they are not a public auth path.
+For server-to-server or scripted integrations, the supported credential is an **API key** issued via the in-app **Account menu → API Keys** flow (see [Authentication](./authentication)). Session JWTs minted by `POST /api/v1/auth/login` exist to keep the first-party SPA logged in and may change without notice — they are not a public auth path.
 
 **SSO and per-user OAuth are not currently exposed** as public auth paths. If your integration needs human-on-behalf-of credentials rather than an organization-scoped API key, [email support](mailto:support@trakrf.id) so we can prioritize the request.
 
