@@ -75,6 +75,15 @@ Filter parameters are specific to each resource. All filters are query parameter
 
 **Default scope.** Every list endpoint applies a [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) on top of any filter you pass — rows with `valid_to` in the past or `valid_from` in the future are excluded by default. The path-param read paths (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) do not apply this predicate; use them to inspect a record you already hold an `id` for.
 
+:::caution Soft-delete inclusion is not uniform across list endpoints
+`GET /api/v1/assets` and `GET /api/v1/locations` filter soft-deleted rows **implicitly** (the `WHERE deleted_at IS NULL` predicate runs at the storage layer; there is no client toggle to defeat it) and expose `is_active` as a separate, independent query param. `GET /api/v1/locations/current` instead exposes the soft-delete predicate as an **opt-in** `include_deleted=true` toggle and has no `is_active` filter. Two consequences worth pinning before you wire a client:
+
+- `?is_active=false` on `/assets` does **not** return soft-deleted rows — it returns currently-effective rows whose `is_active` flag is `false`. Soft-deleted rows are filtered regardless of `is_active`.
+- `?include_deleted=true` on `/assets` or `/locations` returns `400 validation_error` (unknown query parameter). It is only valid on `/locations/current`.
+
+Soft-deleted rows on `/assets` and `/locations` are not addressable through any list filter today; recovering one means having held its `id` already (and even then — see the [path-param soft-delete note](./resource-identifiers#soft-delete-visibility) for what is and isn't exposed).
+:::
+
 | Endpoint                                | Filter params                                                                                                                        |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`                      |
@@ -143,7 +152,16 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z"
 ```
 
-`from` / `to` (history query parameters) and `valid_from` / `valid_to` (resource schema fields) share a similar shape but answer different questions. `from` / `to` bound the **observation window** for the history query — which scan events to include in the response. `valid_from` / `valid_to` are the resource's **effective-dating bounds** ([Date fields](./date-fields)) — when the asset itself became and stops being effective. The history endpoint applies the [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) to the joined location and embedded tags inside each event, but the `from` / `to` query params are independent of that — they're scan timestamps, not effective dates.
+:::tip Common confusion: `from`/`to` is not `valid_from`/`valid_to`
+`from` / `to` (history query parameters) and `valid_from` / `valid_to` (resource schema fields) share a similar shape but answer different questions. The two pairs visually collapse in URL paths and log lines (`from=2026-04-01T00:00:00Z` is one trim away from `valid_from=2026-04-01T00:00:00Z`), so it's worth knowing which is which:
+
+| Pair                      | Where it lives                                          | What it bounds                                                                                                   |
+| ------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `from` / `to`             | Query params on `GET /api/v1/assets/{asset_id}/history` | The **observation window** — which scan events to include in the response. Scan timestamps, not effective dates. |
+| `valid_from` / `valid_to` | Resource schema fields ([Date fields](./date-fields))   | The resource's **effective-dating bounds** — when the asset itself became and stops being effective.             |
+
+The history endpoint applies the [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) to the joined location and embedded tags inside each event, but the `from` / `to` query params are independent of that. Renaming the history pair to something like `since` / `until` is a v2 consideration; in v1 the names are what they are.
+:::
 
 ## Sorting
 

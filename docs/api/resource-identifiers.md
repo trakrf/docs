@@ -18,6 +18,15 @@ The first two are partner-supplied and write-routable; the third is server-deriv
 
 **Character set.** `external_key` (and every `*_external_key` foreign-key field) is constrained to alphanumerics and the hyphen — `^[A-Za-z0-9-]+$`, length 1–255. Underscore, period, slash, colon, and whitespace are reserved. See [`external_key` value rules](#external_key-value-rules) for the full table and the rationale for each reserved character.
 
+**`external_key` and `tags[].value` are not symmetric.** Both are partner-supplied string handles, but their input rules diverge — and the gap is wide enough that a value valid as a tag will 400 as an `external_key`. Worth pinning up front so a CSV importer or migration script doesn't push the same column through both surfaces unmodified:
+
+| Surface        | Length | Pattern                        | Examples that pass                                               | Examples that pass on tags but fail on `external_key`                |
+| -------------- | ------ | ------------------------------ | ---------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `external_key` | 1–255  | `^[A-Za-z0-9-]+$` (alnum, `-`) | `SKU-7421-A`, `BACK-STORAGE-2`                                   | —                                                                    |
+| `tags[].value` | 1–255  | unrestricted (any UTF-8)       | `E2-8042-2D-19F0-AB10`, `a/b/c`, `X With Space`, `bin#3`, `漢字` | `a/b/c`, `X With Space`, `bin#3`, `漢字` (all 400 as `external_key`) |
+
+The asymmetry is intentional: `external_key` flows into URL paths, log lines, and `tree_path` segments where the reserved characters would force quoting; `tags[].value` is opaque payload to the API (an EPC, a beacon ID, a barcode) and the service does not interpret its shape. See [`external_key` value rules](#external_key-value-rules) for the full reserved-character rationale and [Tags use a composite natural key](#tags-use-a-composite-natural-key) for the tag side.
+
 ## Path-param lookup uses `id`
 
 Single-resource endpoints take the canonical integer `id`:
@@ -114,7 +123,7 @@ Soft-deleted records drop out of list responses entirely — every list endpoint
 
 `asset_deleted_at` is the one exception, and it's narrowly scoped: it appears **only** on `report.PublicCurrentLocationItem` (the row shape returned by `GET /api/v1/locations/current`), and **only** when the request includes `?include_deleted=true`. Without that flag, deleted assets don't appear in the response at all and the field is absent from the row. With the flag, the field is always present — `null` for live assets, populated with the deletion timestamp for soft-deleted ones. This is the dedicated path for "show me what's been retired in this report."
 
-The other inspection path for a soft-deleted asset is the path-param read by `id` (`GET /api/v1/assets/{asset_id}`). It returns the record without a `*_deleted_at` field — the path-param read doesn't apply the currently-effective predicate (covered under [Effective dating and `is_active`](#effective-dating-and-is-active)) and doesn't surface the deletion timestamp either. If you need the deletion timestamp for a non-locations-current resource, the API doesn't expose one today.
+There is no second inspection path for a soft-deleted asset on the public surface today. The path-param read by `id` (`GET /api/v1/assets/{asset_id}`) applies a `WHERE deleted_at IS NULL` predicate at the storage layer and returns `404 not_found` once the row has been soft-deleted — the path-param read skips the currently-effective predicate (covered under [Effective dating and `is_active`](#effective-dating-and-is-active)) but not the soft-delete predicate. The locations-current report with `?include_deleted=true` is the only public surface that exposes a soft-deleted asset row, and only there as `asset_deleted_at`. Dedicated by-id inspection of a soft-deleted asset is roadmap, not v1; if you need the deletion timestamp for an asset outside the locations-current shape, the API doesn't expose one today.
 
 ## Asset `metadata` vs. location `tags`: side-channel data {#asset-metadata-vs-location-tags}
 
@@ -174,7 +183,7 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-The round-trip-safe read-only set today is `id`, `created_at`, `updated_at` for assets, plus `tree_path` and `depth` for locations (the two location-specific additions are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe). The managed-via-subresource set today is `tags` on both resources — currently the only example, with no plans to extend it. Generated SDKs surface `tags` as part of the request shape (the OpenAPI spec leaves it writable on the request side so codegen consumers see the rejection signal at runtime rather than a silent drop), so client code that constructs a fresh write payload from a typed model never accidentally sends it.
+The round-trip-safe read-only set today is `id`, `created_at`, `updated_at` for assets, plus `tree_path` and `depth` for locations (the two location-specific additions are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe). The managed-via-subresource set today is `tags` on both resources — currently the only example, with no plans to extend it. Codegen and hand-rolled clients arrive at the same place by different routes: `tags` appears on `CreateAssetWithTagsRequest` / `CreateLocationWithTagsRequest` (so attaching tags at create still type-checks), but `UpdateAssetRequest` / `UpdateLocationRequest` omit the field entirely. A typed-codegen client that tries to set `tags` on a parent `PUT` payload fails at compile time with an unknown-property error; a hand-rolled client that sends the same field over the wire gets a runtime `400 validation_error` from the server. Either way, you can't accidentally send `tags` from a parent `PUT`.
 
 Future resources may grow their own round-trip-safe read-only fields. Don't memorize per-resource lists — derive them from the spec's `readOnly: true` markers, or rely on a generated client. The server's silent-ignore rule means existing clients keep working as that set grows.
 
@@ -308,6 +317,8 @@ curl -X POST \
 ```
 
 A caller-supplied `external_key` that collides with an existing live asset returns `409 conflict`. Once an asset is soft-deleted its `external_key` becomes immediately available for reuse. Full create flows live in the [Quickstart](./quickstart).
+
+**Optional means omit, not empty string.** The auto-mint path fires when the request body has no `external_key` key at all. Sending `"external_key": ""` returns `400 validation_error` with `code: too_short` — the same rejection `PUT /api/v1/assets/{asset_id}` produces, and the same the locations endpoints produce on either verb. CSV importers and form handlers that emit empty strings on blank inputs need to omit the key entirely instead, or they'll 400 on every blank row instead of getting a server-minted `ASSET-NNNN`.
 
 **When integrating with a system of record (an ERP, a WMS, a partner database), supply the partner-side handle on create** — don't rely on the auto-mint. Auto-minted `ASSET-NNNN` values are deterministic per organization but they won't join cleanly to a SKU, an ERP code, or any other handle a downstream system already uses. The auto-mint exists for ad-hoc creates (a one-off entry from the SPA, a quick smoke test) where no partner-side join is needed.
 

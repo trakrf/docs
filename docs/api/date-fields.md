@@ -48,6 +48,10 @@ Note that the second record's `valid_to` is **`null`, not absent** — the field
 
 Send `valid_from` / `valid_to` as **RFC3339 in UTC** (e.g. `2026-04-24T15:30:00Z`). The OpenAPI spec declares both fields as `format: date-time`, and that is the contract — generated clients and spec validators will reject anything else. Use a date library to format your inputs (`Instant.toString()` in Java, `datetime.isoformat() + "Z"` in Python, `new Date().toISOString()` in JavaScript) rather than constructing the string by hand.
 
+The body validator rejects (with `400 validation_error`) every form the spec doesn't permit — date-only (`2026-05-10`), slash-separated (`2026/05/10`), empty string, and the Go zero-time `0001-01-01T00:00:00Z` are all explicit rejections, not silent coercions to a server-computed default. To pick up the server's `valid_from` default on create, **omit the key entirely**; sending an empty string is a 400, not an auto-default trigger.
+
+Sub-microsecond precision is accepted on input but truncated at write — `2026-04-24T15:30:00.123456789Z` round-trips as `2026-04-24T15:30:00.123456Z`. Microsecond is the storage precision; nanosecond is a wire-format affordance for clients whose date libraries default there.
+
 ## Example
 
 Create an asset with an explicit `valid_from` and no `valid_to`, then read it back:

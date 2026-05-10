@@ -45,6 +45,7 @@ const sidebars: SidebarsConfig = {
         "api/date-fields",
         "api/pagination-filtering-sorting",
         "api/errors",
+        "api/http-method-coverage",
         "api/rate-limits",
         "api/versioning",
         "api/changelog",
