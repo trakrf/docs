@@ -250,6 +250,43 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 These are distinct from the [`?parent_id=X` filter](./pagination-filtering-sorting#filtering) on `GET /api/v1/locations`. The filter is a single-level lookup against the parent reference — equivalent to `/{X}/children` for the immediate-child case. The dedicated endpoints are the right tool when you need explicit hierarchy traversal: `/ancestors` for breadcrumbs, `/descendants` for subtree scoping (e.g. "all assets anywhere under WAREHOUSE-WEST"), `/children` when you specifically want the one-level shape and don't want to think about whether the filter applies the [currently-effective predicate](#effective-dating-and-is-active) the same way.
 
+## Locations: delete semantics {#locations-delete-semantics}
+
+`DELETE /api/v1/locations/{location_id}` returns `204` only when the location is a true leaf — no active descendant locations and no assets placed directly at it. Otherwise the server rejects with `409 conflict` and the standard error envelope. Bulk cascade is not supported in v1 — there is no `?cascade=true` query parameter, and the responsibility for reassigning or removing dependents stays on the caller.
+
+The handler runs two pre-checks per call, descendants first. The two cases produce **distinct `detail` strings** so integrators can branch on which constraint failed without parsing free-form text fragments:
+
+| Cause                                          | `error.detail`                                                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Active descendant locations exist              | `location has descendant locations; reassign or remove them before deleting (cascade is not supported)` |
+| Active assets placed directly at this location | `location has assets placed at it; move or remove them before deleting (cascade is not supported)`      |
+
+"Active" here means `deleted_at IS NULL` — soft-deleted descendants and soft-deleted placed assets do **not** block the delete (they already drop out of every list response per [Soft-delete is not a general field](#soft-delete-visibility)). A location whose only children are themselves soft-deleted is still a valid leaf for delete purposes.
+
+The rejection preserves the FK-pair invariant the rest of this page documents. If the server allowed the delete to proceed silently, descendants would survive with `parent_id` pointing at a deleted row, `parent_external_key` becoming `null`, and `tree_path` retaining the stale parent segment — a `parent_id != null AND parent_external_key == null` shape that's undefined under [the FK-pair contract](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs). The same shape would appear on assets placed at a deleted location (`location_id` populated, `location_external_key` null). The 409 keeps both invariants intact.
+
+Sample 409 response:
+
+```json
+{
+  "error": {
+    "type": "conflict",
+    "title": "Conflict",
+    "status": 409,
+    "detail": "location has descendant locations; reassign or remove them before deleting (cascade is not supported)",
+    "instance": "/api/v1/locations/42",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
+  }
+}
+```
+
+To pre-check before deleting, use the existing read endpoints to enumerate the blockers:
+
+- Active descendant locations: [`GET /api/v1/locations/{location_id}/descendants`](#location-tree-endpoints) returns the full subtree.
+- Active placed assets: `GET /api/v1/assets?location_id={location_id}` (or `GET /api/v1/locations/current?location_id={location_id}` for the report shape).
+
+Reassign or remove the dependents (move assets via `PUT /api/v1/assets/{asset_id}` with a new `location_id` / `location_external_key`; reparent or delete the descendants the same way), then retry the delete on the leaf.
+
 ## Asset `external_key` is optional
 
 `external_key` is required on locations but optional on assets. Omit it on `POST /api/v1/assets` and the server assigns one in the format `ASSET-NNNN` from a per-organization sequence:
