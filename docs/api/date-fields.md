@@ -100,7 +100,7 @@ The two history-derived endpoints expose a per-row scan timestamp under differen
 | `timestamp` | `GET /api/v1/assets/{asset_id}/history` | Yes — never `null`, never absent | When this scan event was observed for the asset.                                                       |
 | `last_seen` | `GET /api/v1/reports/asset-locations`   | Yes — never `null`, never absent | When the asset's most recent scan was observed. Drives the `-last_seen` default sort on this endpoint. |
 
-Both fields are declared `required` on their respective response schemas (`report.PublicAssetHistoryItem.timestamp`, `report.PublicCurrentLocationItem.last_seen`) and **not** marked `nullable`. `/reports/asset-locations` returns one row per scanned asset, so an asset that has never been scanned does not appear in the response — there is no "scanned but `last_seen: null`" state.
+Both fields are declared `required` on their respective response schemas (`AssetHistoryItem.timestamp`, `AssetLocationItem.last_seen`) and **not** marked `nullable`. `/reports/asset-locations` returns one row per scanned asset, so an asset that has never been scanned does not appear in the response — there is no "scanned but `last_seen: null`" state.
 
 ### Wire format: RFC3339 in UTC, sub-second precision
 
