@@ -115,17 +115,19 @@ That makes two response-shape behaviors that coexist on these resources, and it'
 | **Always present**    | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)                                     | the value itself |
 | **Present as `null`** | `location_id`, `location_external_key`, `parent_id`, `parent_external_key`, `description`, `valid_to` (and other unset-but-emitted fields) | `field === null` |
 
-Every field on `PublicAssetView` and `PublicLocationView` is **required** in the OpenAPI spec — generated SDKs will surface them as non-optional with a nullable type. Null-check, don't key-check. The same pattern holds on `report.PublicCurrentLocationItem`. When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs and the soft-delete model (below).
+Every field on `PublicAssetView` and `PublicLocationView` is **required** in the OpenAPI spec — generated SDKs will surface them as non-optional with a nullable type. Null-check, don't key-check. The same pattern holds on `report.PublicCurrentLocationItem`, and on the per-entity `asset_deleted_at` / `location_deleted_at` fields ([below](#soft-delete-visibility)). When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs and the soft-delete model.
 
-### Soft-delete is not a general field {#soft-delete-visibility}
+### Soft-delete visibility on lists {#soft-delete-visibility}
 
-Soft-deleted records drop out of list responses entirely — every list endpoint applies a `WHERE deleted_at IS NULL` predicate at the storage layer, and the API surface mirrors it. There is no general `deleted_at` field on assets, locations, or tags on the public surface.
+Soft-deleted records are filtered out of list responses by default — every list endpoint applies a `WHERE deleted_at IS NULL` predicate at the storage layer. To opt in, pass `?include_deleted=true` on any of the three list surfaces: `GET /api/v1/assets`, `GET /api/v1/locations`, and `GET /api/v1/reports/asset-locations`. The toggle is consistent across endpoints — same name, same default (`false`), same independence from `is_active` (see [Boolean filters](./pagination-filtering-sorting#boolean-filters)).
 
-`asset_deleted_at` is the one exception, and it's narrowly scoped: it appears **only** on `report.PublicCurrentLocationItem` (the row shape returned by `GET /api/v1/locations/current`). The field is **always present on every row** in that response — `null` for live assets, populated with the deletion timestamp for soft-deleted ones. The OpenAPI spec marks it `required` on `report.PublicCurrentLocationItem`, matching live behavior; codegen-derived clients surface it as a non-optional nullable field, same pattern as the FK pairs above.
+Each row carries a per-entity deletion timestamp: `asset_deleted_at` on `/assets` rows and `report.PublicCurrentLocationItem` (the asset-locations report row), `location_deleted_at` on `/locations` rows. The field is **always present on every row** — `null` for live records, populated with the deletion timestamp for soft-deleted ones. The OpenAPI spec marks both as `required` and `nullable: true`; codegen-derived clients surface them as non-optional nullable fields, same pattern as the FK pairs above. Both fields are listed on `PublicReadOnlyFields`, so a verbatim `GET` → `PUT` round-trip continues to succeed (see [Read shape vs. write shape](#read-shape-vs-write-shape)).
 
-`?include_deleted=true` controls **whether soft-deleted asset rows appear in the response at all**, not whether the field is rendered. Without the flag, soft-deleted rows are filtered out and only live rows come back (each still carrying `asset_deleted_at: null`). With the flag, soft-deleted rows are included alongside live ones, with their populated `asset_deleted_at` distinguishing them. This is the dedicated path for "show me what's been retired in this report" — null-check `asset_deleted_at`, don't key-check.
+The `location_deleted_at` field on `/locations` is mildly redundant — the row already _is_ a location, and the `_id` prefix is most useful when joining across entities like the asset-locations report does. The redundant naming is deliberate: one field-naming rule across all three list shapes is easier to reason about than a special-case "drop the prefix on single-entity lists." Null-check the appropriate field name for the endpoint you're calling.
 
-There is no second inspection path for a soft-deleted asset on the public surface today. The path-param read by `id` (`GET /api/v1/assets/{asset_id}`) applies a `WHERE deleted_at IS NULL` predicate at the storage layer and returns `404 not_found` once the row has been soft-deleted — the path-param read skips the currently-effective predicate (covered under [Effective dating and `is_active`](#effective-dating-and-is-active)) but not the soft-delete predicate. The locations-current report with `?include_deleted=true` is the only public surface that exposes a soft-deleted asset row, and only there as `asset_deleted_at`. Dedicated by-id inspection of a soft-deleted asset is roadmap, not v1; if you need the deletion timestamp for an asset outside the locations-current shape, the API doesn't expose one today.
+`?include_deleted=true` controls **whether soft-deleted rows appear at all**, not whether the field is rendered. Without the flag, soft-deleted rows are filtered out and only live rows come back (each still carrying `*_deleted_at: null`). With the flag, soft-deleted rows are included alongside live ones, with their populated `*_deleted_at` distinguishing them. Null-check the field, don't key-check.
+
+The path-param read by `id` (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) applies the `WHERE deleted_at IS NULL` predicate at the storage layer and returns `404 not_found` once the row has been soft-deleted — the path-param read skips the currently-effective predicate (covered under [Effective dating and `is_active`](#effective-dating-and-is-active)) but not the soft-delete predicate. Dedicated by-id inspection of a soft-deleted record is roadmap, not v1; the list endpoints with `?include_deleted=true` are the public surface for "show me what's been retired."
 
 ## Asset `metadata` vs. location `tags`: side-channel data {#asset-metadata-vs-location-tags}
 
@@ -296,7 +298,7 @@ Sample 409 response:
 To pre-check before deleting, use the existing read endpoints to enumerate the blockers:
 
 - Active descendant locations: [`GET /api/v1/locations/{location_id}/descendants`](#location-tree-endpoints) returns the full subtree.
-- Active placed assets: `GET /api/v1/assets?location_id={location_id}` (or `GET /api/v1/locations/current?location_id={location_id}` for the report shape).
+- Active placed assets: `GET /api/v1/assets?location_id={location_id}` (or `GET /api/v1/reports/asset-locations?location_id={location_id}` for the report shape).
 
 Reassign or remove the dependents (move assets via `PUT /api/v1/assets/{asset_id}` with a new `location_id` / `location_external_key`; reparent or delete the descendants the same way), then retry the delete on the leaf.
 
@@ -369,7 +371,7 @@ The default scope on list endpoints applies this predicate — temporally inacti
 
 - `GET /api/v1/assets`
 - `GET /api/v1/locations`
-- `GET /api/v1/locations/current`
+- `GET /api/v1/reports/asset-locations`
 - `GET /api/v1/assets/{asset_id}/history` (predicate applies to the joined location and to embedded tags)
 - Embedded `tags` arrays on asset and location responses
 
@@ -441,7 +443,7 @@ curl -X POST \
 Scan-event-derived data is projected through two endpoints:
 
 - `GET /api/v1/assets/{asset_id}/history` — the per-asset event timeline (timestamp, location, duration), authoritative for "what did this asset do over time?"
-- `GET /api/v1/locations/current` — the latest snapshot per asset, authoritative for "where is each asset right now?"
+- `GET /api/v1/reports/asset-locations` — the latest snapshot per asset, authoritative for "where is each asset right now?"
 
 Both are gated by the `history:read` scope (see [Authentication → Scopes](./authentication#scopes)) — the same scope, because both are projections of the same underlying event stream.
 

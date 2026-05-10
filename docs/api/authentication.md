@@ -67,11 +67,11 @@ Selecting **None** for a resource grants no scope for that resource. Selecting *
 | `assets:write`    | Write  | `POST /assets`, `PUT /assets/{asset_id}`, `DELETE /assets/{asset_id}`                |
 | `locations:read`  | Read   | `GET /locations`, `GET /locations/{location_id}`                                     |
 | `locations:write` | Write  | `POST /locations`, `PUT /locations/{location_id}`, `DELETE /locations/{location_id}` |
-| `history:read`    | Read   | `GET /locations/current`, `GET /assets/{asset_id}/history`                           |
+| `history:read`    | Read   | `GET /reports/asset-locations`, `GET /assets/{asset_id}/history`                     |
 
 A few non-obvious pairings worth calling out:
 
-- **`/locations/current`** is gated by **`history:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the history scope.
+- **`/reports/asset-locations`** is gated by **`history:read`**, not `locations:read`. The snapshot is derived from scan events, so it lives under the history scope.
 - **`/assets/{asset_id}/history`** is gated by **`history:read`** for the same reason — it's a projection of scan events, not a property of the asset.
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).

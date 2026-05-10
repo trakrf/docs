@@ -15,7 +15,7 @@ End-to-end: pair a handheld reader, scan tags, see reports. 15 minutes, start to
 
 ## Using the API
 
-End-to-end: mint an API key, call `/api/v1/locations/current`, see the current asset-at-location snapshot. 10 minutes, no hardware required.
+End-to-end: mint an API key, call `/api/v1/reports/asset-locations`, see the current asset-at-location snapshot. 10 minutes, no hardware required.
 
 [**Start the API quickstart →**](./api)
 
