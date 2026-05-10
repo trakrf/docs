@@ -53,7 +53,7 @@ These enum sets will not grow within v1:
 
 These are designed to grow:
 
-- **Error `type`** (`errors.ErrorResponse.error.type`) — marked `x-extensible-enum: true` in the spec. Current values are documented in the [errors catalog](./errors#error-type-catalog); future values may appear in any v1 release. Clients should branch on HTTP status (closed) for retry/alerting policy and treat unknown `type` values as generic errors of that status class.
+- **Error `type`** (`ErrorResponse.error.type`) — marked `x-extensible-enum: true` in the spec. Current values are documented in the [errors catalog](./errors#error-type-catalog); future values may appear in any v1 release. Clients should branch on HTTP status (closed) for retry/alerting policy and treat unknown `type` values as generic errors of that status class.
 - **Validation field codes** (`fields[i].code` on `validation_error` responses) — current set is `required`, `invalid_value`, `too_short`, `too_long`, `too_small`, `too_large`. New codes may appear. Treat unknown codes as generic invalid-value and surface the `message` field.
 - **Scope strings** (keys on API-key responses, scope columns in the UI) — TrakRF may introduce new scopes (e.g. `reports:read`, `webhooks:write`) in any v1 release. Clients that display the list of scopes available to a key must render unknown scope strings as-is rather than filtering them out.
 
