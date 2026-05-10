@@ -6,6 +6,8 @@ sidebar_position: 4
 
 Every timestamped resource in the TrakRF v1 API uses the same two effective-date fields: `valid_from` and `valid_to`. This page describes their shape on the wire and what the API accepts on input. Audit timestamps (`created_at`, `updated_at`) follow a different convention and are not covered here. Soft-deletion is not surfaced as a general timestamp field on the public API — see [Resource identifiers → soft-delete is not a general field](./resource-identifiers#soft-delete-visibility) for where `asset_deleted_at` does appear and the conditions that surface it.
 
+The history-derived endpoints carry their own per-row timestamp: `timestamp` on `GET /api/v1/assets/{asset_id}/history` and `last_seen` on `GET /api/v1/locations/current`. Both share the outbound RFC3339-UTC convention documented below for `valid_from`; their semantics and nullability are covered separately under [Scan-event date fields](#scan-event-date-fields).
+
 ## The two fields at a glance
 
 | Field        | Always present? | Type on response       | Meaning                                                                    |
@@ -88,3 +90,46 @@ Response:
 ```
 
 The response carries `"valid_to": null` because the asset has no expiry. If a later `PUT` sets `valid_to`, subsequent reads will return it as RFC3339.
+
+## Scan-event date fields {#scan-event-date-fields}
+
+The two history-derived endpoints expose a per-row scan timestamp under different field names. Both reflect when a reader observed the tag, not when the surrounding asset or location record was created or last edited; they're projections of the underlying scan-event stream ([scan events are a domain concept, not an API resource](./resource-identifiers#scan-event-vocabulary)).
+
+| Field       | Endpoint                                | Always present?                  | Meaning                                                                                                |
+| ----------- | --------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `timestamp` | `GET /api/v1/assets/{asset_id}/history` | Yes — never `null`, never absent | When this scan event was observed for the asset.                                                       |
+| `last_seen` | `GET /api/v1/locations/current`         | Yes — never `null`, never absent | When the asset's most recent scan was observed. Drives the `-last_seen` default sort on this endpoint. |
+
+Both fields are declared `required` on their respective response schemas (`report.PublicAssetHistoryItem.timestamp`, `report.PublicCurrentLocationItem.last_seen`) and **not** marked `nullable`. `/locations/current` returns one row per scanned asset, so an asset that has never been scanned does not appear in the response — there is no "scanned but `last_seen: null`" state.
+
+### Wire format: RFC3339 in UTC, sub-second precision
+
+Both fields are RFC3339 timestamps in UTC. They are emitted at sub-second precision — typically microsecond, mirroring the storage column's `timestamp with time zone` type. Sample row from `/locations/current`:
+
+```json
+{
+  "asset_id": 4287,
+  "asset_external_key": "SKU-7421-A",
+  "location_id": 42,
+  "location_external_key": "DOCK-1",
+  "asset_deleted_at": null,
+  "last_seen": "2026-04-28T00:33:38.021257Z"
+}
+```
+
+A history-item row:
+
+```json
+{
+  "timestamp": "2026-04-28T00:33:38.021257Z",
+  "location_id": 42,
+  "location_external_key": "DOCK-1",
+  "duration_seconds": 1843
+}
+```
+
+Sub-microsecond precision is a wire-format affordance — clients whose date libraries default to nanosecond won't see it on outbound (storage truncates to microsecond), but inbound parsing should tolerate any RFC3339 fractional-second precision. Use the same date-library helpers covered in [Inbound: RFC3339 only](#inbound-rfc3339-only).
+
+### These fields are read-only
+
+`timestamp` and `last_seen` are server-derived from the scan-event stream and have no inbound write path on the public API. There's no `POST /api/v1/asset_scans` or analogous endpoint for partner-side ingestion of scan events in v1; scan ingestion happens out-of-band through the reader integrations. The two fields above are pure projections — null-safe to read, never sent on a write.

@@ -67,7 +67,7 @@ while True:
 
 ### Consistency note
 
-Offset pagination reflects the table state at each request. If rows are inserted or deleted between pages, results can shift — a row near the page boundary might be seen twice or skipped. For workloads that need strict consistency across pages, filter by a time range (`from`/`to` on history endpoints) or by a stable identifier range rather than paginating a mutable result set.
+Offset pagination reflects the table state at each request. If rows are inserted or deleted between pages, results can shift — a row near the page boundary might be seen twice or skipped. For workloads that need strict consistency across pages, filter by a time range (`from`/`to` on `GET /api/v1/assets/{asset_id}/history`) or by a stable identifier range rather than paginating a mutable result set.
 
 ## Filtering
 

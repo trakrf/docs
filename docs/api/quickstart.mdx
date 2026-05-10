@@ -13,6 +13,10 @@ import EnvSwitcher from "@site/src/components/EnvSwitcher";
 
 Goes from "I have an API key" to "I called the TrakRF API and got a `200` back" in about ten minutes, with nothing but an HTTP client. If you don't have a key yet, mint one from the SPA's **Account menu → API Keys → New Key** ([detail](./authentication#mint-your-first-api-key)) and come back.
 
+:::tip Arriving from "Getting started — using the API"?
+[`/docs/getting-started/api`](/docs/getting-started/api) is the User Guide front-door for the API track. Its §1 "Pick your environment" and §2 "Make your first call" mirror the first two sections of this page near-verbatim — if you've already worked through them, **skim or skip to [§3 Round-trip: create, read, update, delete](#3-round-trip-create-read-update-delete)**. The two pages are intentionally two front doors (User Guide track vs. API reference); the overlap is by design.
+:::
+
 If you're already familiar with API-key-authenticated REST APIs, the TL;DR is: send your key as `Authorization: Bearer <jwt>` and hit `$BASE_URL/api/v1/...`. The full walkthrough follows.
 
 ## 1. Pick your environment
