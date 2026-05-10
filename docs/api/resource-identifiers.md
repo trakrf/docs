@@ -133,20 +133,24 @@ Locations were not given an open `metadata` field because the practical "what wo
 
 ## Read shape vs. write shape
 
-Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields that aren't part of the request schema — server-managed metadata (`id`, `created_at`, `updated_at`), derived fields (`tree_path`, `depth` on locations), and embedded sub-resources (`tags`). The exact set varies by resource.
+Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields that aren't part of the request schema. The validator splits these into two categories with different write-time behavior:
 
-The server **silently ignores** these read-only fields on `PUT`. A naive `GET` → mutate → `PUT` of the entire response object succeeds, so codegen-derived clients that re-send the full read shape don't have to strip first. The fields are flagged with `readOnly: true` in the OpenAPI spec; generated SDKs (typescript-fetch, openapi-generator) honor that marker and split read and write into distinct types, which keeps the request payload minimal at the type-system level.
+- **Round-trip-safe read-only** — server-managed metadata (`id`, `created_at`, `updated_at`) on assets and locations, plus the derived ancestor fields `tree_path` and `depth` on locations. The server **silently ignores** these on `PUT`. A naive `GET` → mutate → `PUT` of the entire response succeeds for these fields — they're flagged with `readOnly: true` in the OpenAPI spec, and generated SDKs (typescript-fetch, openapi-generator) honor the marker and split read and write into distinct types so the request payload stays minimal at the type-system level.
+- **Managed via subresource** — `tags` on assets and locations. Embedded in every read response, but mutated through the dedicated `POST /assets/{asset_id}/tags` / `DELETE /assets/{asset_id}/tags/{tag_id}` endpoints (and location counterparts) rather than the parent resource's `PUT`. The validator **rejects** `tags` in a parent `PUT` body with `400 validation_error` / `code: invalid_value` — the same envelope a typo or off-resource field produces. The rejection is deliberate: a read-modify-write integration that mutates `tags` on a GET body and PUTs the whole resource back would otherwise get a 200 echo of the unchanged tags and silently lose the mutation. Strip `tags` from the body before PUT, then mutate via [Tag CRUD](#tag-crud).
 
-A request body that resolves to **no writable fields** — `{}`, or a body containing only readOnly fields like `{"id":999}`, `{"created_at":"…"}`, or `{"tags":[]}` — returns `200` with the unchanged record. A verbatim `GET` → `PUT` round-trip with no edits in between is a legal no-op, not an error, so a "save" button that re-PUTs the loaded form without diffing against the original is fine.
+A request body that resolves to **no writable fields** — `{}`, or a body containing only round-trip-safe read-only fields like `{"id":999}` or `{"created_at":"…"}` — returns `200` with the unchanged record. A verbatim `GET` → `PUT` round-trip with no edits is a legal no-op as long as `tags` is stripped first.
 
-Strict-unknown-field validation still applies for fields that are **not** declared on either the read or the write schema — a typo'd or off-resource field name returns `400 validation_error` with `fields[].field` naming the offender. See [Errors → Validation errors](./errors#validation-errors) for the envelope shape.
+Strict-unknown-field validation still applies for fields that are **not** declared on either the read or the write schema — a typo'd or off-resource field name returns `400 validation_error` with `fields[].field` naming the offender. See [Errors → Validation errors](./errors#validation-errors) for the envelope shape; the validator behavior is also covered globally in [Pagination, filtering, sorting → Validator behavior on writes](./pagination-filtering-sorting#validator-behavior-on-writes).
 
 ```bash
-# Naive round-trip — the entire GET response is sent back; readOnly fields
-# (id, created_at, updated_at, tags, ...) are silently ignored by the server.
+# GET → mutate → PUT round-trip. The round-trip-safe read-only fields
+# (id, created_at, updated_at) are silently ignored by the server.
+# `tags` must be stripped explicitly — it's managed via the
+# /assets/{asset_id}/tags subresource and is rejected in a parent PUT body.
 curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/4287" \
-| jq '.data | .location_external_key = "PORTABLE-1437"' \
+| jq '.data | del(.tags)
+       | .location_external_key = "PORTABLE-1437"' \
 | curl -X PUT \
        -H "Authorization: Bearer $TRAKRF_API_KEY" \
        -H "Content-Type: application/json" \
@@ -154,10 +158,11 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-For a smaller request body — and for hand-rolled clients that want to be explicit about what they're updating — strip the read-only fields with `jq`:
+For a smaller request body — and for hand-rolled clients that want to be explicit about what they're updating — drop the round-trip-safe read-only fields too:
 
 ```bash
-# Smaller payload: drop the readOnly fields explicitly before PUT.
+# Smaller payload: drop tags (rejected) and the round-trip-safe read-only
+# fields (silently ignored anyway) before PUT.
 curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/4287" \
 | jq '.data | del(.id, .created_at, .updated_at, .tags)
@@ -169,9 +174,9 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-For assets the read-only set today is `id`, `created_at`, `updated_at`, and `tags`. For locations the set is larger: `id`, `created_at`, `updated_at`, `tree_path`, `depth`, and `tags`. The two location-specific additions (`tree_path`, `depth`) are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe.
+The round-trip-safe read-only set today is `id`, `created_at`, `updated_at` for assets, plus `tree_path` and `depth` for locations (the two location-specific additions are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe). The managed-via-subresource set today is `tags` on both resources — currently the only example, with no plans to extend it. Generated SDKs surface `tags` as part of the request shape (the OpenAPI spec leaves it writable on the request side so codegen consumers see the rejection signal at runtime rather than a silent drop), so client code that constructs a fresh write payload from a typed model never accidentally sends it.
 
-Future resources may grow their own read-only fields. Don't memorize per-resource lists — derive them from the spec's `readOnly: true` markers, or rely on a generated client. The server's silent-ignore rule means existing clients keep working as the readOnly set grows.
+Future resources may grow their own round-trip-safe read-only fields. Don't memorize per-resource lists — derive them from the spec's `readOnly: true` markers, or rely on a generated client. The server's silent-ignore rule means existing clients keep working as that set grows.
 
 Either form of the FK pair is accepted on write. Send `location_id` if you have it; send `location_external_key` if that's what the user typed. **Sending both is allowed when they agree** — the server cross-validates the pair and rejects disagreement (e.g., one set, the other `null`, or the two values pointing at different rows) with `400 invalid_value` and `detail: "location_id and location_external_key disagree"`. The same rule covers `parent_id` / `parent_external_key` on locations.
 
