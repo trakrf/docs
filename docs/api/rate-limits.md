@@ -30,24 +30,15 @@ Tier-specific allowances keyed to subscription plans are on the roadmap. If your
 
 Every API response on the public surface — including 4xx and 5xx errors (`401`, `403`, `404`, `409`, `415`, `429`, `500`) — includes three headers describing the current state of your bucket:
 
-| Header                  | Units              | Meaning                                                                                                                    |
-| ----------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `X-RateLimit-Limit`     | integer requests   | Your steady-state budget per 60-second window (e.g. `60`).                                                                 |
-| `X-RateLimit-Remaining` | integer requests   | Requests you can make before throttling, bounded by `Limit`. Stays at `Limit` while you're inside the burst safety margin. |
-| `X-RateLimit-Reset`     | Unix epoch seconds | Wall-clock time at which `Remaining` will next equal `Limit`. Equal to "now" when you already have full quota.             |
+| Header                  | Units              | Meaning                                                                                                                                                                                                           |
+| ----------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `X-RateLimit-Limit`     | integer requests   | Your steady-state budget per 60-second window (e.g. `60`).                                                                                                                                                        |
+| `X-RateLimit-Remaining` | integer requests   | Steady-state budget remaining, bounded by `Limit`. Decrements only after the burst margin is consumed — a value of `Limit` does not mean a full request budget, it means you are still inside the burst headroom. |
+| `X-RateLimit-Reset`     | Unix epoch seconds | Wall-clock time at which `Remaining` will next equal `Limit`. Equal to "now" when you already have full quota.                                                                                                    |
 
-The headers ride on every response status the public surface emits, so clients can read `X-RateLimit-Remaining` even when the request itself failed — error responses are not a blind spot for budget tracking.
+The headers ride on every response status the public surface emits, so clients can read them even when the request itself failed — error responses are not a blind spot for budget-tracking dashboards or observability metrics.
 
-You can watch `X-RateLimit-Remaining` to pace requests preemptively rather than waiting to hit `429`. A well-behaved client pattern is:
-
-```python
-if remaining < some_threshold:
-    time.sleep(max(0, reset - now))
-```
-
-The `max(0, …)` is important: when you're not throttled, `reset - now` is zero and the sleep is a no-op.
-
-**Burst safety margin.** Under the hood, the bucket holds up to 2× `Limit` tokens so short spikes don't throttle well-paced clients. That extra headroom is deliberately hidden from the headers — `Remaining` never exceeds `Limit` — so clients pace against the steady-state rate they were sold, not against burst capacity.
+**Don't pace on `X-RateLimit-Remaining`.** It looks like a preemptive-pacing input but it isn't one. The bucket holds 2× `Limit` tokens (the burst margin), and `Remaining` is reported as `min(bucket, Limit)` so the header never exceeds the steady-state cap a customer was sold. The practical consequence: `Remaining` stays at `Limit` while the bucket is anywhere inside the burst margin, and only starts decrementing once the bucket has drained below the steady-state line. By the time the header moves, the burst margin is already gone and the next bad spike trips `429`. A client that watches `Remaining < threshold` to back off is using a signal that can't fire until throttling is imminent. Pace on `429` + `Retry-After` instead — that's the integrator-correct contract on this surface.
 
 ## When you hit the limit
 
@@ -76,8 +67,8 @@ The `Retry-After` value is an integer number of **seconds** to wait before the n
 
 ## Recommended client behavior
 
-- **Back off on 429.** Wait at least `Retry-After` seconds before retrying. Exponential backoff with jitter on repeated 429s is ideal.
-- **Read `X-RateLimit-Remaining` proactively.** If it's approaching zero and your workload can wait, pause briefly rather than letting the server enforce the pause.
+- **Back off on 429.** Wait at least `Retry-After` seconds before retrying. Exponential backoff with jitter on repeated 429s is ideal. This is the primary pacing signal on the public surface — see the warning above on why preemptive pacing against `X-RateLimit-Remaining` does not work.
+- **Treat the `X-RateLimit-*` headers as observability, not pacing.** Surface them in dashboards and request-budget metrics if useful, but don't drive client-side throttling decisions off `Remaining` or `Reset` — drive throttling off `429` + `Retry-After`.
 - **Don't treat 429 as a server error.** It's a client-side signal — retry policy should differ from retry-on-500. See [Errors](./errors) for the full retry guidance.
 
 ## All endpoints participate in the bucket
