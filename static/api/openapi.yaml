@@ -149,6 +149,10 @@ components:
         asset.PublicAssetView:
             additionalProperties: true
             properties:
+                asset_deleted_at:
+                    format: date-time
+                    nullable: true
+                    type: string
                 created_at:
                     format: date-time
                     readOnly: true
@@ -202,6 +206,7 @@ components:
                 - valid_to
                 - created_at
                 - updated_at
+                - asset_deleted_at
                 - tags
             type: object
         asset.UpdateAssetRequest:
@@ -510,6 +515,10 @@ components:
                     type: integer
                 is_active:
                     type: boolean
+                location_deleted_at:
+                    format: date-time
+                    nullable: true
+                    type: string
                 name:
                     type: string
                 parent_external_key:
@@ -550,6 +559,7 @@ components:
                 - valid_to
                 - created_at
                 - updated_at
+                - location_deleted_at
                 - tags
             type: object
         location.UpdateLocationRequest:
@@ -773,9 +783,9 @@ info:
         email: support@trakrf.id
         name: TrakRF Support
     description: |-
-        TrakRF public REST API. See docs.trakrf.id/api for the customer-facing reference.
+        TrakRF public REST API. See /api for the customer-facing reference.
 
-        HTTP method coverage (HEAD, OPTIONS, 405 / Allow): https://docs.trakrf.id/api/http-method-coverage
+        HTTP method coverage (HEAD, OPTIONS, 405 / Allow): /api/http-method-coverage
     license:
         name: Business Source License 1.1
         url: https://github.com/trakrf/platform/blob/main/LICENSE
@@ -839,6 +849,12 @@ paths:
                   in: query
                   name: is_active
                   schema:
+                    type: boolean
+                - description: when true, include soft-deleted rows in the response. asset_deleted_at is populated for those rows. Orthogonal to is_active.
+                  in: query
+                  name: include_deleted
+                  schema:
+                    default: false
                     type: boolean
                 - description: substring search (case-insensitive) on name, external_key, description, and active tag values
                   in: query
@@ -1135,7 +1151,7 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             responses:
@@ -1250,7 +1266,7 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             responses:
@@ -1367,7 +1383,7 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             requestBody:
@@ -1540,7 +1556,7 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
                 - description: max 200
@@ -1713,7 +1729,7 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             requestBody:
@@ -1885,7 +1901,7 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
                 - description: Tag id
@@ -1893,7 +1909,7 @@ paths:
                   name: tag_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             responses:
@@ -2050,6 +2066,12 @@ paths:
                   in: query
                   name: is_active
                   schema:
+                    type: boolean
+                - description: when true, include soft-deleted rows in the response. location_deleted_at is populated for those rows. Orthogonal to is_active.
+                  in: query
+                  name: include_deleted
+                  schema:
+                    default: false
                     type: boolean
                 - description: substring search (case-insensitive) on name, external_key, description, and active tag values
                   in: query
@@ -2325,7 +2347,7 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             responses:
@@ -2470,7 +2492,7 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             responses:
@@ -2587,7 +2609,7 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             requestBody:
@@ -2755,7 +2777,7 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
                 - description: max 200
@@ -2900,7 +2922,7 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
                 - description: max 200
@@ -3045,7 +3067,7 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
                 - description: max 200
@@ -3190,7 +3212,7 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             requestBody:
@@ -3362,7 +3384,7 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
                 - description: Tag ID
@@ -3370,7 +3392,7 @@ paths:
                   name: tag_id
                   required: true
                   schema:
-                    maximum: 2.147483647e+09
+                    maximum: 9007199254740991
                     minimum: 1
                     type: integer
             responses:
@@ -3471,7 +3493,115 @@ paths:
             summary: Remove a tag from a location
             tags:
                 - locations
-    /api/v1/locations/current:
+    /api/v1/orgs/me:
+        get:
+            description: Returns the organization scoped by the API key presented in Authorization. Intended as a lightweight health-check primitive for integrators verifying a key works end-to-end.
+            operationId: orgs.me
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/org.GetOrgMeResponse'
+                    description: OK
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                "401":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/errors.ErrorResponse'
+                    description: Unauthorized
+                    headers:
+                        WWW-Authenticate:
+                            $ref: '#/components/headers/WWWAuthenticate'
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                "405":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/errors.ErrorResponse'
+                    description: Method not allowed
+                    headers:
+                        Allow:
+                            description: Allowed methods
+                            schema:
+                                type: string
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                "422":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/errors.ErrorResponse'
+                    description: missing_org_context — the API key authenticated but its org no longer exists
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                "429":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/errors.ErrorResponse'
+                    description: rate_limited
+                    headers:
+                        Retry-After:
+                            $ref: '#/components/headers/RetryAfter'
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/errors.ErrorResponse'
+                    description: Internal server error
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+            security:
+                - BearerAuth: []
+            summary: Get the org associated with the authenticated API key
+            tags:
+                - orgs
+    /api/v1/reports/asset-locations:
         get:
             description: |-
                 **Required scope:** `history:read`
@@ -3479,7 +3609,7 @@ paths:
                 Snapshot of each asset's most recent location, filterable by canonical id or external_key. Because this view is derived from immutable scan history, it can resolve references for assets that have since been deleted. By default those rows are excluded; pass `include_deleted=true` to include them, and check `asset_deleted_at` to distinguish deleted from live.
 
                 Temporal validity is applied to both joined entities. Assets whose effective window is past or future are excluded entirely. Locations whose effective window is past or future surface with null `location_id` / `location_external_key` while the parent asset row remains visible — matching how soft-deleted locations are projected.
-            operationId: locations.current
+            operationId: reports.asset-locations
             parameters:
                 - description: max 200
                   in: query
@@ -3627,115 +3757,7 @@ paths:
                 - BearerAuth: []
             summary: List current asset locations
             tags:
-                - locations
-    /api/v1/orgs/me:
-        get:
-            description: Returns the organization scoped by the API key presented in Authorization. Intended as a lightweight health-check primitive for integrators verifying a key works end-to-end.
-            operationId: orgs.me
-            responses:
-                "200":
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/org.GetOrgMeResponse'
-                    description: OK
-                    headers:
-                        X-RateLimit-Limit:
-                            $ref: '#/components/headers/XRateLimitLimit'
-                        X-RateLimit-Remaining:
-                            $ref: '#/components/headers/XRateLimitRemaining'
-                        X-RateLimit-Reset:
-                            $ref: '#/components/headers/XRateLimitReset'
-                        X-Request-Id:
-                            $ref: '#/components/headers/XRequestId'
-                "401":
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/errors.ErrorResponse'
-                    description: Unauthorized
-                    headers:
-                        WWW-Authenticate:
-                            $ref: '#/components/headers/WWWAuthenticate'
-                        X-RateLimit-Limit:
-                            $ref: '#/components/headers/XRateLimitLimit'
-                        X-RateLimit-Remaining:
-                            $ref: '#/components/headers/XRateLimitRemaining'
-                        X-RateLimit-Reset:
-                            $ref: '#/components/headers/XRateLimitReset'
-                        X-Request-Id:
-                            $ref: '#/components/headers/XRequestId'
-                "405":
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/errors.ErrorResponse'
-                    description: Method not allowed
-                    headers:
-                        Allow:
-                            description: Allowed methods
-                            schema:
-                                type: string
-                        X-RateLimit-Limit:
-                            $ref: '#/components/headers/XRateLimitLimit'
-                        X-RateLimit-Remaining:
-                            $ref: '#/components/headers/XRateLimitRemaining'
-                        X-RateLimit-Reset:
-                            $ref: '#/components/headers/XRateLimitReset'
-                        X-Request-Id:
-                            $ref: '#/components/headers/XRequestId'
-                "422":
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/errors.ErrorResponse'
-                    description: missing_org_context — the API key authenticated but its org no longer exists
-                    headers:
-                        X-RateLimit-Limit:
-                            $ref: '#/components/headers/XRateLimitLimit'
-                        X-RateLimit-Remaining:
-                            $ref: '#/components/headers/XRateLimitRemaining'
-                        X-RateLimit-Reset:
-                            $ref: '#/components/headers/XRateLimitReset'
-                        X-Request-Id:
-                            $ref: '#/components/headers/XRequestId'
-                "429":
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/errors.ErrorResponse'
-                    description: rate_limited
-                    headers:
-                        Retry-After:
-                            $ref: '#/components/headers/RetryAfter'
-                        X-RateLimit-Limit:
-                            $ref: '#/components/headers/XRateLimitLimit'
-                        X-RateLimit-Remaining:
-                            $ref: '#/components/headers/XRateLimitRemaining'
-                        X-RateLimit-Reset:
-                            $ref: '#/components/headers/XRateLimitReset'
-                        X-Request-Id:
-                            $ref: '#/components/headers/XRequestId'
-                "500":
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/errors.ErrorResponse'
-                    description: Internal server error
-                    headers:
-                        X-RateLimit-Limit:
-                            $ref: '#/components/headers/XRateLimitLimit'
-                        X-RateLimit-Remaining:
-                            $ref: '#/components/headers/XRateLimitRemaining'
-                        X-RateLimit-Reset:
-                            $ref: '#/components/headers/XRateLimitReset'
-                        X-Request-Id:
-                            $ref: '#/components/headers/XRequestId'
-            security:
-                - BearerAuth: []
-            summary: Get the org associated with the authenticated API key
-            tags:
-                - orgs
+                - reports
 security:
     - BearerAuth: []
 servers:
