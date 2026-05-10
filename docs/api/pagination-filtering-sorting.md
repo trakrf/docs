@@ -75,20 +75,18 @@ Filter parameters are specific to each resource. All filters are query parameter
 
 **Default scope.** Every list endpoint applies a [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) on top of any filter you pass — rows with `valid_to` in the past or `valid_from` in the future are excluded by default. The path-param read paths (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) do not apply this predicate; use them to inspect a record you already hold an `id` for.
 
-:::caution Soft-delete inclusion is not uniform across list endpoints
-`GET /api/v1/assets` and `GET /api/v1/locations` filter soft-deleted rows **implicitly** (the `WHERE deleted_at IS NULL` predicate runs at the storage layer; there is no client toggle to defeat it) and expose `is_active` as a separate, independent query param. `GET /api/v1/locations/current` instead exposes the soft-delete predicate as an **opt-in** `include_deleted=true` toggle and has no `is_active` filter. Two consequences worth pinning before you wire a client:
+:::caution `is_active` and `include_deleted` are independent toggles
+`is_active` is a domain field — whether a resource is currently active per business logic. `include_deleted` is a lifecycle/system toggle — whether soft-deleted rows appear in the response at all. Both `/assets` and `/locations` (and `/reports/asset-locations`) accept `include_deleted=true` (default `false`); the four combinations of `is_active=*&include_deleted=true` are independent and all valid.
 
-- `?is_active=false` on `/assets` does **not** return soft-deleted rows — it returns currently-effective rows whose `is_active` flag is `false`. Soft-deleted rows are filtered regardless of `is_active`.
-- `?include_deleted=true` on `/assets` or `/locations` returns `400 validation_error` (unknown query parameter). It is only valid on `/locations/current`.
-
-Soft-deleted rows on `/assets` and `/locations` are not addressable through any list filter today; recovering one means having held its `id` already (and even then — see the [path-param soft-delete note](./resource-identifiers#soft-delete-visibility) for what is and isn't exposed).
+- `?is_active=false` on `/assets` does **not** return soft-deleted rows — it returns currently-effective rows whose `is_active` flag is `false`. Soft-deleted rows are filtered out regardless of `is_active`; pass `?include_deleted=true` to surface them.
+- `?include_deleted=true` returns currently-effective rows AND soft-deleted rows. Each row carries `asset_deleted_at` (on `/assets` and `/reports/asset-locations`) or `location_deleted_at` (on `/locations`) — `null` for live rows, populated with the deletion timestamp for soft-deleted ones. Null-check the field, don't key-check.
 :::
 
 | Endpoint                                | Filter params                                                                                                                        |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `q`                      |
-| `GET /api/v1/locations`                 | `external_key` (repeatable), `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `q`                          |
-| `GET /api/v1/locations/current`         | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted` (default `false`), `q`                           |
+| `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`                      |
+| `GET /api/v1/locations`                 | `external_key` (repeatable), `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`                          |
+| `GET /api/v1/reports/asset-locations`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted` (default `false`), `q`                           |
 | `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps); also accepts the standard `limit` / `offset` / `sort` from the [Pagination](#pagination) section |
 
 The `external_key` filter on `/assets` and `/locations` is the [`?external_key=` natural-key lookup](./resource-identifiers#natural-key-lookup-uses-external_key) — repeatable as `?external_key=A&external_key=B` for batch resolution.
@@ -119,11 +117,16 @@ Comma-separated values in a single `location_external_key=LOC-A,LOC-B` parameter
 
 ### Boolean filters
 
-Pass `true` or `false`. Omitting `is_active` returns rows of either value (the default scope still applies the [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) — `is_active` is an independent dimension):
+Pass `true` or `false`. Omitting `is_active` returns rows of either value (the default scope still applies the [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) — `is_active` is an independent dimension). Omitting `include_deleted` defaults to `false` (soft-deleted rows are filtered out):
 
 ```bash
+# Active currently-effective assets only (default soft-delete behavior)
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?is_active=true"
+
+# Include soft-deleted rows alongside live ones; null-check asset_deleted_at on each row
+curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/assets?include_deleted=true"
 ```
 
 ### Substring search
@@ -134,7 +137,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 | ------------------------------- | -------------------------------------------------------- |
 | `GET /api/v1/assets`            | `name`, `external_key`, `description`, active tag values |
 | `GET /api/v1/locations`         | `name`, `external_key`, `description`, active tag values |
-| `GET /api/v1/locations/current` | asset `name`, asset `external_key`, active tag values    |
+| `GET /api/v1/reports/asset-locations` | asset `name`, asset `external_key`, active tag values    |
 
 ```bash
 # Find assets whose name, external_key, description, or tag value matches "forklift"
@@ -184,10 +187,10 @@ Sortable fields vary per resource. The exact enum each endpoint accepts:
 | --------------------------------------- | ---------------------------------------------------------- |
 | `GET /api/v1/assets`                    | `external_key`, `name`, `created_at`, `updated_at`         |
 | `GET /api/v1/locations`                 | `tree_path`, `external_key`, `name`, `created_at`          |
-| `GET /api/v1/locations/current`         | `last_seen`, `asset_external_key`, `location_external_key` |
+| `GET /api/v1/reports/asset-locations`   | `last_seen`, `asset_external_key`, `location_external_key` |
 | `GET /api/v1/assets/{asset_id}/history` | `timestamp`                                                |
 
-Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending; `/locations/current` defaults to `-last_seen`).
+Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending; `/reports/asset-locations` defaults to `-last_seen`).
 
 ## Validator behavior on writes
 
@@ -221,13 +224,13 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 For explicit ancestor/descendant traversal, use the dedicated endpoints: `GET /api/v1/locations/{location_id}/ancestors`, `/children`, `/descendants`.
 
-### Current locations
+### Asset-locations report
 
 Where each asset was last seen — one row per asset. Filter by the location(s) you care about:
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/locations/current?location_external_key=DOCK-1&sort=-last_seen"
+     "$BASE_URL/api/v1/reports/asset-locations?location_external_key=DOCK-1&sort=-last_seen"
 ```
 
 ### History

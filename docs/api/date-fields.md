@@ -6,7 +6,7 @@ sidebar_position: 4
 
 Every timestamped resource in the TrakRF v1 API uses the same two effective-date fields: `valid_from` and `valid_to`. This page describes their shape on the wire and what the API accepts on input. Audit timestamps (`created_at`, `updated_at`) follow a different convention and are not covered here. Soft-deletion is not surfaced as a general timestamp field on the public API — see [Resource identifiers → soft-delete is not a general field](./resource-identifiers#soft-delete-visibility) for where `asset_deleted_at` does appear and the conditions that surface it.
 
-The history-derived endpoints carry their own per-row timestamp: `timestamp` on `GET /api/v1/assets/{asset_id}/history` and `last_seen` on `GET /api/v1/locations/current`. Both share the outbound RFC3339-UTC convention documented below for `valid_from`; their semantics and nullability are covered separately under [Scan-event date fields](#scan-event-date-fields).
+The history-derived endpoints carry their own per-row timestamp: `timestamp` on `GET /api/v1/assets/{asset_id}/history` and `last_seen` on `GET /api/v1/reports/asset-locations`. Both share the outbound RFC3339-UTC convention documented below for `valid_from`; their semantics and nullability are covered separately under [Scan-event date fields](#scan-event-date-fields).
 
 ## The two fields at a glance
 
@@ -98,13 +98,13 @@ The two history-derived endpoints expose a per-row scan timestamp under differen
 | Field       | Endpoint                                | Always present?                  | Meaning                                                                                                |
 | ----------- | --------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `timestamp` | `GET /api/v1/assets/{asset_id}/history` | Yes — never `null`, never absent | When this scan event was observed for the asset.                                                       |
-| `last_seen` | `GET /api/v1/locations/current`         | Yes — never `null`, never absent | When the asset's most recent scan was observed. Drives the `-last_seen` default sort on this endpoint. |
+| `last_seen` | `GET /api/v1/reports/asset-locations`   | Yes — never `null`, never absent | When the asset's most recent scan was observed. Drives the `-last_seen` default sort on this endpoint. |
 
-Both fields are declared `required` on their respective response schemas (`report.PublicAssetHistoryItem.timestamp`, `report.PublicCurrentLocationItem.last_seen`) and **not** marked `nullable`. `/locations/current` returns one row per scanned asset, so an asset that has never been scanned does not appear in the response — there is no "scanned but `last_seen: null`" state.
+Both fields are declared `required` on their respective response schemas (`report.PublicAssetHistoryItem.timestamp`, `report.PublicCurrentLocationItem.last_seen`) and **not** marked `nullable`. `/reports/asset-locations` returns one row per scanned asset, so an asset that has never been scanned does not appear in the response — there is no "scanned but `last_seen: null`" state.
 
 ### Wire format: RFC3339 in UTC, sub-second precision
 
-Both fields are RFC3339 timestamps in UTC. They are emitted at sub-second precision — typically microsecond, mirroring the storage column's `timestamp with time zone` type. Sample row from `/locations/current`:
+Both fields are RFC3339 timestamps in UTC. They are emitted at sub-second precision — typically microsecond, mirroring the storage column's `timestamp with time zone` type. Sample row from `/reports/asset-locations`:
 
 ```json
 {
