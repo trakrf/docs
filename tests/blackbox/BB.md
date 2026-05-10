@@ -42,6 +42,18 @@ Document the existence of these constraints in your environment summary if relev
 
 **Do not echo `API_TEST_PASS` or pass it as a literal in tool-call arguments.** Reference it through env var expansion or your language's env-reading APIs.
 
+## Tooling notes
+
+When this evaluation runs through a Playwright MCP-driven browser harness, the literal-password rule above and the supported SPA mint flow are jointly unsatisfiable: the `browser_type` tool has no env-variable substitution, so the password has to appear in the call as a literal. A real customer developer typing into a real browser doesn't hit this — it's a tooling artifact, not a TrakRF design issue. A loopback HTTP shim that reads the password server-side and injects it into the page via `<script src=...>` or `fetch(...)` is blocked by Chrome's Private Network Access policy when initiated from the public docs origin; don't re-attempt that path.
+
+Within the Playwright MCP environment, the literal-password constraint may be relaxed for **a single `browser_type` call to the SPA mint/login form's password field**, under these conditions:
+
+- The literal appears in exactly one tool call — the password field of the SPA login/mint form.
+- The password is not echoed back into chat output.
+- The password is not written to disk — no scratch files, notes, `FINDINGS.md`, or screenshots that capture the field.
+
+The exception does not extend to any other tool call. `curl`, `fetch`, file writes, log statements, and any other surface where the literal could land remain forbidden. This is one named hole in the harness boundary, not a license to spread the literal through the run.
+
 ## Mission
 
 Read the docs. Set up an API key. Call the API. Evaluate the experience.
