@@ -72,12 +72,7 @@ Per-call specifics (the offending field, the unparseable value, the resource id 
 
 ### HTTP method coverage
 
-The catalog above covers `405 method_not_allowed`, but two HTTP methods are intentionally **not** enumerated per path in the OpenAPI reference — they're handled uniformly across every endpoint:
-
-- **`HEAD`** — supported on every endpoint that declares `GET`. The server transparently strips the response body and returns the same status and headers as the matching `GET`. Use it for cheap existence/auth probes that don't need the payload.
-- **`OPTIONS`** — reserved for CORS preflight. Returns `204 No Content` with `Access-Control-*` headers when a browser origin is allowed; otherwise `204` with no CORS headers. OPTIONS is not part of the resource API surface — server-to-server clients won't normally invoke it.
-
-To probe which methods a path supports without consulting the spec, send any request that triggers a `405` and read the `Allow` header on the response (per [RFC 7231 §6.5.5](https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.5)) — the same value also lands in the error envelope's `detail` (e.g. `Allowed methods: GET, HEAD, POST`).
+The catalog above covers `405 method_not_allowed`. `HEAD` and `OPTIONS` are not enumerated per path in the OpenAPI reference — they're handled uniformly across every endpoint and documented at [HTTP method coverage](./http-method-coverage). The short version: `HEAD` is supported wherever `GET` is declared and behaves identically minus the response body; `OPTIONS` is reserved for CORS preflight; the `Allow` header on a `405` response (mirrored in `error.detail`) is the runtime way to discover what each path supports.
 
 ### `validation_error` vs `bad_request`
 
