@@ -239,6 +239,8 @@ If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anythi
 
 `tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use the [`?external_key=` filter](#natural-key-lookup-uses-external_key) on the locations list endpoint for natural-key lookups.
 
+**Don't use `tree_path` as a cross-system join key.** The `external_key` → segment transformation is lossy on case (and the underscore reservation on `external_key` is the only thing keeping the hyphen → underscore step from collapsing other distinct keys). Round-tripping a `tree_path` segment back to its source `external_key` is not generally possible: `WAREHOUSE-WEST` and `warehouse-west` produce the same segment `warehouse_west`, so a downstream consumer joining a TrakRF row to a partner system on a `tree_path` substring can match more rows than the integrator intended. Use the canonical `external_key` (or the `id` chain via `/ancestors`) for cross-system joins; treat `tree_path` as a display-only label for sorting, breadcrumbs, and indented rendering.
+
 ## Location tree endpoints {#location-tree-endpoints}
 
 Three endpoints traverse the location hierarchy from a starting node. All three return the standard list envelope (`data`, `limit`, `offset`, `total_count`) and are gated by `locations:read`:

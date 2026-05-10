@@ -11,7 +11,7 @@ import EnvSwitcher from "@site/src/components/EnvSwitcher";
 
 # Getting started — using the API
 
-This page takes you from "I have an API key" to "I called the TrakRF API and got a `200` back" in about 10 minutes, using only standard HTTP tools. It mirrors the [UI quickstart](./ui) — pick whichever track matches your integration plan.
+This is the front door for the API track. It takes you from "I have an API key" to "I called the TrakRF API and got a `200` back" using only standard HTTP tools, then hands off to the [API Quickstart](../api/quickstart) for the rest of the round-trip (CRUD, error catalog, Postman, codegen). It mirrors the [UI quickstart](./ui) — pick whichever track matches your integration plan.
 
 ## What you'll need
 
@@ -57,39 +57,8 @@ A successful response looks like:
 }
 ```
 
-If the `name` matches the organization you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface. See [Resource identifiers](../api/resource-identifiers) for the integer `id` / string `external_key` convention you'll see on every other resource.
+If the `name` matches the organization you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface.
 
-If you get a `401`, the key is missing, malformed, revoked, or scoped to the other environment (preview vs production) — re-check the `Authorization` header and the [Base URL](../api/authentication#base-url). If you get a `429`, you're being rate-limited — see [Rate limits](../api/rate-limits). If you're calling from browser JavaScript and getting a CORS error with no body, the API is server-to-server only ([details](../api/authentication#server-to-server)).
+## Continue at the API Quickstart
 
-All error bodies are wrapped in an `error` key — a `401` looks like:
-
-```json
-{
-  "error": {
-    "type": "unauthorized",
-    "title": "Unauthorized",
-    "status": 401,
-    "detail": "Authorization header is required",
-    "instance": "/api/v1/orgs/me",
-    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
-  }
-}
-```
-
-Write handlers against `body.error.type` and `body.error.detail`, not top-level fields. Full catalog: [Errors](../api/errors).
-
-## 3. Interpret the response
-
-The two key concepts integrators trip on:
-
-- **Two identifiers per resource** — every asset and location has an integer `id` (server-assigned, used in URL path params and FK fields) and a string `external_key` (your handle for joining TrakRF records back to a SKU, asset tag, or ERP code). Both are first-class — pick whichever fits the context. Full convention: [Resource identifiers](../api/resource-identifiers).
-- **Response envelope** — every endpoint on the public surface wraps payloads in `{ "data": ..., ... }`, including `GET /api/v1/orgs/me`. List endpoints add pagination metadata (`limit`, `offset`, `total_count`) — see [Pagination, filtering, sorting](../api/pagination-filtering-sorting).
-
-## 4. Next steps
-
-- **[API docs landing](../api/)** — concept-guide map and starting points.
-- **[Interactive reference](/api)** — every endpoint, request/response shape, try-it-now widget.
-- **[Pagination, filtering, sorting](../api/pagination-filtering-sorting)** — how to shape list queries.
-- **[Postman collection](../api/postman)** — ready-to-import JSON.
-- **[Rate limits](../api/rate-limits)** — request budgets, retry-after semantics.
-- **[Errors](../api/errors)** — the common error envelope and how to handle each status.
+The [**API Quickstart**](../api/quickstart) picks up from here with the full round-trip: CRUD (create, read, update, delete), the error envelope and catalog, troubleshooting `401` / `429` / CORS, the Postman collection, and raw spec for codegen. Steps 1 and 2 above mirror its first two sections, so you can skim or skip ahead to **§3 Round-trip: create, read, update, delete** when you arrive.
