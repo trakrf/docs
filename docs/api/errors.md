@@ -168,7 +168,6 @@ Current `code` values (extensible):
 - `too_long` — string or collection length above the maximum
 - `too_small` — numeric value below the minimum
 - `too_large` — numeric value above the maximum
-- `immutable_field` — the request body included a field that cannot be mutated through this verb. Today the only emitter is `external_key` on `PATCH /api/v1/assets/{asset_id}` and `PATCH /api/v1/locations/{location_id}`; the `detail` string names the dedicated operation that mutates it (see [Resource identifiers → Renaming an `external_key`](./resource-identifiers#renaming-an-external_key)). Distinct from `invalid_value` so a validation UI can render "this field is read-only on update" rather than a generic "invalid" message.
 
 The `code` enum is extensible — TrakRF may add new validation codes in any v1 release. Treat unknown codes as generic invalid-value errors and surface the `message` field.
 
