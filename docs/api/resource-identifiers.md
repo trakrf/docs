@@ -483,13 +483,23 @@ Direct lookups by canonical `id` (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/
 
 If your business logic needs to surface an expired record (e.g., to render a "decommissioned on …" row in your UI), use the path-param read path or your own client-side filter — the list endpoints will not surface temporally inactive rows.
 
-## Tags use a composite natural key
+## Tag is a polymorphic resource
+
+Tag is a polymorphic identifier attached to an asset or a location. The `tag_type` discriminator selects one of three kinds:
+
+- `rfid` — RFID transponder
+- `ble` — Bluetooth Low Energy beacon
+- `barcode` — 1D/2D barcode
+
+All three kinds share the same `Tag` schema, the same wire shape, and the same endpoints. The `/assets/{asset_id}/tags` and `/locations/{location_id}/tags` subresources accept and return all three kinds; the kind travels in the request body via `tag_type`, not in the URL. There is no per-kind subresource (no `/tags/rfid`, no `/tags/ble`), no per-kind path variation, and no per-kind schema variation — codegen-derived clients see one Tag type regardless of kind, with `tag_type` as the discriminator field.
 
 :::note "Tag" is a noun with two senses
-In the API surface (and this page), **tag** is a typed data primitive: the `(tag_type, value)` pair attached to an asset or a location. In RFID-domain prose elsewhere on the docs site (and in user-facing UI copy), "tag" can also mean the physical hardware label being read by a scanner. Both senses are valid; this page operates on the data-primitive sense, and `tag_type` is what disambiguates which kind of physical artifact a given record represents (`rfid`, `ble`, or `barcode`).
+In the API surface (and this page), **tag** is a typed data primitive: the `(tag_type, value)` pair attached to an asset or a location. In RFID-domain prose elsewhere on the docs site (and in user-facing UI copy), "tag" can also mean the physical hardware label a scanner reads. Both senses are valid; this page operates on the data-primitive sense, with `tag_type` selecting which kind of physical artifact a given record represents.
 :::
 
-Tags follow the same principle as assets and locations, with a composite shape: a tag's natural key is the `(tag_type, value)` pair within an organization, enforced by the partial unique index `(org_id, tag_type, value) WHERE deleted_at IS NULL`. Inserting a duplicate live `(tag_type, value)` for the same organization returns `409 conflict`.
+## Tags use a composite natural key
+
+Tags follow the same principle as assets and locations, with a composite shape: a tag's natural key is the `(tag_type, value)` pair within an organization, enforced by the partial unique index `(org_id, tag_type, value) WHERE deleted_at IS NULL`. Uniqueness is **within kind, not across kinds** — the same `value` may exist under different `tag_type`s without conflict (a barcode `"E2-8042"` and an RFID EPC `"E2-8042"` coexist as distinct rows). Inserting a duplicate live `(tag_type, value)` for the same organization returns `409 conflict`.
 
 Don't conflate `external_key` with `tags[].value`: assets and locations have a single string natural key (`external_key`); tags have a composite one. The `value` field _inside_ a tag is the tag's own partner-supplied handle (an EPC, a beacon ID, a barcode), scoped by `tag_type`. The `external_key` _on_ an asset or location is the resource's partner-supplied handle, scoped by resource type. They sit at different levels and are not interchangeable — an asset's `external_key` and one of its tags' `value` answer different questions.
 
