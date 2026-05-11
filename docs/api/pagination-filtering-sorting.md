@@ -80,14 +80,14 @@ Filter parameters are specific to each resource. All filters are query parameter
 
 - `?is_active=false` on `/assets` does **not** return soft-deleted rows — it returns currently-effective rows whose `is_active` flag is `false`. Soft-deleted rows are filtered out regardless of `is_active`; pass `?include_deleted=true` to surface them.
 - `?include_deleted=true` returns currently-effective rows AND soft-deleted rows. Each row carries `asset_deleted_at` (on `/assets` and `/reports/asset-locations`) or `location_deleted_at` (on `/locations`) — `null` for live rows, populated with the deletion timestamp for soft-deleted ones. Null-check the field, don't key-check.
-:::
+  :::
 
-| Endpoint                                | Filter params                                                                                                                        |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`                      |
-| `GET /api/v1/locations`                 | `external_key` (repeatable), `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`                          |
-| `GET /api/v1/reports/asset-locations`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted` (default `false`), `q`                           |
-| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps); also accepts the standard `limit` / `offset` / `sort` from the [Pagination](#pagination) section |
+| Endpoint                                | Filter params                                                                                                                                        |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q` |
+| `GET /api/v1/locations`                 | `external_key` (repeatable), `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`     |
+| `GET /api/v1/reports/asset-locations`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted` (default `false`), `q`                                           |
+| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps); also accepts the standard `limit` / `offset` / `sort` from the [Pagination](#pagination) section                 |
 
 The `external_key` filter on `/assets` and `/locations` is the [`?external_key=` natural-key lookup](./resource-identifiers#natural-key-lookup-uses-external_key) — repeatable as `?external_key=A&external_key=B` for batch resolution.
 
@@ -133,10 +133,10 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 `q` performs a substring search (case-insensitive) across the resource's most commonly queried fields:
 
-| Endpoint                        | Fields matched                                           |
-| ------------------------------- | -------------------------------------------------------- |
-| `GET /api/v1/assets`            | `name`, `external_key`, `description`, active tag values |
-| `GET /api/v1/locations`         | `name`, `external_key`, `description`, active tag values |
+| Endpoint                              | Fields matched                                           |
+| ------------------------------------- | -------------------------------------------------------- |
+| `GET /api/v1/assets`                  | `name`, `external_key`, `description`, active tag values |
+| `GET /api/v1/locations`               | `name`, `external_key`, `description`, active tag values |
 | `GET /api/v1/reports/asset-locations` | asset `name`, asset `external_key`, active tag values    |
 
 ```bash
@@ -194,11 +194,11 @@ Unknown sort fields return `400 validation_error`. Generated clients with strict
 
 ## Validator behavior on writes
 
-Three rules govern how the validator handles PUT/POST request bodies. They're separate from list-endpoint filters but they're the next thing partners ask about once they've done a `GET` and want to write back, so they live here:
+Three rules govern how the validator handles `POST` and `PATCH` request bodies. They're separate from list-endpoint filters but they're the next thing partners ask about once they've done a `GET` and want to write back, so they live here:
 
-**Round-trip-safe read-only fields are silently accepted.** Server-managed metadata like `id`, `created_at`, `updated_at` (assets and locations) and the derived ancestor fields `tree_path`, `depth` (locations) appear on every read response but are not part of any write schema. A naive `GET` → mutate → `PUT` of the entire response object succeeds for these — they're accepted and discarded, not rejected — so a verbatim round-trip with no edits is a legal no-op (200 with the unchanged record). The per-resource set is documented in [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape).
+**Round-trip-safe read-only fields are silently accepted.** Server-managed metadata like `id`, `created_at`, `updated_at` (assets and locations) and the derived ancestor fields `tree_path`, `depth` (locations) appear on every read response but are not part of any write schema. A naive `GET` → mutate → `PATCH` of the entire response object succeeds for these — they're accepted and discarded, not rejected — so a verbatim round-trip with no edits is a legal no-op (200 with the unchanged record). The per-resource set is documented in [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape).
 
-**Managed-via-subresource fields are rejected.** Some fields appear on the read shape but are mutated through dedicated subresource endpoints, not through the parent's `PUT`. Today the only example is `tags` on assets and locations: PUT a body containing a `tags` field and the server returns `400 validation_error` with `fields[].field = "tags"` and `code: invalid_value`, the same envelope a typo or off-resource name produces. Tag mutation goes through `POST /api/v1/assets/{asset_id}/tags`, `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`, and the location counterparts — see [Tag CRUD](./resource-identifiers#tag-crud). The rejection is intentional: a read-modify-write integration that mutates `tags` on the GET body and PUTs back would otherwise get a 200 echo of the unchanged tags and silently lose the mutation. Strip `tags` from the body before PUT, then mutate via the subresource endpoints.
+**Managed-via-subresource fields are rejected.** Some fields appear on the read shape but are mutated through dedicated subresource endpoints, not through the parent's `PATCH`. Today the only example is `tags` on assets and locations: send a `PATCH` body containing a `tags` field and the server returns `400 validation_error` with `fields[].field = "tags"` and `code: invalid_value`, the same envelope a typo or off-resource name produces. Tag mutation goes through `POST /api/v1/assets/{asset_id}/tags`, `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`, and the location counterparts — see [Tag CRUD](./resource-identifiers#tag-crud). The rejection is intentional: a read-modify-write integration that mutates `tags` on the GET body and `PATCH`es back would otherwise get a 200 echo of the unchanged tags and silently lose the mutation. Strip `tags` from the body before `PATCH`, then mutate via the subresource endpoints.
 
 **Truly unknown fields are rejected.** A field name that doesn't appear on either the read or the write schema (a typo, an off-resource field, a `metadata`-on-locations attempt) returns the same `400 validation_error` / `invalid_value` envelope. The silent-accept rule above is reserved for round-trip-safe read-only fields the platform marks `readOnly: true` and that integrators can't avoid sending verbatim from a `GET` response — it isn't a general loose-mode.
 

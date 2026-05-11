@@ -78,7 +78,7 @@ Every endpoint on the public surface — including `GET /api/v1/orgs/me` and eve
 At 60 requests/minute the steady-state budget comfortably covers normal integration traffic, but a few patterns are worth flagging:
 
 - **Liveness/connectivity probes against `GET /api/v1/orgs/me`** — these count, so probe at a frequency your budget tolerates. Once per minute is the simplest pattern that always fits inside the default tier with room to spare; once every 30 seconds is fine if `/orgs/me` is the only thing the probe hits. Aggressive sub-second probes will trip throttling.
-- **Bulk writes** — every `POST` / `PUT` / `DELETE` under `/api/v1/assets` and `/api/v1/locations` consumes one token. For ingest workloads above the default tier, [contact support](mailto:support@trakrf.id) about a custom tier rather than spreading writes across multiple keys.
+- **Bulk writes** — every `POST` / `PATCH` / `DELETE` under `/api/v1/assets` and `/api/v1/locations` consumes one token. For ingest workloads above the default tier, [contact support](mailto:support@trakrf.id) about a custom tier rather than spreading writes across multiple keys.
 
 `GET /api/v1/orgs/me` returns the standard `{ "data": ... }` envelope, same as every other endpoint on the public surface. See [Private endpoints → /orgs/me](./private-endpoints#orgs-me) for the full catalog entry.
 

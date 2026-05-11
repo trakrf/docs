@@ -121,7 +121,7 @@ Every field on `AssetView` and `LocationView` is **required** in the OpenAPI spe
 
 Soft-deleted records are filtered out of list responses by default — every list endpoint applies a `WHERE deleted_at IS NULL` predicate at the storage layer. To opt in, pass `?include_deleted=true` on any of the three list surfaces: `GET /api/v1/assets`, `GET /api/v1/locations`, and `GET /api/v1/reports/asset-locations`. The toggle is consistent across endpoints — same name, same default (`false`), same independence from `is_active` (see [Boolean filters](./pagination-filtering-sorting#boolean-filters)).
 
-Each row carries a per-entity deletion timestamp: `asset_deleted_at` on `/assets` rows and `AssetLocationItem` (the asset-locations report row), `location_deleted_at` on `/locations` rows. The field is **always present on every row** — `null` for live records, populated with the deletion timestamp for soft-deleted ones. The OpenAPI spec marks both as `required` and `nullable: true`; codegen-derived clients surface them as non-optional nullable fields, same pattern as the FK pairs above. Both fields are flagged `readOnly: true` in the spec, so a verbatim `GET` → `PUT` round-trip continues to succeed (see [Read shape vs. write shape](#read-shape-vs-write-shape)).
+Each row carries a per-entity deletion timestamp: `asset_deleted_at` on `/assets` rows and `AssetLocationItem` (the asset-locations report row), `location_deleted_at` on `/locations` rows. The field is **always present on every row** — `null` for live records, populated with the deletion timestamp for soft-deleted ones. The OpenAPI spec marks both as `required` and `nullable: true`; codegen-derived clients surface them as non-optional nullable fields, same pattern as the FK pairs above. Both fields are flagged `readOnly: true` in the spec, so a verbatim `GET` → `PATCH` round-trip continues to succeed (see [Read shape vs. write shape](#read-shape-vs-write-shape)).
 
 The `location_deleted_at` field on `/locations` is mildly redundant — the row already _is_ a location, and the `_id` prefix is most useful when joining across entities like the asset-locations report does. The redundant naming is deliberate: one field-naming rule across all three list shapes is easier to reason about than a special-case "drop the prefix on single-entity lists." Null-check the appropriate field name for the endpoint you're calling.
 
@@ -139,61 +139,66 @@ The pattern we recommend mirrors the schemas:
 
 | Surface       | Where to put partner-side data                                                                   |
 | ------------- | ------------------------------------------------------------------------------------------------ |
-| **Assets**    | `metadata` — free-form key/value, no schema, round-trips through `GET` → `PUT`.                  |
+| **Assets**    | `metadata` — free-form key/value, no schema, round-trips through `GET` → `PATCH`.                |
 | **Locations** | `tags` — typed natural-key pairs (`tag_type`, `value`), enforced unique within the organization. |
 
 Locations were not given an open `metadata` field because the practical "what would I stuff in here" use cases on a location (a CRM site id, a partner facility code) are already addressable through `tags` with a partner-defined `tag_type`. If you have a use case that genuinely needs schemaless side-channel data on a location, [contact us](mailto:support@trakrf.id) — same evaluation track as the v2 capability requests.
 
 ## Read shape vs. write shape
 
-Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PUT` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields that aren't part of the request schema. The validator splits these into two categories with different write-time behavior:
+Asset and location updates use `PATCH /api/v1/{resource}/{id}` with `Content-Type: application/merge-patch+json` (JSON Merge Patch, [RFC 7396](https://datatracker.ietf.org/doc/html/rfc7396)). Three rules cover the body semantics:
 
-- **Round-trip-safe read-only** — server-managed metadata (`id`, `created_at`, `updated_at`) on assets and locations, plus the derived ancestor fields `tree_path` and `depth` on locations. The server **silently ignores** these on `PUT`. A naive `GET` → mutate → `PUT` of the entire response succeeds for these fields — they're flagged with `readOnly: true` in the OpenAPI spec, and generated SDKs (typescript-fetch, openapi-generator) honor the marker and split read and write into distinct types so the request payload stays minimal at the type-system level.
-- **Managed via subresource** — `tags` on assets and locations. Embedded in every read response, but mutated through the dedicated `POST /assets/{asset_id}/tags` / `DELETE /assets/{asset_id}/tags/{tag_id}` endpoints (and location counterparts) rather than the parent resource's `PUT`. The validator **rejects** `tags` in a parent `PUT` body with `400 validation_error` / `code: invalid_value` — the same envelope a typo or off-resource field produces. The rejection is deliberate: a read-modify-write integration that mutates `tags` on a GET body and PUTs the whole resource back would otherwise get a 200 echo of the unchanged tags and silently lose the mutation. Strip `tags` from the body before PUT, then mutate via [Tag CRUD](#tag-crud).
+- **Field present, scalar value** — set the field to that value.
+- **Field present, value `null`** — clear the field. Only legal for writable-nullable fields (listed at the end of this section); sending `null` for a non-nullable field returns `400 validation_error` / `code: invalid_value`.
+- **Field omitted** — leave the existing value unchanged.
 
-A request body that resolves to **no writable fields** — `{}`, or a body containing only round-trip-safe read-only fields like `{"id":999}` or `{"created_at":"…"}` — returns `200` with the unchanged record. A verbatim `GET` → `PUT` round-trip with no edits is a legal no-op as long as `tags` is stripped first.
+An empty body (`{}`) is a documented no-op and returns `200` with the resource unchanged. This is also the floor case for the "no writable fields" rule below.
+
+Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PATCH` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields that aren't part of the request schema. The validator splits these into two categories with different write-time behavior:
+
+- **Round-trip-safe read-only** — server-managed metadata (`id`, `created_at`, `updated_at`) on assets and locations, plus the derived ancestor fields `tree_path` and `depth` on locations. The server **silently ignores** these on `PATCH`. A naive `GET` → mutate → `PATCH` of the entire response succeeds for these fields — they're flagged with `readOnly: true` in the OpenAPI spec, and generated SDKs (typescript-fetch, openapi-generator) honor the marker and split read and write into distinct types so the request payload stays minimal at the type-system level.
+- **Managed via subresource** — `tags` on assets and locations. Embedded in every read response, but mutated through the dedicated `POST /assets/{asset_id}/tags` / `DELETE /assets/{asset_id}/tags/{tag_id}` endpoints (and location counterparts) rather than the parent resource's `PATCH`. The validator **rejects** `tags` in a parent `PATCH` body with `400 validation_error` / `code: invalid_value` — the same envelope a typo or off-resource field produces. The rejection is deliberate: a read-modify-write integration that mutates `tags` on a GET body and `PATCH`es the whole resource back would otherwise get a 200 echo of the unchanged tags and silently lose the mutation. Strip `tags` from the body before `PATCH`, then mutate via [Tag CRUD](#tag-crud).
+
+A request body that resolves to **no writable fields** — `{}`, or a body containing only round-trip-safe read-only fields like `{"id":999}` or `{"created_at":"…"}` — returns `200` with the unchanged record. A verbatim `GET` → `PATCH` round-trip with no edits is a legal no-op as long as `tags` is stripped first.
 
 Strict-unknown-field validation still applies for fields that are **not** declared on either the read or the write schema — a typo'd or off-resource field name returns `400 validation_error` with `fields[].field` naming the offender. See [Errors → Validation errors](./errors#validation-errors) for the envelope shape; the validator behavior is also covered globally in [Pagination, filtering, sorting → Validator behavior on writes](./pagination-filtering-sorting#validator-behavior-on-writes).
 
 ```bash
-# GET → mutate → PUT round-trip. The round-trip-safe read-only fields
+# GET → mutate → PATCH round-trip. The round-trip-safe read-only fields
 # (id, created_at, updated_at) are silently ignored by the server.
 # `tags` must be stripped explicitly — it's managed via the
-# /assets/{asset_id}/tags subresource and is rejected in a parent PUT body.
+# /assets/{asset_id}/tags subresource and is rejected in a parent PATCH body.
 curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/4287" \
 | jq '.data | del(.tags)
        | .location_external_key = "PORTABLE-1437"' \
-| curl -X PUT \
+| curl -X PATCH \
        -H "Authorization: Bearer $TRAKRF_API_KEY" \
-       -H "Content-Type: application/json" \
+       -H "Content-Type: application/merge-patch+json" \
        -d @- \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-For a smaller request body — and for hand-rolled clients that want to be explicit about what they're updating — drop the round-trip-safe read-only fields too:
+For a smaller request body — and for hand-rolled clients that want to be explicit about what they're updating — send only the fields you're changing. Merge-patch leaves omitted fields untouched, so the minimal form is the more idiomatic one:
 
 ```bash
-# Smaller payload: drop tags (rejected) and the round-trip-safe read-only
-# fields (silently ignored anyway) before PUT.
-curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/4287" \
-| jq '.data | del(.id, .created_at, .updated_at, .tags)
-       | .location_external_key = "PORTABLE-1437"' \
-| curl -X PUT \
-       -H "Authorization: Bearer $TRAKRF_API_KEY" \
-       -H "Content-Type: application/json" \
-       -d @- \
-       "$BASE_URL/api/v1/assets/4287"
+# Minimal PATCH: only the field being changed. Omitted fields stay as-is;
+# the round-trip-safe read-only fields don't need to be stripped because
+# they aren't included in the first place.
+curl -X PATCH \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/merge-patch+json" \
+     -d '{"location_external_key": "PORTABLE-1437"}' \
+     "$BASE_URL/api/v1/assets/4287"
 ```
 
-The round-trip-safe read-only set today is `id`, `created_at`, `updated_at` for assets, plus `tree_path` and `depth` for locations (the two location-specific additions are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe). The managed-via-subresource set today is `tags` on both resources — currently the only example, with no plans to extend it. Codegen and hand-rolled clients arrive at the same place by different routes: `tags` appears on `CreateAssetWithTagsRequest` / `CreateLocationWithTagsRequest` (so attaching tags at create still type-checks), but `UpdateAssetRequest` / `UpdateLocationRequest` omit the field entirely. A typed-codegen client that tries to set `tags` on a parent `PUT` payload fails at compile time with an unknown-property error; a hand-rolled client that sends the same field over the wire gets a runtime `400 validation_error` from the server. Either way, you can't accidentally send `tags` from a parent `PUT`.
+The round-trip-safe read-only set today is `id`, `created_at`, `updated_at` for assets, plus `tree_path` and `depth` for locations (the two location-specific additions are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe). The managed-via-subresource set today is `tags` on both resources — currently the only example, with no plans to extend it. Codegen and hand-rolled clients arrive at the same place by different routes: `tags` appears on `CreateAssetWithTagsRequest` / `CreateLocationWithTagsRequest` (so attaching tags at create still type-checks), but `UpdateAssetRequest` / `UpdateLocationRequest` omit the field entirely. A typed-codegen client that tries to set `tags` on a parent `PATCH` payload fails at compile time with an unknown-property error; a hand-rolled client that sends the same field over the wire gets a runtime `400 validation_error` from the server. Either way, you can't accidentally send `tags` from a parent `PATCH`.
 
 Future resources may grow their own round-trip-safe read-only fields. Don't memorize per-resource lists — derive them from the spec's `readOnly: true` markers, or rely on a generated client. The server's silent-ignore rule means existing clients keep working as that set grows.
 
 Either form of the FK pair is accepted on write. Send `location_id` if you have it; send `location_external_key` if that's what the user typed. **Sending both is allowed when they agree** — the server cross-validates the pair and rejects disagreement (e.g., one set, the other `null`, or the two values pointing at different rows) with `400 invalid_value` and `detail: "location_id and location_external_key disagree"`. The same rule covers `parent_id` / `parent_external_key` on locations.
 
-To **clear** a relationship, send `null` on either form (or both — they agree). The other writable-nullable fields work the same way: PUT `{"description": null}` clears the description; PUT `{"valid_to": null}` clears the expiry. Asset writable-nullables are `description`, `location_id`, `location_external_key`, `valid_to`; location writable-nullables are `description`, `parent_id`, `parent_external_key`, `valid_to`. After a clear, the field reads back as `null` (see [Always present vs. present-as-null](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs) above; for `valid_to` specifically see [Date fields](./date-fields)).
+To **clear** a relationship, send `null` on either form (or both — they agree). The other writable-nullable fields work the same way: `PATCH {"description": null}` clears the description; `PATCH {"valid_to": null}` clears the expiry. Asset writable-nullables are `description`, `location_id`, `location_external_key`, `valid_to`; location writable-nullables are `description`, `parent_id`, `parent_external_key`, `valid_to`. After a clear, the field reads back as `null` (see [Always present vs. present-as-null](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs) above; for `valid_to` specifically see [Date fields](./date-fields)).
 
 ## Locations: `parent_id` and `parent_external_key`
 
@@ -300,7 +305,7 @@ To pre-check before deleting, use the existing read endpoints to enumerate the b
 - Active descendant locations: [`GET /api/v1/locations/{location_id}/descendants`](#location-tree-endpoints) returns the full subtree.
 - Active placed assets: `GET /api/v1/assets?location_id={location_id}` (or `GET /api/v1/reports/asset-locations?location_id={location_id}` for the report shape).
 
-Reassign or remove the dependents (move assets via `PUT /api/v1/assets/{asset_id}` with a new `location_id` / `location_external_key`; reparent or delete the descendants the same way), then retry the delete on the leaf.
+Reassign or remove the dependents (move assets via `PATCH /api/v1/assets/{asset_id}` with a new `location_id` / `location_external_key`; reparent or delete the descendants the same way), then retry the delete on the leaf.
 
 ## Asset `external_key` is optional
 
@@ -324,13 +329,13 @@ curl -X POST \
 
 A caller-supplied `external_key` that collides with an existing live asset returns `409 conflict`. Once an asset is soft-deleted its `external_key` becomes immediately available for reuse. Full create flows live in the [Quickstart](./quickstart).
 
-**Optional means omit, not empty string.** The auto-mint path fires when the request body has no `external_key` key at all. Sending `"external_key": ""` returns `400 validation_error` with `code: too_short` — the same rejection `PUT /api/v1/assets/{asset_id}` produces, and the same the locations endpoints produce on either verb. CSV importers and form handlers that emit empty strings on blank inputs need to omit the key entirely instead, or they'll 400 on every blank row instead of getting a server-minted `ASSET-NNNN`.
+**Optional means omit, not empty string.** The auto-mint path fires when the request body has no `external_key` key at all. Sending `"external_key": ""` returns `400 validation_error` with `code: too_short` — the same rejection `PATCH /api/v1/assets/{asset_id}` produces, and the same the locations endpoints produce on either verb. CSV importers and form handlers that emit empty strings on blank inputs need to omit the key entirely instead, or they'll 400 on every blank row instead of getting a server-minted `ASSET-NNNN`.
 
 **When integrating with a system of record (an ERP, a WMS, a partner database), supply the partner-side handle on create** — don't rely on the auto-mint. Auto-minted `ASSET-NNNN` values are deterministic per organization but they won't join cleanly to a SKU, an ERP code, or any other handle a downstream system already uses. The auto-mint exists for ad-hoc creates (a one-off entry from the SPA, a quick smoke test) where no partner-side join is needed.
 
 ## `external_key` value rules {#external_key-value-rules}
 
-`external_key` is constrained by the regex `^[A-Za-z0-9-]+$` — alphanumerics and hyphen only, length 1–255. The OpenAPI spec declares this `pattern` on every write schema (`POST` and `PUT` on assets and locations, plus the `*_external_key` foreign-key fields). Invalid input returns `400 validation_error` with `code: invalid_value`.
+`external_key` is constrained by the regex `^[A-Za-z0-9-]+$` — alphanumerics and hyphen only, length 1–255. The OpenAPI spec declares this `pattern` on every write schema (`POST` and `PATCH` on assets and locations, plus the `*_external_key` foreign-key fields). Invalid input returns `400 validation_error` with `code: invalid_value`.
 
 The reserved characters and why they're reserved:
 

@@ -108,10 +108,12 @@ ASSET_ID=$(echo "$ASSET" | jq -r '.data.id')
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/$ASSET_ID"
 
-# Update
-curl -X PUT "$BASE_URL/api/v1/assets/$ASSET_ID" \
+# Update — partial merge-patch per RFC 7396. Only fields in the body are
+# changed; omitted fields are left unchanged. Send `null` to clear a
+# nullable field; `{}` is a documented no-op.
+curl -X PATCH "$BASE_URL/api/v1/assets/$ASSET_ID" \
   -H "Authorization: Bearer $TRAKRF_API_KEY" \
-  -H "Content-Type: application/json" \
+  -H "Content-Type: application/merge-patch+json" \
   -d '{"name": "Quickstart test asset (renamed)"}'
 
 # Delete
