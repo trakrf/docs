@@ -14,7 +14,7 @@ Three string-handle concepts appear across these resources, and they show up clo
 - **`*_external_key` foreign-key fields** — flat-scalar references _to_ another resource's `external_key` from a record that holds the relationship. Examples: `location_external_key` on assets, `parent_external_key` on locations. Covered under [Foreign-key fields in responses](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs).
 - **`tree_path`** — a derived label-path on locations only, useful for sorting / breadcrumbs / indenting flat lists. Not an identifier and not a natural key. Covered under [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key).
 
-The first two are partner-supplied and write-routable; the third is server-derived and read-only. The asymmetry is deliberate.
+The first two are write-routable (caller-supplied on create, or server-minted from a per-organization sequence when `external_key` is omitted — see [auto-mint behavior](#external_key-is-optional-on-create)); the third is server-derived and read-only. The asymmetry is deliberate.
 
 **Character set.** `external_key` (and every `*_external_key` foreign-key field) is constrained to alphanumerics and the hyphen — `^[A-Za-z0-9-]+$`, length 1–255. Underscore, period, slash, colon, and whitespace are reserved. See [`external_key` value rules](#external_key-value-rules) for the full table and the rationale for each reserved character.
 
@@ -392,9 +392,14 @@ To pre-check before deleting, use the existing read endpoints to enumerate the b
 
 Reassign or remove the dependents (move assets via `PATCH /api/v1/assets/{asset_id}` with a new `location_id` / `location_external_key`; reparent or delete the descendants the same way), then retry the delete on the leaf.
 
-## Asset `external_key` is optional
+## `external_key` is optional on create — both resources auto-mint {#external_key-is-optional-on-create}
 
-`external_key` is required on locations but optional on assets. Omit it on `POST /api/v1/assets` and the server assigns one in the format `ASSET-NNNN` from a per-organization sequence:
+`external_key` is **optional on `POST` for assets and locations alike**. Supply your own value to anchor the row to a partner-side handle (a SKU, an ERP code, an operator-typed location label, a row from a planned-layout export), or omit the field on the request body and the server assigns one from a per-organization sequence. Each resource type has its own format and its own sequence:
+
+| Resource | Auto-minted format | Sequence scope   |
+| -------- | ------------------ | ---------------- |
+| Asset    | `ASSET-NNNN`       | per-organization |
+| Location | `LOC-NNNN`         | per-organization |
 
 ```bash
 # Caller-supplied external_key
@@ -410,13 +415,20 @@ curl -X POST \
      -H "Content-Type: application/json" \
      -d '{"name": "Pallet jack #14"}' \
      "$BASE_URL/api/v1/assets"
+
+# Same shape on locations — omit external_key to receive a LOC-NNNN value
+curl -X POST \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"name": "Back storage, bay 2"}' \
+     "$BASE_URL/api/v1/locations"
 ```
 
-A caller-supplied `external_key` that collides with an existing live asset returns `409 conflict`. Once an asset is soft-deleted its `external_key` becomes immediately available for reuse. Full create flows live in the [Quickstart](./quickstart).
+A caller-supplied `external_key` that collides with an existing live row of the same resource type returns `409 conflict` against the partial unique index `(org_id, external_key) WHERE deleted_at IS NULL`. Once a row is soft-deleted its `external_key` becomes immediately available for reuse. Full create flows live in the [Quickstart](./quickstart).
 
-**Optional means omit, not empty string.** The auto-mint path fires when the request body has no `external_key` key at all. Sending `"external_key": ""` returns `400 validation_error` with `code: too_short` — the same rejection `PATCH /api/v1/assets/{asset_id}` produces, and the same the locations endpoints produce on either verb. CSV importers and form handlers that emit empty strings on blank inputs need to omit the key entirely instead, or they'll 400 on every blank row instead of getting a server-minted `ASSET-NNNN`.
+**Optional means omit, not empty string.** The auto-mint path fires only when the request body has no `external_key` key at all. Sending `"external_key": ""` (or any whitespace-only value) returns `400 validation_error` with `code: too_short` — the same rejection `PATCH /api/v1/assets/{asset_id}` and `PATCH /api/v1/locations/{location_id}` produce, on the same envelope. CSV importers and form handlers that emit empty strings on blank inputs need to omit the key entirely, or they'll 400 on every blank row instead of receiving a server-minted value.
 
-**When integrating with a system of record (an ERP, a WMS, a partner database), supply the partner-side handle on create** — don't rely on the auto-mint. Auto-minted `ASSET-NNNN` values are deterministic per organization but they won't join cleanly to a SKU, an ERP code, or any other handle a downstream system already uses. The auto-mint exists for ad-hoc creates (a one-off entry from the SPA, a quick smoke test) where no partner-side join is needed.
+**When integrating with a system of record (an ERP, a WMS, a partner database, a layout / floor-plan tool), supply the partner-side handle on create** — don't rely on the auto-mint. Auto-minted `ASSET-NNNN` / `LOC-NNNN` values are deterministic per organization but they won't join cleanly to a SKU, a facility code, an ERP location, or any other handle a downstream system already uses. The auto-mint is the right call for ad-hoc creates (a one-off entry from the SPA, a quick smoke test, a row pasted in from a CSV with no upstream key). In practice the supply-your-own pattern dominates on locations, which are more often planned-layout than ad-hoc, while assets see more auto-mint use when no upstream SKU yet exists.
 
 ## `external_key` value rules {#external_key-value-rules}
 
