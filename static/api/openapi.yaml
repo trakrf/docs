@@ -53,7 +53,6 @@ components:
                         type: string
     schemas:
         AddAssetTagResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/Tag'
@@ -61,7 +60,6 @@ components:
                 - data
             type: object
         AddLocationTagResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/Tag'
@@ -69,18 +67,20 @@ components:
                 - data
             type: object
         AssetHistoryItem:
-            additionalProperties: true
             properties:
                 duration_seconds:
+                    format: int32
                     nullable: true
                     type: integer
                 location_external_key:
                     nullable: true
                     type: string
                 location_id:
+                    format: int32
                     nullable: true
                     type: integer
                 timestamp:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     type: string
             required:
@@ -90,7 +90,6 @@ components:
                 - duration_seconds
             type: object
         AssetHistoryResponse:
-            additionalProperties: true
             properties:
                 data:
                     items:
@@ -98,12 +97,15 @@ components:
                     type: array
                 limit:
                     example: 50
+                    format: int32
                     type: integer
                 offset:
                     example: 0
+                    format: int32
                     type: integer
                 total_count:
                     example: 100
+                    format: int32
                     type: integer
             required:
                 - data
@@ -112,25 +114,29 @@ components:
                 - total_count
             type: object
         AssetLocationItem:
-            additionalProperties: true
             properties:
                 asset_deleted_at:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     nullable: true
+                    readOnly: true
                     type: string
                 asset_external_key:
                     nullable: true
                     type: string
                 asset_id:
+                    format: int32
                     nullable: true
                     type: integer
                 last_seen:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     type: string
                 location_external_key:
                     nullable: true
                     type: string
                 location_id:
+                    format: int32
                     nullable: true
                     type: integer
             required:
@@ -142,7 +148,6 @@ components:
                 - asset_deleted_at
             type: object
         AssetLocationsResponse:
-            additionalProperties: true
             properties:
                 data:
                     items:
@@ -150,12 +155,15 @@ components:
                     type: array
                 limit:
                     example: 50
+                    format: int32
                     type: integer
                 offset:
                     example: 0
+                    format: int32
                     type: integer
                 total_count:
                     example: 100
+                    format: int32
                     type: integer
             required:
                 - data
@@ -164,13 +172,15 @@ components:
                 - total_count
             type: object
         AssetView:
-            additionalProperties: true
             properties:
                 asset_deleted_at:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     nullable: true
+                    readOnly: true
                     type: string
                 created_at:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     readOnly: true
                     type: string
@@ -180,6 +190,7 @@ components:
                 external_key:
                     type: string
                 id:
+                    format: int32
                     readOnly: true
                     type: integer
                 is_active:
@@ -188,6 +199,7 @@ components:
                     nullable: true
                     type: string
                 location_id:
+                    format: int32
                     nullable: true
                     type: integer
                 metadata:
@@ -201,13 +213,16 @@ components:
                         $ref: '#/components/schemas/Tag'
                     type: array
                 updated_at:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     readOnly: true
                     type: string
                 valid_from:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     type: string
                 valid_to:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     nullable: true
                     type: string
@@ -228,7 +243,6 @@ components:
                 - tags
             type: object
         CreateAssetResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/AssetView'
@@ -239,6 +253,7 @@ components:
             properties:
                 description:
                     maxLength: 1024
+                    minLength: 1
                     nullable: true
                     type: string
                 external_key:
@@ -258,6 +273,7 @@ components:
                     type: string
                 location_id:
                     example: 42
+                    format: int32
                     nullable: true
                     type: integer
                 metadata:
@@ -274,6 +290,7 @@ components:
                 valid_from:
                     example: "2025-01-01T00:00:00Z"
                     format: date-time
+                    nullable: true
                     type: string
                 valid_to:
                     example: "2026-01-01T00:00:00Z"
@@ -284,7 +301,6 @@ components:
                 - name
             type: object
         CreateLocationResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/LocationView'
@@ -296,6 +312,7 @@ components:
                 description:
                     example: Main warehouse location
                     maxLength: 1024
+                    minLength: 1
                     nullable: true
                     type: string
                 external_key:
@@ -326,6 +343,7 @@ components:
                     type: string
                 parent_id:
                     example: 42
+                    format: int32
                     minimum: 1
                     nullable: true
                     type: integer
@@ -336,6 +354,7 @@ components:
                 valid_from:
                     example: "2025-12-14T00:00:00Z"
                     format: date-time
+                    nullable: true
                     type: string
                 valid_to:
                     example: "2026-12-14T00:00:00Z"
@@ -346,7 +365,6 @@ components:
                 - name
             type: object
         ErrorResponse:
-            additionalProperties: true
             description: TrakRF error envelope, modeled on RFC 7807 but not 7807-compliant. Fields are nested under `error.*` and content-type is `application/json` (not `application/problem+json`). Generated clients should branch on `error.type` and `error.title`, not `error.detail`. `error.title` is a stable, machine-readable summary that does not vary between calls for the same condition. `error.detail` is the specific, human-readable cause of this particular failure and may be empty when title alone fully describes the condition.
             properties:
                 error:
@@ -363,6 +381,7 @@ components:
                         request_id:
                             type: string
                         status:
+                            format: int32
                             type: integer
                         title:
                             description: Stable, machine-readable summary suitable for client-side branching. Does not vary between calls for the same condition.
@@ -395,7 +414,6 @@ components:
                 - error
             type: object
         FieldError:
-            additionalProperties: true
             properties:
                 code:
                     enum:
@@ -422,7 +440,6 @@ components:
                 - message
             type: object
         GetAssetResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/AssetView'
@@ -430,7 +447,6 @@ components:
                 - data
             type: object
         GetCurrentOrgResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/OrgView'
@@ -438,7 +454,6 @@ components:
                 - data
             type: object
         GetLocationResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/LocationView'
@@ -446,7 +461,6 @@ components:
                 - data
             type: object
         ListAssetsResponse:
-            additionalProperties: true
             properties:
                 data:
                     items:
@@ -454,12 +468,15 @@ components:
                     type: array
                 limit:
                     example: 50
+                    format: int32
                     type: integer
                 offset:
                     example: 0
+                    format: int32
                     type: integer
                 total_count:
                     example: 100
+                    format: int32
                     type: integer
             required:
                 - data
@@ -468,7 +485,6 @@ components:
                 - total_count
             type: object
         ListLocationAncestorsResponse:
-            additionalProperties: true
             properties:
                 data:
                     items:
@@ -476,12 +492,15 @@ components:
                     type: array
                 limit:
                     example: 50
+                    format: int32
                     type: integer
                 offset:
                     example: 0
+                    format: int32
                     type: integer
                 total_count:
                     example: 100
+                    format: int32
                     type: integer
             required:
                 - data
@@ -490,7 +509,6 @@ components:
                 - total_count
             type: object
         ListLocationChildrenResponse:
-            additionalProperties: true
             properties:
                 data:
                     items:
@@ -498,12 +516,15 @@ components:
                     type: array
                 limit:
                     example: 50
+                    format: int32
                     type: integer
                 offset:
                     example: 0
+                    format: int32
                     type: integer
                 total_count:
                     example: 100
+                    format: int32
                     type: integer
             required:
                 - data
@@ -512,7 +533,6 @@ components:
                 - total_count
             type: object
         ListLocationDescendantsResponse:
-            additionalProperties: true
             properties:
                 data:
                     items:
@@ -520,12 +540,15 @@ components:
                     type: array
                 limit:
                     example: 50
+                    format: int32
                     type: integer
                 offset:
                     example: 0
+                    format: int32
                     type: integer
                 total_count:
                     example: 100
+                    format: int32
                     type: integer
             required:
                 - data
@@ -534,7 +557,6 @@ components:
                 - total_count
             type: object
         ListLocationsResponse:
-            additionalProperties: true
             properties:
                 data:
                     items:
@@ -542,12 +564,15 @@ components:
                     type: array
                 limit:
                     example: 50
+                    format: int32
                     type: integer
                 offset:
                     example: 0
+                    format: int32
                     type: integer
                 total_count:
                     example: 100
+                    format: int32
                     type: integer
             required:
                 - data
@@ -556,13 +581,14 @@ components:
                 - total_count
             type: object
         LocationView:
-            additionalProperties: true
             properties:
                 created_at:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     readOnly: true
                     type: string
                 depth:
+                    format: int32
                     readOnly: true
                     type: integer
                 description:
@@ -571,13 +597,16 @@ components:
                 external_key:
                     type: string
                 id:
+                    format: int32
                     readOnly: true
                     type: integer
                 is_active:
                     type: boolean
                 location_deleted_at:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     nullable: true
+                    readOnly: true
                     type: string
                 name:
                     type: string
@@ -585,6 +614,7 @@ components:
                     nullable: true
                     type: string
                 parent_id:
+                    format: int32
                     nullable: true
                     type: integer
                 tags:
@@ -596,13 +626,16 @@ components:
                     readOnly: true
                     type: string
                 updated_at:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     readOnly: true
                     type: string
                 valid_from:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     type: string
                 valid_to:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     nullable: true
                     type: string
@@ -624,10 +657,11 @@ components:
                 - tags
             type: object
         OrgView:
-            additionalProperties: true
             properties:
                 id:
                     example: 42
+                    format: int32
+                    readOnly: true
                     type: integer
                 name:
                     example: Acme Logistics
@@ -648,7 +682,6 @@ components:
                 - external_key
             type: object
         RenameAssetResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/AssetView'
@@ -667,22 +700,23 @@ components:
                 - external_key
             type: object
         RenameLocationResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/LocationView'
                 descendant_count_affected:
                     example: 7
+                    format: int32
                     type: integer
             required:
                 - data
                 - descendant_count_affected
             type: object
         Tag:
-            additionalProperties: true
             description: 'Polymorphic identifier attached to an asset or location. The `tag_type` discriminator selects one of three kinds: `rfid` (RFID transponder), `ble` (Bluetooth Low Energy beacon), or `barcode` (1D/2D barcode). The `/assets/{asset_id}/tags` and `/locations/{location_id}/tags` subresources accept and return all three kinds; `tag_type` together with `value` form the natural key (a tag value is unique within its kind, not across kinds).'
             properties:
                 id:
+                    format: int32
+                    readOnly: true
                     type: integer
                 is_active:
                     type: boolean
@@ -729,6 +763,7 @@ components:
             properties:
                 description:
                     maxLength: 1024
+                    minLength: 1
                     nullable: true
                     type: string
                 is_active:
@@ -742,6 +777,7 @@ components:
                     type: string
                 location_id:
                     example: 42
+                    format: int32
                     nullable: true
                     type: integer
                 metadata:
@@ -762,7 +798,6 @@ components:
                     type: string
             type: object
         UpdateAssetResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/AssetView'
@@ -774,6 +809,7 @@ components:
                 description:
                     example: Updated description
                     maxLength: 1024
+                    minLength: 1
                     nullable: true
                     type: string
                 is_active:
@@ -793,6 +829,7 @@ components:
                     type: string
                 parent_id:
                     example: 42
+                    format: int32
                     minimum: 1
                     nullable: true
                     type: integer
@@ -807,7 +844,6 @@ components:
                     type: string
             type: object
         UpdateLocationResponse:
-            additionalProperties: true
             properties:
                 data:
                     $ref: '#/components/schemas/LocationView'
@@ -824,6 +860,7 @@ info:
     contact:
         email: support@trakrf.id
         name: TrakRF Support
+        url: https://app.trakrf.id/api
     description: |-
         TrakRF public REST API. See /api for the customer-facing reference.
 
@@ -834,7 +871,7 @@ info:
         name: Business Source License 1.1
         url: https://github.com/trakrf/platform/blob/main/LICENSE
     title: TrakRF API
-    version: v1
+    version: 1.0.0
 openapi: 3.0.3
 paths:
     /api/v1/assets:
@@ -986,6 +1023,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Not Found
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "405":
                     $ref: '#/components/responses/MethodNotAllowed'
                 "429":
@@ -1011,6 +1063,21 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorResponse'
                     description: Internal Server Error
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
                     headers:
                         X-RateLimit-Limit:
                             $ref: '#/components/headers/XRateLimitLimit'
@@ -1113,6 +1180,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: not_found
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "405":
                     $ref: '#/components/responses/MethodNotAllowed'
                 "409":
@@ -1177,6 +1259,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Create an asset
@@ -1195,12 +1292,28 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             responses:
                 "204":
                     description: deleted
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: bad_request
                     headers:
                         X-RateLimit-Limit:
                             $ref: '#/components/headers/XRateLimitLimit'
@@ -1259,6 +1372,21 @@ paths:
                             $ref: '#/components/headers/XRequestId'
                 "405":
                     $ref: '#/components/responses/MethodNotAllowed'
+                "415":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: unsupported_media_type
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "429":
                     content:
                         application/json:
@@ -1291,6 +1419,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Delete an asset
@@ -1310,7 +1453,8 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             responses:
@@ -1410,6 +1554,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Get asset by canonical id
@@ -1419,7 +1578,7 @@ paths:
             description: |-
                 **Required scope:** `assets:write`
 
-                Apply a JSON Merge Patch (RFC 7396) to an asset. Only fields included in the request body are changed; fields set to `null` clear the corresponding nullable column. Omitted fields are left unchanged. An empty body (`{}`) is a no-op and returns the current resource unchanged. Tags are read-only via this endpoint; mutate via POST /assets/{asset_id}/tags and DELETE /assets/{asset_id}/tags/{tag_id}.
+                Apply a JSON Merge Patch (RFC 7396) to an asset. Only fields included in the request body are changed; fields set to `null` clear the corresponding nullable column. Omitted fields are left unchanged. An empty body (`{}`) is a no-op and returns the current resource unchanged. Server-owned fields (`id`, `created_at`, `updated_at`, `asset_deleted_at`, `external_key`, `tags`) are silently stripped from the body so a verbatim GET → PATCH round-trip succeeds. Mutate `external_key` via POST /assets/{asset_id}/rename; mutate `tags` via POST /assets/{asset_id}/tags and DELETE /assets/{asset_id}/tags/{tag_id}.
             operationId: patchAsset
             parameters:
                 - description: Asset id (canonical)
@@ -1427,7 +1586,8 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             requestBody:
@@ -1580,6 +1740,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Update an asset
@@ -1600,7 +1775,8 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
                 - description: max 200
@@ -1622,12 +1798,14 @@ paths:
                   in: query
                   name: from
                   schema:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     type: string
                 - description: RFC 3339 end timestamp
                   in: query
                   name: to
                   schema:
+                    example: "2025-04-29T12:34:56Z"
                     format: date-time
                     type: string
                 - description: comma-separated; prefix '-' for DESC
@@ -1754,6 +1932,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Asset movement history
@@ -1774,7 +1967,8 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             requestBody:
@@ -1927,6 +2121,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Rename an asset (mutate external_key)
@@ -1946,7 +2155,8 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             requestBody:
@@ -2099,6 +2309,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Add a tag to an asset
@@ -2118,7 +2343,8 @@ paths:
                   name: asset_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
                 - description: Tag id
@@ -2126,7 +2352,8 @@ paths:
                   name: tag_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             responses:
@@ -2188,8 +2415,38 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: not_found
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "405":
                     $ref: '#/components/responses/MethodNotAllowed'
+                "415":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: unsupported_media_type
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "429":
                     content:
                         application/json:
@@ -2213,6 +2470,21 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorResponse'
                     description: internal_error
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
                     headers:
                         X-RateLimit-Limit:
                             $ref: '#/components/headers/XRateLimitLimit'
@@ -2376,6 +2648,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: not_found
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "405":
                     $ref: '#/components/responses/MethodNotAllowed'
                 "429":
@@ -2387,6 +2674,36 @@ paths:
                     headers:
                         Retry-After:
                             $ref: '#/components/headers/RetryAfter'
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: internal_error
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
                         X-RateLimit-Limit:
                             $ref: '#/components/headers/XRateLimitLimit'
                         X-RateLimit-Remaining:
@@ -2487,6 +2804,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: not_found
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "405":
                     $ref: '#/components/responses/MethodNotAllowed'
                 "409":
@@ -2551,6 +2883,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Create a location
@@ -2569,7 +2916,8 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             responses:
@@ -2663,6 +3011,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                "415":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: unsupported_media_type
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "429":
                     content:
                         application/json:
@@ -2695,6 +3058,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Delete location
@@ -2714,7 +3092,8 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             responses:
@@ -2814,6 +3193,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Get location by ID
@@ -2823,7 +3217,7 @@ paths:
             description: |-
                 **Required scope:** `locations:write`
 
-                Apply a JSON Merge Patch (RFC 7396) to a location. Only fields included in the request body are changed; fields set to `null` clear the corresponding nullable column. Omitted fields are left unchanged. An empty body (`{}`) is a no-op and returns the current resource unchanged. Tags are read-only via this endpoint; mutate via POST /locations/{location_id}/tags and DELETE /locations/{location_id}/tags/{tag_id}.
+                Apply a JSON Merge Patch (RFC 7396) to a location. Only fields included in the request body are changed; fields set to `null` clear the corresponding nullable column. Omitted fields are left unchanged. An empty body (`{}`) is a no-op and returns the current resource unchanged. Server-owned fields (`id`, `created_at`, `updated_at`, `tree_path`, `depth`, `location_deleted_at`, `external_key`, `tags`) are silently stripped from the body so a verbatim GET → PATCH round-trip succeeds. Mutate `external_key` via POST /locations/{location_id}/rename (also cascades `tree_path` across descendants); mutate `tags` via POST /locations/{location_id}/tags and DELETE /locations/{location_id}/tags/{tag_id}.
             operationId: patchLocation
             parameters:
                 - description: Location ID
@@ -2831,7 +3225,8 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             requestBody:
@@ -2984,6 +3379,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Update a location
@@ -2999,7 +3409,8 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
                 - description: max 200
@@ -3129,6 +3540,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: List location ancestors
@@ -3144,7 +3570,8 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
                 - description: max 200
@@ -3274,6 +3701,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: List location children
@@ -3289,7 +3731,8 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
                 - description: max 200
@@ -3419,6 +3862,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: List location descendants
@@ -3439,7 +3897,8 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             requestBody:
@@ -3592,6 +4051,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Rename a location (mutate external_key + cascade tree_path)
@@ -3607,7 +4081,8 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             requestBody:
@@ -3760,6 +4235,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
             security:
                 - BearerAuth: []
             summary: Add a tag to a location
@@ -3779,7 +4269,8 @@ paths:
                   name: location_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
                 - description: Tag ID
@@ -3787,7 +4278,8 @@ paths:
                   name: tag_id
                   required: true
                   schema:
-                    maximum: 9007199254740991
+                    format: int32
+                    maximum: 2147483647
                     minimum: 1
                     type: integer
             responses:
@@ -3849,8 +4341,38 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: not_found
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "405":
                     $ref: '#/components/responses/MethodNotAllowed'
+                "415":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: unsupported_media_type
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "429":
                     content:
                         application/json:
@@ -3874,6 +4396,21 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorResponse'
                     description: internal_error
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
                     headers:
                         X-RateLimit-Limit:
                             $ref: '#/components/headers/XRateLimitLimit'
@@ -3908,6 +4445,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                "400":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: bad_request
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "401":
                     content:
                         application/json:
@@ -3917,6 +4469,21 @@ paths:
                     headers:
                         WWW-Authenticate:
                             $ref: '#/components/headers/WWWAuthenticate'
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: not_found
+                    headers:
                         X-RateLimit-Limit:
                             $ref: '#/components/headers/XRateLimitLimit'
                         X-RateLimit-Remaining:
@@ -3982,6 +4549,21 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/ErrorResponse'
                     description: Internal server error
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
                     headers:
                         X-RateLimit-Limit:
                             $ref: '#/components/headers/XRateLimitLimit'
@@ -4129,6 +4711,21 @@ paths:
                             $ref: '#/components/headers/XRateLimitReset'
                         X-Request-Id:
                             $ref: '#/components/headers/XRequestId'
+                "404":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Not Found
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
                 "405":
                     $ref: '#/components/responses/MethodNotAllowed'
                 "429":
@@ -4140,6 +4737,36 @@ paths:
                     headers:
                         Retry-After:
                             $ref: '#/components/headers/RetryAfter'
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                "500":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Internal Server Error
+                    headers:
+                        X-RateLimit-Limit:
+                            $ref: '#/components/headers/XRateLimitLimit'
+                        X-RateLimit-Remaining:
+                            $ref: '#/components/headers/XRateLimitRemaining'
+                        X-RateLimit-Reset:
+                            $ref: '#/components/headers/XRateLimitReset'
+                        X-Request-Id:
+                            $ref: '#/components/headers/XRequestId'
+                default:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ErrorResponse'
+                    description: Unmodeled error. Generated clients should treat any response not otherwise enumerated as a structured ErrorResponse.
+                    headers:
                         X-RateLimit-Limit:
                             $ref: '#/components/headers/XRateLimitLimit'
                         X-RateLimit-Remaining:
