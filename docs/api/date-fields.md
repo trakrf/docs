@@ -54,6 +54,21 @@ The body validator rejects (with `400 validation_error`) every form the spec doe
 
 Sub-microsecond precision is accepted on input but truncated at write — `2026-04-24T15:30:00.123456789Z` round-trips as `2026-04-24T15:30:00.123456Z`. Microsecond is the storage precision; nanosecond is a wire-format affordance for clients whose date libraries default there.
 
+### `valid_from: null` on Create vs. Update
+
+`valid_from` is **nullable on create** request schemas and **non-nullable on update** request schemas. The asymmetry is intentional: on `POST`, sending `valid_from: null` is equivalent to omitting the field — both mean "use the server default of now," which is the useful semantic for ETL or migration code whose JSON serializer emits explicit `null` rather than omitting keys. On `PATCH`, sending `valid_from: null` returns `400 validation_error` / `code: invalid_value` — there is no "use server default" semantic on update, so explicit `null` is a malformed request. To leave `valid_from` unchanged on `PATCH`, omit the field.
+
+| Request                           | `valid_from` body field                | Result                                   |
+| --------------------------------- | -------------------------------------- | ---------------------------------------- |
+| `POST /api/v1/assets`             | omitted                                | Server default: now                      |
+| `POST /api/v1/assets`             | `"valid_from": null`                   | Server default: now (same as omit)       |
+| `POST /api/v1/assets`             | `"valid_from": "2026-04-24T15:30:00Z"` | Stored as supplied                       |
+| `PATCH /api/v1/assets/{asset_id}` | omitted                                | Unchanged                                |
+| `PATCH /api/v1/assets/{asset_id}` | `"valid_from": null`                   | `400 validation_error` / `invalid_value` |
+| `PATCH /api/v1/assets/{asset_id}` | `"valid_from": "2026-04-24T15:30:00Z"` | Set to supplied value                    |
+
+The same asymmetry applies to `POST /api/v1/locations` vs. `PATCH /api/v1/locations/{location_id}`, and to any future bitemporal resource. `valid_to` follows a different pattern — nullable on both create and update, where `null` means "no expiry."
+
 ## Example
 
 Create an asset with an explicit `valid_from` and no `valid_to`, then read it back:
