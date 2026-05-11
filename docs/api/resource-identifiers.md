@@ -154,10 +154,11 @@ Asset and location updates use `PATCH /api/v1/{resource}/{id}` with `Content-Typ
 
 An empty body (`{}`) is a documented no-op and returns `200` with the resource unchanged. This is also the floor case for the "no writable fields" rule below.
 
-Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PATCH` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields that aren't part of the request schema. The validator splits these into two categories with different write-time behavior:
+Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PATCH` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields that aren't part of the request schema. The validator splits these into three categories with different write-time behavior:
 
 - **Round-trip-safe read-only** — server-managed metadata (`id`, `created_at`, `updated_at`) on assets and locations, plus the derived ancestor fields `tree_path` and `depth` on locations. The server **silently ignores** these on `PATCH`. A naive `GET` → mutate → `PATCH` of the entire response succeeds for these fields — they're flagged with `readOnly: true` in the OpenAPI spec, and generated SDKs (typescript-fetch, openapi-generator) honor the marker and split read and write into distinct types so the request payload stays minimal at the type-system level.
 - **Managed via subresource** — `tags` on assets and locations. Embedded in every read response, but mutated through the dedicated `POST /assets/{asset_id}/tags` / `DELETE /assets/{asset_id}/tags/{tag_id}` endpoints (and location counterparts) rather than the parent resource's `PATCH`. The validator **rejects** `tags` in a parent `PATCH` body with `400 validation_error` / `code: invalid_value` — the same envelope a typo or off-resource field produces. The rejection is deliberate: a read-modify-write integration that mutates `tags` on a GET body and `PATCH`es the whole resource back would otherwise get a 200 echo of the unchanged tags and silently lose the mutation. Strip `tags` from the body before `PATCH`, then mutate via [Tag CRUD](#tag-crud).
+- **Immutable via dedicated operation** — `external_key` on assets and locations. Read shape carries it; `UpdateAssetRequest` / `UpdateLocationRequest` do not. The validator **rejects** `external_key` in a parent `PATCH` body with `400 validation_error` / `code: immutable_field` (a separate code from the typo rejection above) and a `detail` string pointing at the rename endpoint. Mutate via `POST /api/v1/assets/{asset_id}/rename` or `POST /api/v1/locations/{location_id}/rename` — see [Renaming an `external_key`](#renaming-an-external_key) for the full operation shape and the join-disconnect contract.
 
 A request body that resolves to **no writable fields** — `{}`, or a body containing only round-trip-safe read-only fields like `{"id":999}` or `{"created_at":"…"}` — returns `200` with the unchanged record. A verbatim `GET` → `PATCH` round-trip with no edits is a legal no-op as long as `tags` is stripped first.
 
@@ -192,13 +193,97 @@ curl -X PATCH \
      "$BASE_URL/api/v1/assets/4287"
 ```
 
-The round-trip-safe read-only set today is `id`, `created_at`, `updated_at` for assets, plus `tree_path` and `depth` for locations (the two location-specific additions are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe). The managed-via-subresource set today is `tags` on both resources — currently the only example, with no plans to extend it. Codegen and hand-rolled clients arrive at the same place by different routes: `tags` appears on `CreateAssetWithTagsRequest` / `CreateLocationWithTagsRequest` (so attaching tags at create still type-checks), but `UpdateAssetRequest` / `UpdateLocationRequest` omit the field entirely. A typed-codegen client that tries to set `tags` on a parent `PATCH` payload fails at compile time with an unknown-property error; a hand-rolled client that sends the same field over the wire gets a runtime `400 validation_error` from the server. Either way, you can't accidentally send `tags` from a parent `PATCH`.
+The round-trip-safe read-only set today is `id`, `created_at`, `updated_at` for assets, plus `tree_path` and `depth` for locations (the two location-specific additions are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe). The managed-via-subresource set today is `tags` on both resources — currently the only example, with no plans to extend it. The immutable-via-rename set is `external_key` on both resources. Codegen and hand-rolled clients arrive at the same place by different routes: both `tags` and `external_key` appear on the create requests (`CreateAssetWithTagsRequest` / `CreateLocationWithTagsRequest` for tags; the plain create requests for `external_key`) but are omitted from `UpdateAssetRequest` / `UpdateLocationRequest`. A typed-codegen client that tries to set either on a parent `PATCH` payload fails at compile time with an unknown-property error; a hand-rolled client that sends the same field over the wire gets a runtime `400 validation_error` from the server (`code: invalid_value` for `tags`, `code: immutable_field` for `external_key`). Either way, you can't accidentally mutate them through `PATCH`.
 
 Future resources may grow their own round-trip-safe read-only fields. Don't memorize per-resource lists — derive them from the spec's `readOnly: true` markers, or rely on a generated client. The server's silent-ignore rule means existing clients keep working as that set grows.
 
 Either form of the FK pair is accepted on write. Send `location_id` if you have it; send `location_external_key` if that's what the user typed. **Sending both is allowed when they agree** — the server cross-validates the pair and rejects disagreement (e.g., one set, the other `null`, or the two values pointing at different rows) with `400 invalid_value` and `detail: "location_id and location_external_key disagree"`. The same rule covers `parent_id` / `parent_external_key` on locations.
 
 To **clear** a relationship, send `null` on either form (or both — they agree). The other writable-nullable fields work the same way: `PATCH {"description": null}` clears the description; `PATCH {"valid_to": null}` clears the expiry. Asset writable-nullables are `description`, `location_id`, `location_external_key`, `valid_to`; location writable-nullables are `description`, `parent_id`, `parent_external_key`, `valid_to`. After a clear, the field reads back as `null` (see [Always present vs. present-as-null](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs) above; for `valid_to` specifically see [Date fields](./date-fields)).
+
+## Renaming an `external_key` {#renaming-an-external_key}
+
+`external_key` is your join key — the form your ERP, WMS, or operator recognizes — and the rest of this page treats it that way. Because partner-side systems are likely to have indexed or cached records under the existing key, **`external_key` is immutable on `PATCH`**. The platform exposes a dedicated rename operation per resource type so the mutation is explicit at the URL surface, visible in audit logs, and (for locations) cleanly cascades the derived `tree_path`.
+
+:::caution Renaming disconnects downstream joins
+A partner system that has cached or indexed records under the old `external_key` will silently desynchronize across a rename. Treat rename as a coordinated cutover — notify the downstream consumer, or re-export from TrakRF after the rename — not a casual edit.
+:::
+
+### Asset rename
+
+```bash
+curl -X POST \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"external_key": "SKU-7421-B"}' \
+     "$BASE_URL/api/v1/assets/4287/rename"
+```
+
+The response is the updated `AssetView`, wrapped in the standard `{ "data": ... }` envelope. Required scope is `assets:write` — the same scope as `PATCH /api/v1/assets/{asset_id}`. The operation is logged distinctly from a PATCH in audit trails by virtue of its dedicated URL surface (`/rename` vs the parent path), so no audit-schema extension is needed for integrators ingesting the audit stream.
+
+### Location rename (with `tree_path` cascade) {#location-rename}
+
+Location rename does everything the asset variant does, plus regenerates `tree_path` for the renamed row **and every descendant** in a single transaction. The response includes `descendant_count_affected` so you know whether the subtree's display-paths have shifted under you:
+
+```bash
+curl -X POST \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"external_key": "WAREHOUSE-MAIN"}' \
+     "$BASE_URL/api/v1/locations/7/rename"
+```
+
+```json
+{
+  "data": {
+    "id": 7,
+    "external_key": "WAREHOUSE-MAIN",
+    "name": "Warehouse, west annex",
+    "tree_path": "warehouse_main",
+    "depth": 1
+  },
+  "descendant_count_affected": 23
+}
+```
+
+`descendant_count_affected` is the count of descendant rows whose `tree_path` changed — the renamed row itself is **not** included. Use this as the signal for whether to invalidate cached subtree state: a non-zero value is your cue to re-fetch the relevant subtree via [`GET /api/v1/locations/{location_id}/descendants`](#location-tree-endpoints) (or to recompute display labels client-side). Zero means there are no descendants — for example, a leaf-location rename — and no subtree refresh is needed.
+
+A same-value rename (new `external_key` equals the current one) is idempotent: returns `200` with `descendant_count_affected: 0` and no audit-log noise to special-case. Safe to retry on partial-failure without branching for "already at the target value."
+
+### Uniqueness collisions return `409`
+
+The new `external_key` must satisfy the same per-org uniqueness rule as create — the partial unique index `(org_id, external_key) WHERE deleted_at IS NULL`. A collision returns `409 conflict` with the standard error envelope, matching how `POST /api/v1/assets` and `POST /api/v1/locations` handle the same collision. Resolve the conflict (rename or retire the conflicting row first), then retry.
+
+### Rejection on `PATCH` with `external_key`
+
+For completeness, here's the rejection that drives integrators to this operation. Sending `external_key` in a `PATCH /api/v1/assets/{asset_id}` (or location) body returns `400 validation_error` with `fields[].code: immutable_field` and a `detail` pointing at the rename endpoint:
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "title": "Validation failed",
+    "status": 400,
+    "detail": "external_key cannot be mutated via PATCH. Use POST /api/v1/assets/{asset_id}/rename to change the natural key.",
+    "instance": "/api/v1/assets/4287",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
+    "fields": [
+      {
+        "field": "external_key",
+        "code": "immutable_field",
+        "message": "external_key is immutable; use POST /api/v1/assets/{asset_id}/rename"
+      }
+    ]
+  }
+}
+```
+
+`immutable_field` is one entry in the extensible [validation `code` enum](./errors#validation-errors) — clients that branch on `code` should add a case for it; clients that fall through to a generic invalid-value handler keep working.
+
+### Out of scope for v1
+
+- **Bulk rename.** Single-row only. Loop client-side for multi-row scenarios; each call is its own transaction.
+- **Cross-org rename.** `external_key` uniqueness is per-org by construction; there is no concept of "rename across organizations."
 
 ## Locations: `parent_id` and `parent_external_key`
 
@@ -236,13 +321,13 @@ Worked example, with two locations forming a parent / child pair:
 | `WHS-01` (root)                 | `whs_01`           |
 | `WHS-07-03` (child of `WHS-01`) | `whs_01.whs_07_03` |
 
-The root's `tree_path` is its own normalized segment. A child's `tree_path` is its parent's `tree_path` plus a `.` and the child's normalized segment. Renaming `WHS-01` to `WHS-MAIN` rewrites the segment for the root **and the prefix** of every descendant in one transaction.
+The root's `tree_path` is its own normalized segment. A child's `tree_path` is its parent's `tree_path` plus a `.` and the child's normalized segment. Renaming `WHS-01` to `WHS-MAIN` rewrites the segment for the root **and the prefix** of every descendant in one transaction — see [Location rename](#location-rename) for the dedicated operation and the `descendant_count_affected` signal that tells you how much of the subtree moved.
 
 `depth` is the companion field. The root location has `depth: 1`; each child increments by 1 (`WHS-07-03` above has `depth: 2`). Like `tree_path`, `depth` is server-derived and read-only — clients can use it directly for indented rendering but should not try to set it on a write.
 
 If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{location_id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`.
 
-**Don't cache `tree_path`.** The value is derived, and renaming an `external_key` rewrites the `tree_path` on that location _and every descendant_ in one transaction. A client that pinned `tree_path` for hierarchy queries will silently desync after a rename. If you need stable hierarchy state, store the chain of `external_key`s (or the `id` chain via `/ancestors`) and re-derive on demand.
+**Don't cache `tree_path`.** The value is derived, and the [location rename operation](#location-rename) rewrites the `tree_path` on that location _and every descendant_ in one transaction. A client that pinned `tree_path` for hierarchy queries will silently desync after a rename. If you need stable hierarchy state, store the chain of `external_key`s (or the `id` chain via `/ancestors`) and re-derive on demand. The rename response's `descendant_count_affected` is the live signal that a subtree refresh is needed.
 
 `tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use the [`?external_key=` filter](#natural-key-lookup-uses-external_key) on the locations list endpoint for natural-key lookups.
 
