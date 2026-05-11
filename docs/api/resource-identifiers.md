@@ -154,25 +154,35 @@ Asset and location updates use `PATCH /api/v1/{resource}/{id}` with `Content-Typ
 
 An empty body (`{}`) is a documented no-op and returns `200` with the resource unchanged. This is also the floor case for the "no writable fields" rule below.
 
-Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PATCH` round-trip without remapping. Read shape and write shape are not identical, though: read responses include fields that aren't part of the request schema. The validator splits these into three categories with different write-time behavior:
+Request and response field _names_ match (e.g., `location_external_key` reads and writes under the same name), so the natural-key parts of a `PATCH` round-trip without remapping. Read shape and write shape are not identical — read responses include fields that aren't part of the request schema — but **the server silently ignores every read-only field on `PATCH`**. A full-object round-trip — `GET`, mutate one writable field, `PATCH` the whole body back — succeeds without any client-side stripping. Server-owned fields and fields managed through dedicated subresources are accepted and discarded, not rejected.
 
-- **Round-trip-safe read-only** — server-managed metadata (`id`, `created_at`, `updated_at`) on assets and locations, plus the derived ancestor fields `tree_path` and `depth` on locations. The server **silently ignores** these on `PATCH`. A naive `GET` → mutate → `PATCH` of the entire response succeeds for these fields — they're flagged with `readOnly: true` in the OpenAPI spec, and generated SDKs (typescript-fetch, openapi-generator) honor the marker and split read and write into distinct types so the request payload stays minimal at the type-system level.
-- **Managed via subresource** — `tags` on assets and locations. Embedded in every read response, but mutated through the dedicated `POST /assets/{asset_id}/tags` / `DELETE /assets/{asset_id}/tags/{tag_id}` endpoints (and location counterparts) rather than the parent resource's `PATCH`. The validator **rejects** `tags` in a parent `PATCH` body with `400 validation_error` / `code: invalid_value` — the same envelope a typo or off-resource field produces. The rejection is deliberate: a read-modify-write integration that mutates `tags` on a GET body and `PATCH`es the whole resource back would otherwise get a 200 echo of the unchanged tags and silently lose the mutation. Strip `tags` from the body before `PATCH`, then mutate via [Tag CRUD](#tag-crud).
-- **Immutable via dedicated operation** — `external_key` on assets and locations. Read shape carries it; `UpdateAssetRequest` / `UpdateLocationRequest` do not. The validator **rejects** `external_key` in a parent `PATCH` body with `400 validation_error` / `code: immutable_field` (a separate code from the typo rejection above) and a `detail` string pointing at the rename endpoint. Mutate via `POST /api/v1/assets/{asset_id}/rename` or `POST /api/v1/locations/{location_id}/rename` — see [Renaming an `external_key`](#renaming-an-external_key) for the full operation shape and the join-disconnect contract.
+The complete read-only set per resource:
 
-A request body that resolves to **no writable fields** — `{}`, or a body containing only round-trip-safe read-only fields like `{"id":999}` or `{"created_at":"…"}` — returns `200` with the unchanged record. A verbatim `GET` → `PATCH` round-trip with no edits is a legal no-op as long as `tags` is stripped first.
+| Resource  | Silently-ignored fields on `PATCH`                                                                    |
+| --------- | ----------------------------------------------------------------------------------------------------- |
+| Assets    | `id`, `created_at`, `updated_at`, `asset_deleted_at`, `external_key`, `tags`                          |
+| Locations | `id`, `created_at`, `updated_at`, `location_deleted_at`, `tree_path`, `depth`, `external_key`, `tags` |
+
+Two of these have dedicated mutation surfaces — sending them in a `PATCH` body is a no-op, but you change them through their own endpoints:
+
+- **`external_key`** — mutate via `POST /api/v1/assets/{asset_id}/rename` or `POST /api/v1/locations/{location_id}/rename`. See [Renaming an `external_key`](#renaming-an-external_key) for the operation shape and the partner-side join-disconnect contract.
+- **`tags`** — mutate via `POST /api/v1/assets/{asset_id}/tags` and `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}` (and the location counterparts). See [Tag CRUD](#tag-crud).
+
+The rest are server-managed and have no caller-facing mutation path: `id` is assigned at create, `created_at` and `*_deleted_at` are stamped by the server, `updated_at` reflects the last successful write, `tree_path` and `depth` are derived from the location's ancestor chain.
+
+A request body that resolves to **no writable fields** — `{}`, or a body containing only read-only fields like `{"id":999,"tags":[]}` — returns `200` with the unchanged record. A verbatim `GET` → `PATCH` round-trip with no edits is a legal no-op.
 
 Strict-unknown-field validation still applies for fields that are **not** declared on either the read or the write schema — a typo'd or off-resource field name returns `400 validation_error` with `fields[].field` naming the offender. See [Errors → Validation errors](./errors#validation-errors) for the envelope shape; the validator behavior is also covered globally in [Pagination, filtering, sorting → Validator behavior on writes](./pagination-filtering-sorting#validator-behavior-on-writes).
 
 ```bash
-# GET → mutate → PATCH round-trip. The round-trip-safe read-only fields
-# (id, created_at, updated_at) are silently ignored by the server.
-# `tags` must be stripped explicitly — it's managed via the
-# /assets/{asset_id}/tags subresource and is rejected in a parent PATCH body.
+# GET → mutate → PATCH round-trip. Every read-only field on the response
+# (id, created_at, updated_at, asset_deleted_at, external_key, tags) is
+# silently discarded on PATCH, so no client-side stripping is required.
+# To actually change external_key use /rename; to change tags use the
+# tag subresource.
 curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/4287" \
-| jq '.data | del(.tags)
-       | .location_external_key = "PORTABLE-1437"' \
+| jq '.data | .location_external_key = "PORTABLE-1437"' \
 | curl -X PATCH \
        -H "Authorization: Bearer $TRAKRF_API_KEY" \
        -H "Content-Type: application/merge-patch+json" \
@@ -183,9 +193,7 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
 For a smaller request body — and for hand-rolled clients that want to be explicit about what they're updating — send only the fields you're changing. Merge-patch leaves omitted fields untouched, so the minimal form is the more idiomatic one:
 
 ```bash
-# Minimal PATCH: only the field being changed. Omitted fields stay as-is;
-# the round-trip-safe read-only fields don't need to be stripped because
-# they aren't included in the first place.
+# Minimal PATCH: only the field being changed. Omitted fields stay as-is.
 curl -X PATCH \
      -H "Authorization: Bearer $TRAKRF_API_KEY" \
      -H "Content-Type: application/merge-patch+json" \
@@ -193,13 +201,13 @@ curl -X PATCH \
      "$BASE_URL/api/v1/assets/4287"
 ```
 
-The round-trip-safe read-only set today is `id`, `created_at`, `updated_at` for assets, plus `tree_path` and `depth` for locations (the two location-specific additions are derived ancestor metadata — see [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key) below for what they describe). The managed-via-subresource set today is `tags` on both resources — currently the only example, with no plans to extend it. The immutable-via-rename set is `external_key` on both resources. Codegen and hand-rolled clients arrive at the same place by different routes: both `tags` and `external_key` appear on the create requests (`CreateAssetWithTagsRequest` / `CreateLocationWithTagsRequest` for tags; the plain create requests for `external_key`) but are omitted from `UpdateAssetRequest` / `UpdateLocationRequest`. A typed-codegen client that tries to set either on a parent `PATCH` payload fails at compile time with an unknown-property error; a hand-rolled client that sends the same field over the wire gets a runtime `400 validation_error` from the server (`code: invalid_value` for `tags`, `code: immutable_field` for `external_key`). Either way, you can't accidentally mutate them through `PATCH`.
-
-Future resources may grow their own round-trip-safe read-only fields. Don't memorize per-resource lists — derive them from the spec's `readOnly: true` markers, or rely on a generated client. The server's silent-ignore rule means existing clients keep working as that set grows.
+The silent-ignore rule applies to fields the spec marks `readOnly: true` — those markers drive typed codegen tools to split read and write into distinct types, and the runtime behavior matches. Hand-rolled clients that send a read-only field anyway get the same outcome over the wire. Future resources may grow their own read-only fields; don't memorize per-resource lists — derive them from the spec, or rely on a generated client.
 
 Either form of the FK pair is accepted on write. Send `location_id` if you have it; send `location_external_key` if that's what the user typed. **Sending both is allowed when they agree** — the server cross-validates the pair and rejects disagreement (e.g., one set, the other `null`, or the two values pointing at different rows) with `400 invalid_value` and `detail: "location_id and location_external_key disagree"`. The same rule covers `parent_id` / `parent_external_key` on locations.
 
-To **clear** a relationship, send `null` on either form (or both — they agree). The other writable-nullable fields work the same way: `PATCH {"description": null}` clears the description; `PATCH {"valid_to": null}` clears the expiry. Asset writable-nullables are `description`, `location_id`, `location_external_key`, `valid_to`; location writable-nullables are `description`, `parent_id`, `parent_external_key`, `valid_to`. After a clear, the field reads back as `null` (see [Always present vs. present-as-null](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs) above; for `valid_to` specifically see [Date fields](./date-fields)).
+A value that refers to a non-existent row — `location_id: 99999999` or `location_external_key: "NOPE-XYZ"` — returns the same `400 validation_error` / `code: invalid_value` envelope regardless of which form you used; `fields[].field` names the form you sent. Branch on the envelope, not on which FK variant the caller chose.
+
+To **clear** a relationship, send `null` on either form (or both — they agree). The other writable-nullable fields work the same way: `PATCH {"description": null}` clears the description; `PATCH {"valid_to": null}` clears the expiry. Sending an empty string (`""`) for a length-bearing nullable like `description` is **rejected** with `400 validation_error` / `code: too_short`, matching every other length-bearing field — send explicit `null` to clear, not `""`. Asset writable-nullables are `description`, `location_id`, `location_external_key`, `valid_to`; location writable-nullables are `description`, `parent_id`, `parent_external_key`, `valid_to`. After a clear, the field reads back as `null` (see [Always present vs. present-as-null](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs) above; for `valid_to` specifically see [Date fields](./date-fields)).
 
 ## Renaming an `external_key` {#renaming-an-external_key}
 
@@ -254,31 +262,9 @@ A same-value rename (new `external_key` equals the current one) is idempotent: r
 
 The new `external_key` must satisfy the same per-org uniqueness rule as create — the partial unique index `(org_id, external_key) WHERE deleted_at IS NULL`. A collision returns `409 conflict` with the standard error envelope, matching how `POST /api/v1/assets` and `POST /api/v1/locations` handle the same collision. Resolve the conflict (rename or retire the conflicting row first), then retry.
 
-### Rejection on `PATCH` with `external_key`
+### `external_key` in a `PATCH` body is silently ignored
 
-For completeness, here's the rejection that drives integrators to this operation. Sending `external_key` in a `PATCH /api/v1/assets/{asset_id}` (or location) body returns `400 validation_error` with `fields[].code: immutable_field` and a `detail` pointing at the rename endpoint:
-
-```json
-{
-  "error": {
-    "type": "validation_error",
-    "title": "Validation failed",
-    "status": 400,
-    "detail": "external_key cannot be mutated via PATCH. Use POST /api/v1/assets/{asset_id}/rename to change the natural key.",
-    "instance": "/api/v1/assets/4287",
-    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
-    "fields": [
-      {
-        "field": "external_key",
-        "code": "immutable_field",
-        "message": "external_key is immutable; use POST /api/v1/assets/{asset_id}/rename"
-      }
-    ]
-  }
-}
-```
-
-`immutable_field` is one entry in the extensible [validation `code` enum](./errors#validation-errors) — clients that branch on `code` should add a case for it; clients that fall through to a generic invalid-value handler keep working.
+For symmetry with the silent-ignore rule on every other read-only field ([Read shape vs. write shape](#read-shape-vs-write-shape)), `external_key` in a `PATCH /api/v1/assets/{asset_id}` (or location) body is silently discarded — the request returns `200` with the unchanged `external_key`, and the natural key changes only when you call the dedicated rename endpoint. Round-tripping a full `GET` body back through `PATCH` is safe; the only way to actually rename a row is `POST /api/v1/{resource}/{id}/rename`.
 
 ### Out of scope for v1
 
@@ -485,7 +471,7 @@ If your business logic needs to surface an expired record (e.g., to render a "de
 
 ## Tag is a polymorphic resource
 
-Tag is a polymorphic identifier attached to an asset or a location. The `tag_type` discriminator selects one of three kinds:
+`Tag` is a polymorphic resource attached to an asset or a location. The `tag_type` discriminator selects one of three kinds:
 
 - `rfid` — RFID transponder
 - `ble` — Bluetooth Low Energy beacon
