@@ -89,7 +89,7 @@ Response:
 }
 ```
 
-The response carries `"valid_to": null` because the asset has no expiry. If a later `PUT` sets `valid_to`, subsequent reads will return it as RFC3339.
+The response carries `"valid_to": null` because the asset has no expiry. If a later `PATCH` sets `valid_to`, subsequent reads will return it as RFC3339.
 
 ## Scan-event date fields {#scan-event-date-fields}
 
