@@ -578,6 +578,6 @@ Scan-event-derived data is projected through two endpoints:
 - `GET /api/v1/assets/{asset_id}/history` — the per-asset event timeline (timestamp, location, duration), authoritative for "what did this asset do over time?"
 - `GET /api/v1/reports/asset-locations` — the latest snapshot per asset, authoritative for "where is each asset right now?"
 
-Both are gated by the `history:read` scope (see [Authentication → Scopes](./authentication#scopes)) — the same scope, because both are projections of the same underlying event stream.
+Both are gated by the `tracking:read` scope (see [Authentication → Scopes](./authentication#scopes)) — the same scope, because both are projections of the same underlying event stream.
 
 When [webhooks](./webhooks) ship, events will fire on scan events but the payloads address **assets and locations**, not scan events directly — there's no scan-event id to subscribe to or look up. An ingestor planning a scan-driven workflow should think in terms of asset history and current location, not in terms of a scan-event resource.

@@ -27,6 +27,20 @@ The TrakRF API is **server-to-server only — no third-party browser origins are
 
 `OPTIONS` is not part of the resource API surface and is not a way to introspect a path's supported methods. Server-to-server clients won't normally invoke it; if you're writing a non-browser client, treat `OPTIONS` as if it doesn't exist on this API.
 
+## Request body `Content-Type` per method {#patch-content-type}
+
+The TrakRF API enforces a strict media type per write method, matching what the OpenAPI spec declares for each operation's `requestBody.content`. Sending the wrong type returns `415 unsupported_media_type` with a method-aware detail string ([Errors → unsupported_media_type](./errors#error-type-catalog)).
+
+| Method   | Required `Content-Type`        | Body shape                                                                    |
+| -------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `POST`   | `application/json`             | Full resource (create) or operation payload (`/rename`, `/tags`).             |
+| `PATCH`  | `application/merge-patch+json` | JSON Merge Patch ([RFC 7396](https://datatracker.ietf.org/doc/html/rfc7396)). |
+| `DELETE` | — (no body)                    | —                                                                             |
+
+`PATCH` requires `application/merge-patch+json` **exclusively** — sending a `PATCH` body with `application/json` returns `415 unsupported_media_type` with `detail: "Content-Type must be application/merge-patch+json on PATCH operations"`. The merge-patch media type is the surface signal of the merge-patch semantics: omitted fields stay as-is, `null` clears a writable-nullable field, and read-only fields are silently ignored. See [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape) for the body rules. POST endpoints (`/assets`, `/locations`, `/rename`, `/tags`) require `application/json` and reject `application/merge-patch+json` for the same reason in reverse.
+
+A `charset=utf-8` parameter on the media type is accepted; any other media type — `text/plain`, `multipart/form-data`, a typo'd subtype — returns `415` regardless of method.
+
 ## Discovering supported methods at runtime
 
 To probe which methods a path supports without consulting the spec, send any request that triggers a `405` and read the response `Allow` header (per [RFC 7231 §6.5.5](https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.5)). The same value lands in the error envelope's `detail`, so a JSON-only client can branch without reading raw headers:
