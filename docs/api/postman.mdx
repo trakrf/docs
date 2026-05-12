@@ -11,7 +11,9 @@ reflects the current v1 contract.
 
 ## Download
 
-- <a href="/api/trakrf-api.postman_collection.json" download>Postman collection (JSON)</a>
+- <a href="/api/trakrf-api.postman_collection.json" download>
+    Postman collection (JSON)
+  </a>
 
 ## Raw OpenAPI spec
 
@@ -28,6 +30,6 @@ The rendered interactive reference lives at [`/api`](/api).
 2. Click **Import** → **File**.
 3. Select the downloaded `trakrf-api.postman_collection.json`.
 4. In the collection variables, set:
-   - `baseUrl` to `https://app.trakrf.id/api/v1` for production, or `https://app.preview.trakrf.id/api/v1` for preview accounts. The API is served from the `app.` subdomain, not the marketing site.
-   - `apiKey` to your API key. See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for how to create one.
-5. The collection's **Authorization** is preconfigured as a Bearer token referencing `{{apiKey}}`.
+   - `baseUrl` to `https://app.trakrf.id` for production, or `https://app.preview.trakrf.id` for preview accounts. The bare host with no `/api/v1` suffix — paths in the collection already include the version prefix. The API is served from the `app.` subdomain, not the marketing site.
+   - `bearerToken` to your API key (the JWT shown once at creation). See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for how to create one.
+5. The collection's **Authorization** is preconfigured as a Bearer token referencing `{{bearerToken}}`.
