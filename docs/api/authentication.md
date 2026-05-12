@@ -78,6 +78,14 @@ A few non-obvious pairings worth calling out:
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).
 
+### `x-required-scopes` on operations
+
+The OpenAPI spec's `BearerAuth` scheme (HTTP Bearer, JWT format) can't express scope-per-operation, so each scope-gated operation also carries an `x-required-scopes` extension listing the scope strings the endpoint requires (e.g. `x-required-scopes: [assets:write]`). Standard codegen tools won't surface the extension automatically — it's metadata, not part of the runtime contract a generic Bearer client implements — but scope-aware partners and policy tooling can read it programmatically rather than scraping this page. The table above is the human-readable view of the same data.
+
+### Internal scope: `keys:admin` {#internal-scopes}
+
+A sixth scope, `keys:admin`, exists in the platform but does not appear in the public spec or the **New Key** picker. It gates the SPA-side key administration surface (mint, list, revoke) — the same browser flow described in [Listing and revocation are SPA-side](#listing-revocation-spa-side). The scope is granted implicitly to authenticated session JWTs inside the web app; it is not selectable when minting an API key and is not required by any documented public endpoint. Integrators do not need to request, hold, or branch on this scope. It is documented here only so the five-row table above isn't read as the platform's complete scope list.
+
 ## Example requests
 
 Examples use `$BASE_URL` — set it to `https://app.trakrf.id` for production or `https://app.preview.trakrf.id` for preview accounts. See [Base URL](#base-url).

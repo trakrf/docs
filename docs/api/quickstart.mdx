@@ -130,9 +130,9 @@ Prefer a GUI? The same API surface is available as a ready-to-import Postman col
 1. Download <a href="/api/trakrf-api.postman_collection.json" download>`trakrf-api.postman_collection.json`</a>.
 2. In Postman, **Import → File** and select it.
 3. Set the collection variables:
-   - `baseUrl` → `https://app.trakrf.id/api/v1` (or `https://app.preview.trakrf.id/api/v1` for preview accounts)
-   - `apiKey` → the JWT from step 2
-4. Collection auth is preconfigured as a Bearer token referencing `{{apiKey}}`.
+   - `baseUrl` → `https://app.trakrf.id` (or `https://app.preview.trakrf.id` for preview accounts) — bare host, no `/api/v1` suffix; paths in the collection already include the version prefix
+   - `bearerToken` → the JWT from step 2
+4. Collection auth is preconfigured as a Bearer token referencing `{{bearerToken}}`.
 
 Full detail: [Postman collection](./postman).
 

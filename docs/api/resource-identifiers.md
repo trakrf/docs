@@ -175,14 +175,18 @@ Asset and location updates use `PATCH /api/v1/{resource}/{id}` with `Content-Typ
 
 An empty body (`{}`) is a documented no-op and returns `200` with the resource unchanged. This is also the floor case for the "no writable fields" rule below.
 
-Request and response field _names_ match for every writable field (e.g., `location_id` reads and writes under the same name), and the read-only fields that appear on responses but not on the write schema are silently discarded if echoed back. Read shape and write shape are not identical — read responses include fields that aren't part of the request schema — but **the server silently ignores every read-only field on `PATCH`**. A full-object round-trip — `GET`, mutate one writable field, `PATCH` the whole body back — succeeds without any client-side stripping. Server-owned fields, fields managed through dedicated subresources, and the natural-key form of every paired FK relationship are accepted and discarded, not rejected.
+Request and response field _names_ match for every writable field (e.g., `location_id` reads and writes under the same name), and the read-only fields that appear on responses but not on the write schema are silently discarded if echoed back. Read shape and write shape are not identical — read responses include fields that aren't part of the request schema — but **the server silently ignores every read-only field on `PATCH`**. A full-object round-trip — `GET`, mutate one writable field, `PATCH` the whole body back — succeeds without any client-side stripping at the wire. Server-owned fields, fields managed through dedicated subresources, and the natural-key form of every paired FK relationship are accepted and discarded, not rejected.
+
+:::note Typed clients still need to reshape
+The "echo the response straight back" pattern is a wire-level guarantee — the server tolerates the extra fields. **It is not a type-level guarantee in strongly-typed codegen.** The read schemas (`AssetView`, `LocationView`) declare a superset of fields and mark most of them `required`; the write schemas (`UpdateAssetRequest`, `UpdateLocationRequest`) declare a smaller, all-optional shape. Loose-typed clients (TypeScript with `fetch`, raw `requests`, shell `curl | jq`) can pass the read object verbatim to the write call without ceremony. Strict-typed clients (Pydantic, Java, Go with generated structs) cannot — the response object's type is not assignable to the request object's type, so a real `GET → mutate → PATCH` ends up shaping a fresh write-schema instance with only the fields being changed. Either pattern works against the server; pick the one your language ergonomics prefer. For strict-typed clients, the minimal-body form shown further down this section is the more natural shape and avoids the reshape.
+:::
 
 The complete read-only set per resource:
 
-| Resource  | Silently-ignored fields on `PATCH`                                                                                  |
-| --------- | ------------------------------------------------------------------------------------------------------------------- |
-| Assets    | `id`, `created_at`, `updated_at`, `deleted_at`, `external_key`, `tags`, `location_external_key`                     |
-| Locations | `id`, `created_at`, `updated_at`, `deleted_at`, `external_key`, `tags`, `parent_external_key`                       |
+| Resource  | Silently-ignored fields on `PATCH`                                                              |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| Assets    | `id`, `created_at`, `updated_at`, `deleted_at`, `external_key`, `tags`, `location_external_key` |
+| Locations | `id`, `created_at`, `updated_at`, `deleted_at`, `external_key`, `tags`, `parent_external_key`   |
 
 Two of these have dedicated mutation surfaces — sending them in a `PATCH` body is a no-op, but you change them through their own endpoints:
 

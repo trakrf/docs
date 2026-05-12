@@ -16,12 +16,14 @@ Non-2xx responses return `Content-Type: application/json` with the error object 
     "type": "validation_error",
     "title": "Validation failed",
     "status": 400,
-    "detail": "external_key must be 1-255 characters",
+    "detail": "external_key must be at most 255 characters",
     "instance": "/api/v1/assets",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
   }
 }
 ```
+
+On `validation_error`, `detail` echoes the first offending field's `message` verbatim (and appends `(and N more validation errors)` when more than one field is invalid). The per-field structure lives in `fields[]` — see [Validation errors](#validation-errors) below.
 
 The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) (Problem Details for HTTP APIs), but the envelope is **not** 7807-compliant: TrakRF serves `application/json` (not `application/problem+json`) and nests the fields under `error` rather than placing them at the top level. Clients wiring directly to a 7807 library should parse this shape themselves.
 
@@ -122,7 +124,7 @@ The OpenAPI spec marks `error.type` with `x-extensible-enum: true`, but mainstre
 For `validation_error` responses, the stable contract for programmatic handling is `fields[].code` per offending field — that's the extensible-enum value codegen and validation UIs should switch on. `title` is fixed per `error.type` ([canonical titles](#canonical-titles)) and carries no per-field information; `detail` summarizes the first problem in human prose and is safe to log or surface, but its wording is not a contract. When the offending field matters (which it usually does for `validation_error`), iterate `fields[]` and branch on `code`.
 :::
 
-When `type` is `validation_error`, the envelope carries an additional `fields` array with one entry per invalid field:
+When `type` is `validation_error`, the envelope carries an additional `fields` array with one entry per invalid field. `detail` bubbles the first field's `message` so single-field cases read naturally without descending into `fields[]`; multi-field cases append `(and N more validation errors)` so a logged `detail` still flags that more issues are present:
 
 ```json
 {
@@ -130,7 +132,7 @@ When `type` is `validation_error`, the envelope carries an additional `fields` a
     "type": "validation_error",
     "title": "Validation failed",
     "status": 400,
-    "detail": "Request did not pass validation",
+    "detail": "external_key must be at most 255 characters (and 1 more validation error)",
     "instance": "/api/v1/assets",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
