@@ -244,14 +244,14 @@ List endpoints validate their query string the same way, and every endpoint vali
     "type": "validation_error",
     "title": "Validation failed",
     "status": 400,
-    "detail": "Invalid 'from' timestamp; RFC3339 required",
+    "detail": "Invalid 'from' timestamp; expected RFC 3339, e.g. 2026-04-21T00:00:00Z",
     "instance": "/api/v1/assets/ASSET-0001/history",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
       {
         "field": "from",
         "code": "invalid_value",
-        "message": "Invalid 'from' timestamp; RFC3339 required"
+        "message": "Invalid 'from' timestamp; expected RFC 3339, e.g. 2026-04-21T00:00:00Z"
       }
     ]
   }

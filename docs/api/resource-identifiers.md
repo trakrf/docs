@@ -16,6 +16,20 @@ Three string-handle concepts appear across these resources, and they show up clo
 
 The first two are write-routable (caller-supplied on create, or server-minted from a per-organization sequence when `external_key` is omitted — see [auto-mint behavior](#external_key-is-optional-on-create)); the third is server-derived and read-only. The asymmetry is deliberate.
 
+### Natural keys per resource
+
+Every resource on the public surface has a natural key — the caller-meaningful handle that lets you address a row without holding its surrogate `id`. Two shapes appear:
+
+| Resource | Natural key                   | Uniqueness scope | Lookup surface                                                                                   |
+| -------- | ----------------------------- | ---------------- | ------------------------------------------------------------------------------------------------ |
+| Asset    | `external_key` (string)       | per organization | `GET /api/v1/assets?external_key=...`                                                            |
+| Location | `external_key` (string)       | per organization | `GET /api/v1/locations?external_key=...`                                                         |
+| Tag      | `(tag_type, value)` composite | per organization | parent resource (`/assets/{id}/tags` or `/locations/{id}/tags`); no top-level discovery endpoint |
+
+Asset and location natural keys are single-string handles; tags are polymorphic, so the natural key is a `(tag_type, value)` pair — the same `value` can exist under different `tag_type`s in the same organization without conflict. All three are enforced by partial unique indexes on `WHERE deleted_at IS NULL`, so the constraint applies to live rows only and a soft-delete frees the handle for reuse.
+
+The single-string form is covered in [Natural-key lookup uses `?external_key=`](#natural-key-lookup-uses-external_key); the composite tag form is covered in [Tags use a composite natural key](#tags-use-a-composite-natural-key).
+
 **Character set.** `external_key` (and every `*_external_key` foreign-key field) is constrained to alphanumerics and the hyphen — `^[A-Za-z0-9-]+$`, length 1–255. Underscore, period, slash, colon, and whitespace are reserved. See [`external_key` value rules](#external_key-value-rules) for the full table and the rationale for each reserved character.
 
 **`external_key` and `tags[].value` are not symmetric.** Both are partner-supplied string handles, but their input rules diverge — and the gap is wide enough that a value valid as a tag will 400 as an `external_key`. Worth pinning up front so a CSV importer or migration script doesn't push the same column through both surfaces unmodified:
@@ -115,17 +129,25 @@ That makes two response-shape behaviors that coexist on these resources, and it'
 | **Always present**    | `id`, `name`, `external_key`, `created_at`, `updated_at`, `is_active`, `valid_from` (and most scalars)                                     | the value itself |
 | **Present as `null`** | `location_id`, `location_external_key`, `parent_id`, `parent_external_key`, `description`, `valid_to` (and other unset-but-emitted fields) | `field === null` |
 
-Every field on `AssetView` and `LocationView` is **required** in the OpenAPI spec — generated SDKs will surface them as non-optional with a nullable type. Null-check, don't key-check. The same pattern holds on `AssetLocationItem`, and on the per-entity `asset_deleted_at` / `location_deleted_at` fields ([below](#soft-delete-visibility)). When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs and the soft-delete model.
+Every field on `AssetView` and `LocationView` is **required** in the OpenAPI spec — generated SDKs will surface them as non-optional with a nullable type. Null-check, don't key-check. The same pattern holds on `AssetLocationItem`, and on the per-entity `deleted_at` field ([below](#soft-delete-visibility)). When in doubt, check the field's documentation page — [Date fields](./date-fields) covers `valid_to`, this page covers FK pairs and the soft-delete model.
 
 ### Soft-delete visibility on lists {#soft-delete-visibility}
 
 Soft-deleted records are filtered out of list responses by default — every list endpoint applies a `WHERE deleted_at IS NULL` predicate at the storage layer. To opt in, pass `?include_deleted=true` on any of the three list surfaces: `GET /api/v1/assets`, `GET /api/v1/locations`, and `GET /api/v1/reports/asset-locations`. The toggle is consistent across endpoints — same name, same default (`false`), same independence from `is_active` (see [Boolean filters](./pagination-filtering-sorting#boolean-filters)).
 
-Each row carries a per-entity deletion timestamp: `asset_deleted_at` on `/assets` rows and `AssetLocationItem` (the asset-locations report row), `location_deleted_at` on `/locations` rows. The field is **always present on every row** — `null` for live records, populated with the deletion timestamp for soft-deleted ones. The OpenAPI spec marks both as `required` and `nullable: true`; codegen-derived clients surface them as non-optional nullable fields, same pattern as the FK pairs above. Both fields are flagged `readOnly: true` in the spec, so a verbatim `GET` → `PATCH` round-trip continues to succeed (see [Read shape vs. write shape](#read-shape-vs-write-shape)).
+Each row carries a deletion timestamp. The field name depends on whether you're reading a per-resource list or a cross-resource report:
 
-The `location_deleted_at` field on `/locations` is mildly redundant — the row already _is_ a location, and the `_id` prefix is most useful when joining across entities like the asset-locations report does. The redundant naming is deliberate: one field-naming rule across all three list shapes is easier to reason about than a special-case "drop the prefix on single-entity lists." Null-check the appropriate field name for the endpoint you're calling.
+| Endpoint                              | Schema              | Deletion field     |
+| ------------------------------------- | ------------------- | ------------------ |
+| `GET /api/v1/assets`                  | `AssetView`         | `deleted_at`       |
+| `GET /api/v1/locations`               | `LocationView`      | `deleted_at`       |
+| `GET /api/v1/reports/asset-locations` | `AssetLocationItem` | `asset_deleted_at` |
 
-`?include_deleted=true` controls **whether soft-deleted rows appear at all**, not whether the field is rendered. Without the flag, soft-deleted rows are filtered out and only live rows come back (each still carrying `*_deleted_at: null`). With the flag, soft-deleted rows are included alongside live ones, with their populated `*_deleted_at` distinguishing them. Null-check the field, don't key-check.
+Per-resource views drop the prefix because the row is already inside the resource's own namespace — `AssetView.deleted_at` is unambiguously the asset's deletion timestamp. The cross-resource report row merges fields from multiple resources, so the prefix is load-bearing: `AssetLocationItem.asset_deleted_at` disambiguates from any location-side fields embedded in the same row, and reserves room for future per-row deletion timestamps from the location side without a rename.
+
+The field is **always present on every row** — `null` for live records, populated with the deletion timestamp for soft-deleted ones. The OpenAPI spec marks it as `required` and `nullable: true`; codegen-derived clients surface it as a non-optional nullable field, same pattern as the FK pairs above. It is flagged `readOnly: true` in the spec, so a verbatim `GET` → `PATCH` round-trip continues to succeed (see [Read shape vs. write shape](#read-shape-vs-write-shape)).
+
+`?include_deleted=true` controls **whether soft-deleted rows appear at all**, not whether the field is rendered. Without the flag, soft-deleted rows are filtered out and only live rows come back (each still carrying the deletion field as `null`). With the flag, soft-deleted rows are included alongside live ones, with their populated deletion timestamp distinguishing them. Null-check the field, don't key-check.
 
 The path-param read by `id` (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) applies the `WHERE deleted_at IS NULL` predicate at the storage layer and returns `404 not_found` once the row has been soft-deleted — the path-param read skips the currently-effective predicate (covered under [Effective dating and `is_active`](#effective-dating-and-is-active)) but not the soft-delete predicate. Dedicated by-id inspection of a soft-deleted record is roadmap, not v1; the list endpoints with `?include_deleted=true` are the public surface for "show me what's been retired."
 
@@ -158,10 +180,10 @@ Request and response field _names_ match for every writable field (e.g., `locati
 
 The complete read-only set per resource:
 
-| Resource  | Silently-ignored fields on `PATCH`                                                                                           |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Assets    | `id`, `created_at`, `updated_at`, `asset_deleted_at`, `external_key`, `tags`, `location_external_key`                        |
-| Locations | `id`, `created_at`, `updated_at`, `location_deleted_at`, `tree_path`, `depth`, `external_key`, `tags`, `parent_external_key` |
+| Resource  | Silently-ignored fields on `PATCH`                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------------- |
+| Assets    | `id`, `created_at`, `updated_at`, `deleted_at`, `external_key`, `tags`, `location_external_key`                     |
+| Locations | `id`, `created_at`, `updated_at`, `deleted_at`, `tree_path`, `depth`, `external_key`, `tags`, `parent_external_key` |
 
 Two of these have dedicated mutation surfaces — sending them in a `PATCH` body is a no-op, but you change them through their own endpoints:
 
@@ -170,7 +192,7 @@ Two of these have dedicated mutation surfaces — sending them in a `PATCH` body
 
 The natural-key form of each paired FK — `location_external_key` on assets, `parent_external_key` on locations — has a different mutation path: change the relationship by sending the **surrogate** form (`location_id`, `parent_id`) on `PATCH`. The natural-key form is read-only on the `PATCH` surface and is silently stripped from the request body **before** validation runs, so the strip is unconditional — sending both forms (whether they agree or not) is accepted; sending the natural-key form alone is accepted as a no-op. To re-parent or relocate on `PATCH`, send `location_id` (or `parent_id`); to clear the relationship, send `"location_id": null`. The natural-key form continues to appear on the read shape and is recomputed by the server whenever the surrogate changes.
 
-The rest are server-managed and have no caller-facing mutation path: `id` is assigned at create, `created_at` and `*_deleted_at` are stamped by the server, `updated_at` reflects the last successful write, `tree_path` and `depth` are derived from the location's ancestor chain.
+The rest are server-managed and have no caller-facing mutation path: `id` is assigned at create, `created_at` and `deleted_at` are stamped by the server, `updated_at` reflects the last successful write, `tree_path` and `depth` are derived from the location's ancestor chain.
 
 A request body that resolves to **no writable fields** — `{}`, or a body containing only read-only fields like `{"id":999,"tags":[]}` — returns `200` with the unchanged record. A verbatim `GET` → `PATCH` round-trip with no edits is a legal no-op.
 
@@ -178,7 +200,7 @@ Strict-unknown-field validation still applies for fields that are **not** declar
 
 ```bash
 # GET → mutate → PATCH round-trip. Every read-only field on the response
-# (id, created_at, updated_at, asset_deleted_at, external_key, tags,
+# (id, created_at, updated_at, deleted_at, external_key, tags,
 # location_external_key) is silently discarded on PATCH, so no client-side
 # stripping is required. To actually change the location, mutate location_id
 # (the surrogate form); the natural-key form is read-only on PATCH.
