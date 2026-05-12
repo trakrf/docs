@@ -49,7 +49,7 @@ Each key is issued with one or more scopes. The API rejects requests whose key l
 
 ### UI labels vs scope strings {#ui-labels}
 
-The **New key** form in the web app lets you pick a resource (Assets / Locations / History) and an access level (None / Read / Read + Write). Each combination maps to one or two of the scope strings used throughout these docs and in API responses.
+The **New key** form in the web app lets you pick a resource (Assets / Locations / Tracking) and an access level (None / Read / Read + Write). Each combination maps to one or two of the scope strings used throughout these docs and in API responses.
 
 | UI form (resource × level) | Scopes granted                      |
 | -------------------------- | ----------------------------------- |
@@ -57,7 +57,7 @@ The **New key** form in the web app lets you pick a resource (Assets / Locations
 | Assets → Read + Write      | `assets:read`, `assets:write`       |
 | Locations → Read           | `locations:read`                    |
 | Locations → Read + Write   | `locations:read`, `locations:write` |
-| History → Read             | `history:read`                      |
+| Tracking → Read            | `tracking:read`                     |
 
 Selecting **None** for a resource grants no scope for that resource. Selecting **Read + Write** always grants both the read and the write scope — there is no write-only level today.
 
@@ -67,12 +67,14 @@ Selecting **None** for a resource grants no scope for that resource. Selecting *
 | `assets:write`    | Write  | `POST /assets`, `PATCH /assets/{asset_id}`, `POST /assets/{asset_id}/rename`, `DELETE /assets/{asset_id}`                      |
 | `locations:read`  | Read   | `GET /locations`, `GET /locations/{location_id}`                                                                               |
 | `locations:write` | Write  | `POST /locations`, `PATCH /locations/{location_id}`, `POST /locations/{location_id}/rename`, `DELETE /locations/{location_id}` |
-| `history:read`    | Read   | `GET /reports/asset-locations`, `GET /assets/{asset_id}/history`                                                               |
+| `tracking:read`   | Read   | `GET /reports/asset-locations`, `GET /assets/{asset_id}/history`                                                               |
+
+`tracking:read` gates the two endpoints that answer "where are things — now and over time." It covers both the time-series history feed (`/assets/{asset_id}/history`) and the current-state snapshot report (`/reports/asset-locations`), because both views are derived from the same underlying scan-event stream. The name reflects that data lineage: it's permission to read tracking data, not just historical data.
 
 A few non-obvious pairings worth calling out:
 
-- **`/reports/asset-locations`** is gated by **`history:read`**, not `locations:read` (and not `assets:read`). The endpoint's URL says "reports," the response rows are asset-at-location pairs, but the scope follows the **data lineage**: every field on every row is derived from the scan-event stream — `last_seen` is the timestamp of the most recent scan event for that asset, and the `location_id` / `location_external_key` on the row is the location of that scan. Granting `assets:read` or `locations:read` on a key does **not** unlock this endpoint; you need `history:read`. If you're building an integration that surfaces "where is each asset right now," mint a key with `history:read` even if you don't otherwise need history data.
-- **`/assets/{asset_id}/history`** is gated by **`history:read`** for the same reason — it's a projection of scan events, not a property of the asset.
+- **`/reports/asset-locations`** is gated by **`tracking:read`**, not `locations:read` (and not `assets:read`). The endpoint's URL says "reports," the response rows are asset-at-location pairs, but the scope follows the **data lineage**: every field on every row is derived from the scan-event stream — `last_seen` is the timestamp of the most recent scan event for that asset, and the `location_id` / `location_external_key` on the row is the location of that scan. Granting `assets:read` or `locations:read` on a key does **not** unlock this endpoint; you need `tracking:read`. If you're building an integration that surfaces "where is each asset right now," mint a key with `tracking:read` even if you don't otherwise need history data.
+- **`/assets/{asset_id}/history`** is gated by **`tracking:read`** for the same reason — it's a projection of scan events, not a property of the asset.
 
 Additional scopes may be added in any v1 release. Clients should tolerate unknown scope strings without breaking (see [Versioning → Open enums](./versioning#open-extensible-enums-in-v1)).
 
