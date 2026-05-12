@@ -186,11 +186,11 @@ Sortable fields vary per resource. The exact enum each endpoint accepts:
 | Endpoint                                | Sort fields (each also accepts `-` prefix for descending)  |
 | --------------------------------------- | ---------------------------------------------------------- |
 | `GET /api/v1/assets`                    | `external_key`, `name`, `created_at`, `updated_at`         |
-| `GET /api/v1/locations`                 | `tree_path`, `external_key`, `name`, `created_at`          |
+| `GET /api/v1/locations`                 | `external_key`, `name`, `created_at`                       |
 | `GET /api/v1/reports/asset-locations`   | `last_seen`, `asset_external_key`, `location_external_key` |
 | `GET /api/v1/assets/{asset_id}/history` | `timestamp`                                                |
 
-Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending; `/reports/asset-locations` defaults to `-last_seen`).
+Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering — `external_key` ascending, with `id` ascending as a deterministic tiebreaker, on the asset and location collections; `/reports/asset-locations` defaults to `-last_seen`.
 
 ### Sub-resource list endpoints use a fixed sort order
 
@@ -198,7 +198,7 @@ The three location-tree subresource lists — `/ancestors`, `/children`, `/desce
 
 | Endpoint                                          | Fixed sort order                                                                            |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `GET /api/v1/locations/{location_id}/ancestors`   | `depth` ascending (root first), `id` ascending as a tiebreaker.                             |
+| `GET /api/v1/locations/{location_id}/ancestors`   | Root first (walking up the `parent_id` chain), `id` ascending as a tiebreaker.              |
 | `GET /api/v1/locations/{location_id}/children`    | `name` ascending, `id` ascending as a tiebreaker.                                           |
 | `GET /api/v1/locations/{location_id}/descendants` | Depth-first tree order (preorder traversal of the subtree), `id` ascending as a tiebreaker. |
 
@@ -208,7 +208,7 @@ The `id` tiebreaker makes the order deterministic across pages. Sending `?sort=.
 
 Two rules govern how the validator handles `POST` and `PATCH` request bodies. They're separate from list-endpoint filters but they're the next thing partners ask about once they've done a `GET` and want to write back, so they live here:
 
-**Read-only fields are silently accepted on `PATCH`.** Fields that appear on the read shape but aren't part of the write schema — server-managed metadata (`id`, `created_at`, `updated_at`, the per-entity `deleted_at` timestamp, the derived ancestor fields `tree_path` / `depth` on locations), the natural key (`external_key`), the embedded `tags` array, and the natural-key form of paired FK relationships (`location_external_key` on assets, `parent_external_key` on locations — the surrogate form is the writable canonical) — are accepted and discarded. A naive `GET` → mutate → `PATCH` of the entire response object succeeds; integrators don't need a strip-on-`PATCH` helper. The per-resource set is documented in [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape). The two read-only fields with dedicated mutation surfaces — `external_key` via `POST /…/rename`, `tags` via the tag subresource — are still mutated through those endpoints; sending them in a `PATCH` body is a no-op, not a mutation path.
+**Read-only fields are silently accepted on `PATCH`.** Fields that appear on the read shape but aren't part of the write schema — server-managed metadata (`id`, `created_at`, `updated_at`, the per-entity `deleted_at` timestamp), the natural key (`external_key`), the embedded `tags` array, and the natural-key form of paired FK relationships (`location_external_key` on assets, `parent_external_key` on locations — the surrogate form is the writable canonical) — are accepted and discarded. A naive `GET` → mutate → `PATCH` of the entire response object succeeds; integrators don't need a strip-on-`PATCH` helper. The per-resource set is documented in [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape). The two read-only fields with dedicated mutation surfaces — `external_key` via `POST /…/rename`, `tags` via the tag subresource — are still mutated through those endpoints; sending them in a `PATCH` body is a no-op, not a mutation path.
 
 **Truly unknown fields are rejected.** A field name that doesn't appear on either the read or the write schema (a typo, an off-resource field, a `metadata`-on-locations attempt) returns `400 validation_error` with `fields[].code: invalid_value`. The silent-accept rule above is reserved for fields the platform marks `readOnly: true` and that integrators can't avoid sending verbatim from a `GET` response — it isn't a general loose-mode.
 
