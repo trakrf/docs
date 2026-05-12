@@ -8,13 +8,12 @@ Every asset and location has two identifiers. The integer `id` is **canonical at
 
 ## String-handle concepts at a glance
 
-Three string-handle concepts appear across these resources, and they show up close enough together to blur. Briefly:
+Two string-handle concepts appear across these resources, and they're close enough together to blur. Briefly:
 
 - **`external_key`** — the resource's own natural key (this page, top-to-bottom).
 - **`*_external_key` foreign-key fields** — flat-scalar references _to_ another resource's `external_key` from a record that holds the relationship. Examples: `location_external_key` on assets, `parent_external_key` on locations. Covered under [Foreign-key fields in responses](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs).
-- **`tree_path`** — a derived label-path on locations only, useful for sorting / breadcrumbs / indenting flat lists. Not an identifier and not a natural key. Covered under [Locations: `parent_id` and `parent_external_key`](#locations-parent_id-and-parent_external_key).
 
-The first two are write-routable (caller-supplied on create, or server-minted from a per-organization sequence when `external_key` is omitted — see [auto-mint behavior](#external_key-is-optional-on-create)); the third is server-derived and read-only. The asymmetry is deliberate.
+Both are write-routable: caller-supplied on create, or server-minted from a per-organization sequence when `external_key` is omitted — see [auto-mint behavior](#external_key-is-optional-on-create). For ancestor chains and breadcrumbs on locations, walk the `parent_id` chain via the [tree endpoints](#location-tree-endpoints); there is no derived display-path field on the response.
 
 ### Natural keys per resource
 
@@ -39,7 +38,7 @@ The single-string form is covered in [Natural-key lookup uses `?external_key=`](
 | `external_key` | 1–255  | `^[A-Za-z0-9-]+$` (alnum, `-`) | `SKU-7421-A`, `BACK-STORAGE-2`                                   | —                                                                    |
 | `tags[].value` | 1–255  | unrestricted (any UTF-8)       | `E2-8042-2D-19F0-AB10`, `a/b/c`, `X With Space`, `bin#3`, `漢字` | `a/b/c`, `X With Space`, `bin#3`, `漢字` (all 400 as `external_key`) |
 
-The asymmetry is intentional: `external_key` flows into URL paths, log lines, and `tree_path` segments where the reserved characters would force quoting; `tags[].value` is opaque payload to the API (an EPC, a beacon ID, a barcode) and the service does not interpret its shape. See [`external_key` value rules](#external_key-value-rules) for the full reserved-character rationale and [Tags use a composite natural key](#tags-use-a-composite-natural-key) for the tag side.
+The asymmetry is intentional: `external_key` flows into URL paths and log lines where the reserved characters would force quoting; `tags[].value` is opaque payload to the API (an EPC, a beacon ID, a barcode) and the service does not interpret its shape. See [`external_key` value rules](#external_key-value-rules) for the full reserved-character rationale and [Tags use a composite natural key](#tags-use-a-composite-natural-key) for the tag side.
 
 ## Path-param lookup uses `id`
 
@@ -183,7 +182,7 @@ The complete read-only set per resource:
 | Resource  | Silently-ignored fields on `PATCH`                                                                                  |
 | --------- | ------------------------------------------------------------------------------------------------------------------- |
 | Assets    | `id`, `created_at`, `updated_at`, `deleted_at`, `external_key`, `tags`, `location_external_key`                     |
-| Locations | `id`, `created_at`, `updated_at`, `deleted_at`, `tree_path`, `depth`, `external_key`, `tags`, `parent_external_key` |
+| Locations | `id`, `created_at`, `updated_at`, `deleted_at`, `external_key`, `tags`, `parent_external_key`                       |
 
 Two of these have dedicated mutation surfaces — sending them in a `PATCH` body is a no-op, but you change them through their own endpoints:
 
@@ -192,7 +191,7 @@ Two of these have dedicated mutation surfaces — sending them in a `PATCH` body
 
 The natural-key form of each paired FK — `location_external_key` on assets, `parent_external_key` on locations — has a different mutation path: change the relationship by sending the **surrogate** form (`location_id`, `parent_id`) on `PATCH`. The natural-key form is read-only on the `PATCH` surface and is silently stripped from the request body **before** validation runs, so the strip is unconditional — sending both forms (whether they agree or not) is accepted; sending the natural-key form alone is accepted as a no-op. To re-parent or relocate on `PATCH`, send `location_id` (or `parent_id`); to clear the relationship, send `"location_id": null`. The natural-key form continues to appear on the read shape and is recomputed by the server whenever the surrogate changes.
 
-The rest are server-managed and have no caller-facing mutation path: `id` is assigned at create, `created_at` and `deleted_at` are stamped by the server, `updated_at` reflects the last successful write, `tree_path` and `depth` are derived from the location's ancestor chain.
+The rest are server-managed and have no caller-facing mutation path: `id` is assigned at create, `created_at` and `deleted_at` are stamped by the server, `updated_at` reflects the last successful write.
 
 A request body that resolves to **no writable fields** — `{}`, or a body containing only read-only fields like `{"id":999,"tags":[]}` — returns `200` with the unchanged record. A verbatim `GET` → `PATCH` round-trip with no edits is a legal no-op.
 
@@ -246,7 +245,7 @@ To **clear** a relationship on `PATCH`, send `null` on the surrogate form: `PATC
 
 ## Renaming an `external_key` {#renaming-an-external_key}
 
-`external_key` is your join key — the form your ERP, WMS, or operator recognizes — and the rest of this page treats it that way. Because partner-side systems are likely to have indexed or cached records under the existing key, **`external_key` is immutable on `PATCH`**. The platform exposes a dedicated rename operation per resource type so the mutation is explicit at the URL surface, visible in audit logs, and (for locations) cleanly cascades the derived `tree_path`.
+`external_key` is your join key — the form your ERP, WMS, or operator recognizes — and the rest of this page treats it that way. Because partner-side systems are likely to have indexed or cached records under the existing key, **`external_key` is immutable on `PATCH`**. The platform exposes a dedicated rename operation per resource type so the mutation is explicit at the URL surface and visible in audit logs.
 
 :::caution Renaming disconnects downstream joins
 A partner system that has cached or indexed records under the old `external_key` will silently desynchronize across a rename. Treat rename as a coordinated cutover — notify the downstream consumer, or re-export from TrakRF after the rename — not a casual edit.
@@ -264,9 +263,9 @@ curl -X POST \
 
 The response is the updated `AssetView`, wrapped in the standard `{ "data": ... }` envelope. Required scope is `assets:write` — the same scope as `PATCH /api/v1/assets/{asset_id}`. The operation is logged distinctly from a PATCH in audit trails by virtue of its dedicated URL surface (`/rename` vs the parent path), so no audit-schema extension is needed for integrators ingesting the audit stream.
 
-### Location rename (with `tree_path` cascade) {#location-rename}
+### Location rename {#location-rename}
 
-Location rename does everything the asset variant does, plus regenerates `tree_path` for the renamed row **and every descendant** in a single transaction. The response includes `descendant_count_affected` so you know whether the subtree's display-paths have shifted under you:
+Location rename mutates only the renamed row's `external_key`. Descendants are not modified on the server — the location hierarchy is keyed on the surrogate `parent_id`, so descendants stay correctly parented across a rename. The response still surfaces `descendant_count_affected` so an integrator who maintains derived natural-key joins on their own side knows how many rows under the renamed node may need refreshing:
 
 ```bash
 curl -X POST \
@@ -281,15 +280,13 @@ curl -X POST \
   "data": {
     "id": 7,
     "external_key": "WAREHOUSE-MAIN",
-    "name": "Warehouse, west annex",
-    "tree_path": "warehouse_main",
-    "depth": 1
+    "name": "Warehouse, west annex"
   },
   "descendant_count_affected": 23
 }
 ```
 
-`descendant_count_affected` is the count of descendant rows whose `tree_path` changed — the renamed row itself is **not** included. Use this as the signal for whether to invalidate cached subtree state: a non-zero value is your cue to re-fetch the relevant subtree via [`GET /api/v1/locations/{location_id}/descendants`](#location-tree-endpoints) (or to recompute display labels client-side). Zero means there are no descendants — for example, a leaf-location rename — and no subtree refresh is needed.
+`descendant_count_affected` is the live count of descendant rows reachable through the `parent_id` chain — the renamed row itself is **not** included. The TrakRF response carries `parent_id` (surrogate) and `parent_external_key` (the renamed value will propagate through `parent_external_key` on descendants automatically because that field is recomputed on read). A non-zero value is your cue to refresh any subtree state your own side caches under the old natural key. Zero means there are no descendants — for example, a leaf-location rename — and no client-side refresh is needed.
 
 A same-value rename (new `external_key` equals the current one) is idempotent: returns `200` with `descendant_count_affected: 0` and no audit-log noise to special-case. Safe to retry on partial-failure without branching for "already at the target value."
 
@@ -317,9 +314,7 @@ Locations follow the same flat-scalar pattern for their parent reference. A loca
     "external_key": "BACK-STORAGE-2",
     "name": "Back storage, bay 2",
     "parent_id": 7,
-    "parent_external_key": "WAREHOUSE-WEST",
-    "tree_path": "warehouse_west.back_storage_2",
-    "depth": 2
+    "parent_external_key": "WAREHOUSE-WEST"
   }
 }
 ```
@@ -333,26 +328,9 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/locations/42/ancestors"
 ```
 
-`tree_path` is a derived label-path helper, useful for sorting or indenting flat lists. Segments are joined by `.` and each segment is derived from the corresponding ancestor's `external_key` via two transformations: **lowercase** and **hyphen → underscore**. So an `external_key` of `WAREHOUSE-WEST` contributes the segment `warehouse_west` to its descendants' tree paths. The pattern on `external_key` (see [`external_key` value rules](#external_key-value-rules)) keeps `.` and `_` reserved for these roles, so `tree_path` is well-formed by construction. The transformation is still **lossy on case** — `WAREHOUSE-WEST` and `warehouse-west` are distinct `external_key`s but produce the same segment — so don't try to reverse it.
+If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), `GET /api/v1/locations/{location_id}/ancestors` returns the full parent chain. For indent-rendering a flat list of locations, walk the `parent_id` chain client-side from the cached list — the location count per organization is small enough that client-side derivation is cheap and the surrogate `parent_id` is stable across renames.
 
-Worked example, with two locations forming a parent / child pair:
-
-| `external_key`                  | `tree_path`        |
-| ------------------------------- | ------------------ |
-| `WHS-01` (root)                 | `whs_01`           |
-| `WHS-07-03` (child of `WHS-01`) | `whs_01.whs_07_03` |
-
-The root's `tree_path` is its own normalized segment. A child's `tree_path` is its parent's `tree_path` plus a `.` and the child's normalized segment. Renaming `WHS-01` to `WHS-MAIN` rewrites the segment for the root **and the prefix** of every descendant in one transaction — see [Location rename](#location-rename) for the dedicated operation and the `descendant_count_affected` signal that tells you how much of the subtree moved.
-
-`depth` is the companion field. The root location has `depth: 1`; each child increments by 1 (`WHS-07-03` above has `depth: 2`). Like `tree_path`, `depth` is server-derived and read-only — clients can use it directly for indented rendering but should not try to set it on a write.
-
-If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anything that touches your system of record), use `GET /api/v1/locations/{location_id}/ancestors` instead — it returns the full chain with each ancestor's untransformed `external_key`.
-
-**Don't cache `tree_path`.** The value is derived, and the [location rename operation](#location-rename) rewrites the `tree_path` on that location _and every descendant_ in one transaction. A client that pinned `tree_path` for hierarchy queries will silently desync after a rename. If you need stable hierarchy state, store the chain of `external_key`s (or the `id` chain via `/ancestors`) and re-derive on demand. The rename response's `descendant_count_affected` is the live signal that a subtree refresh is needed.
-
-`tree_path` is also not an identifier — you can't look a location up by its `tree_path`. Use the [`?external_key=` filter](#natural-key-lookup-uses-external_key) on the locations list endpoint for natural-key lookups.
-
-**Don't use `tree_path` as a cross-system join key.** The `external_key` → segment transformation is lossy on case (and the underscore reservation on `external_key` is the only thing keeping the hyphen → underscore step from collapsing other distinct keys). Round-tripping a `tree_path` segment back to its source `external_key` is not generally possible: `WAREHOUSE-WEST` and `warehouse-west` produce the same segment `warehouse_west`, so a downstream consumer joining a TrakRF row to a partner system on a `tree_path` substring can match more rows than the integrator intended. Use the canonical `external_key` (or the `id` chain via `/ancestors`) for cross-system joins; treat `tree_path` as a display-only label for sorting, breadcrumbs, and indented rendering.
+**Case-distinct external keys are distinct locations.** `WAREHOUSE-WEST` and `warehouse-west` are two different rows under the per-org partial unique index on `(org_id, external_key) WHERE deleted_at IS NULL`. They can coexist as siblings under the same parent. Tagging conventions that mix case (`SKU-WHS-01` vs. `sku-whs-01`) won't silently merge — pick a convention to keep partner-side joins predictable, but the platform doesn't enforce one.
 
 ## Location tree endpoints {#location-tree-endpoints}
 
@@ -389,7 +367,7 @@ The handler runs two pre-checks per call, descendants first. The two cases produ
 
 "Active" here means `deleted_at IS NULL` — soft-deleted descendants and soft-deleted placed assets do **not** block the delete (they already drop out of every list response per [Soft-delete is not a general field](#soft-delete-visibility)). A location whose only children are themselves soft-deleted is still a valid leaf for delete purposes.
 
-The rejection preserves the FK-pair invariant the rest of this page documents. If the server allowed the delete to proceed silently, descendants would survive with `parent_id` pointing at a deleted row, `parent_external_key` becoming `null`, and `tree_path` retaining the stale parent segment — a `parent_id != null AND parent_external_key == null` shape that's undefined under [the FK-pair contract](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs). The same shape would appear on assets placed at a deleted location (`location_id` populated, `location_external_key` null). The 409 keeps both invariants intact.
+The rejection preserves the FK-pair invariant the rest of this page documents. If the server allowed the delete to proceed silently, descendants would survive with `parent_id` pointing at a deleted row and `parent_external_key` becoming `null` — a `parent_id != null AND parent_external_key == null` shape that's undefined under [the FK-pair contract](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs). The same shape would appear on assets placed at a deleted location (`location_id` populated, `location_external_key` null). The 409 keeps both invariants intact.
 
 Sample 409 response:
 
@@ -457,11 +435,11 @@ A caller-supplied `external_key` that collides with an existing live row of the 
 
 The reserved characters and why they're reserved:
 
-| Character             | Reason it's reserved                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `.` (period)          | `tree_path` segment separator                                                                                                   |
-| `_` (underscore)      | segment-internal separator after `tree_path` normalization (each hyphen in `external_key` becomes an underscore in `tree_path`) |
-| ` ` (space), `/`, `:` | URL-, log-, and path-hostile; reserved to avoid surprise quoting                                                                |
+| Character             | Reason it's reserved                                                                                                    |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `.` (period)          | path-/URL-hostile and reserved for future structural use (segment separators, file-extension idioms in partner systems) |
+| `_` (underscore)      | reserved alongside `-` so partner systems standardizing on one separator don't see the other as a near-match collision  |
+| ` ` (space), `/`, `:` | URL-, log-, and path-hostile; reserved to avoid surprise quoting                                                        |
 
 Practical examples:
 
@@ -477,7 +455,7 @@ Practical examples:
 | `BB_underscored` | ✗ `400 invalid_value`                     |
 | `BB漢字`         | ✗ `400 invalid_value` (non-ASCII)         |
 
-`external_key` is **case-preserving** on storage — `MyAsset` and `myasset` are distinct keys for uniqueness purposes — but `tree_path` lowercases every segment, so two location keys differing only in case will collide on `tree_path` even though they coexist as distinct rows. Pick a casing convention and stick to it.
+`external_key` is **case-preserving and case-sensitive** on storage — `MyAsset` and `myasset` are distinct keys, and `WAREHOUSE-WEST` and `warehouse-west` coexist as distinct locations under the per-org partial unique index. The case mapping is preserved verbatim on every response. Pick a casing convention for your own integration to keep partner-side joins predictable, but the platform doesn't enforce one and won't silently merge case-distinct keys.
 
 ## Effective dating and `is_active` {#effective-dating-and-is-active}
 
