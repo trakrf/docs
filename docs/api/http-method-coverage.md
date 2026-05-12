@@ -21,12 +21,9 @@ curl -I -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 `HEAD` is not enumerated as a separate operation per path — assume it wherever `GET` is declared.
 
-## `OPTIONS` — reserved for CORS preflight
+## `OPTIONS` — CORS preflight, always 204 with no `Allow-Origin`
 
-`OPTIONS` is reserved for CORS preflight. Browser clients hitting the API across origins issue an automatic `OPTIONS` request before the actual call; the server responds:
-
-- `204 No Content` with `Access-Control-Allow-*` headers when the origin and method are allowed.
-- `204 No Content` with no CORS headers when they aren't.
+The TrakRF API is **server-to-server only — no third-party browser origins are permitted**. Preflights always return `204 No Content` with no `Access-Control-Allow-Origin` (and no other `Access-Control-Allow-*` headers). There is no allowlist, no per-origin path that produces a populated CORS envelope; the server's CORS posture is "closed, uniformly." A browser issuing the automatic preflight before a cross-origin call sees the empty envelope, refuses the actual call, and surfaces a CORS error to your console — which is the intended outcome. Call the API from a backend service instead (see [Authentication → Server-to-server design](./authentication#server-to-server)).
 
 `OPTIONS` is not part of the resource API surface and is not a way to introspect a path's supported methods. Server-to-server clients won't normally invoke it; if you're writing a non-browser client, treat `OPTIONS` as if it doesn't exist on this API.
 
@@ -58,6 +55,12 @@ Content-Type: application/json
 ```
 
 `HEAD` appears in `Allow` wherever `GET` does. `OPTIONS` does not appear — see above for why.
+
+## `Location` header on `201 Created`
+
+Top-level `POST` creates return a `Location` header pointing at the canonical resource URL — `POST /api/v1/assets` and `POST /api/v1/locations` both set `Location: /api/v1/{resource}/{id}` on the `201` response, mirroring the `{ "data": { "id": ..., ... } }` body. Use either signal to discover the freshly-assigned id; an integrator who already reads the response body doesn't need the header.
+
+Sub-resource `POST` creates — `POST /api/v1/assets/{asset_id}/tags` and `POST /api/v1/locations/{location_id}/tags` — do **not** set a `Location` header. The parent URL is already known to the caller, and tags have no top-level canonical URL of their own (see [Tag CRUD](./resource-identifiers#tag-crud)) — emitting a header pointing to the parent or to a non-routable per-tag path would mislead more than help. The omission is by design and is enforced by a Spectral rule on the spec; future sub-resource creates will follow the same policy.
 
 ## Related
 

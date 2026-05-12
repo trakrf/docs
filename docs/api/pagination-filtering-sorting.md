@@ -79,7 +79,7 @@ Filter parameters are specific to each resource. All filters are query parameter
 `is_active` is a domain field — whether a resource is currently active per business logic. `include_deleted` is a lifecycle/system toggle — whether soft-deleted rows appear in the response at all. Both `/assets` and `/locations` (and `/reports/asset-locations`) accept `include_deleted=true` (default `false`); the four combinations of `is_active=*&include_deleted=true` are independent and all valid.
 
 - `?is_active=false` on `/assets` does **not** return soft-deleted rows — it returns currently-effective rows whose `is_active` flag is `false`. Soft-deleted rows are filtered out regardless of `is_active`; pass `?include_deleted=true` to surface them.
-- `?include_deleted=true` returns currently-effective rows AND soft-deleted rows. Each row carries `asset_deleted_at` (on `/assets` and `/reports/asset-locations`) or `location_deleted_at` (on `/locations`) — `null` for live rows, populated with the deletion timestamp for soft-deleted ones. Null-check the field, don't key-check.
+- `?include_deleted=true` returns currently-effective rows AND soft-deleted rows. Each row carries a deletion timestamp — `deleted_at` on the per-resource lists `/assets` and `/locations`, `asset_deleted_at` on the cross-resource report `/reports/asset-locations` — `null` for live rows, populated with the deletion timestamp for soft-deleted ones. Null-check the field, don't key-check. See [Resource identifiers → Soft-delete visibility on lists](./resource-identifiers#soft-delete-visibility) for why the per-resource form drops the prefix.
   :::
 
 | Endpoint                                | Filter params                                                                                                                                        |
@@ -93,11 +93,11 @@ The `external_key` filter on `/assets` and `/locations` is the [`?external_key=`
 
 ### Paired-by-id-and-by-natural-key filters are mutually exclusive
 
-When a list endpoint accepts both an id form and a natural-key form for the same logical relationship — `location_id` / `location_external_key` on `/assets`, `parent_id` / `parent_external_key` on `/locations` — the two forms are **mutually exclusive in a single request**. Sending both returns `400 validation_error` with `fields[]` naming the conflicting params. State the rule once for all such pairs rather than per-parameter.
+When a list endpoint accepts both an id form and a natural-key form for the same logical relationship — `location_id` / `location_external_key` on `/assets`, `parent_id` / `parent_external_key` on `/locations` — the two forms are **mutually exclusive in a single request**. Sending both returns `400 validation_error` with `code: ambiguous_fields` and one `fields[]` entry per offending param. State the rule once for all such pairs rather than per-parameter.
 
 To filter for the union of two values, repeat **one** form: `?location_id=42&location_id=43`. To filter for the union across both forms, resolve to one form first (typically `id`, since the natural-key lookup gives you the `id` for free).
 
-This is distinct from the FK pair on a **write body**, where both `location_id` and `location_external_key` may be sent and are cross-validated for agreement — see [Resource identifiers → foreign-key fields](./resource-identifiers#foreign-key-fields-in-responses-come-as-flat-scalar-pairs). The list-filter mutex and the write-body cross-validation are separate rules.
+The same `ambiguous_fields` rule applies to `POST` request bodies on `/assets` and `/locations` (surrogate XOR natural-key — pick one). `PATCH` is the exception: it accepts both forms but treats the natural-key form as read-only, silently stripping it before validation runs. See [Resource identifiers → Paired-key behavior per verb](./resource-identifiers#paired-key-behavior-per-verb) for the full matrix and the `fk_not_found` envelope returned when either form references a non-existent row.
 
 ### Repeatable filters
 
@@ -124,7 +124,7 @@ Pass `true` or `false`. Omitting `is_active` returns rows of either value (the d
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?is_active=true"
 
-# Include soft-deleted rows alongside live ones; null-check asset_deleted_at on each row
+# Include soft-deleted rows alongside live ones; null-check deleted_at on each row
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?include_deleted=true"
 ```
@@ -192,11 +192,23 @@ Sortable fields vary per resource. The exact enum each endpoint accepts:
 
 Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering (typically `external_key` ascending; `/reports/asset-locations` defaults to `-last_seen`).
 
+### Sub-resource list endpoints use a fixed sort order
+
+The three location-tree subresource lists — `/ancestors`, `/children`, `/descendants` — paginate but do **not** accept a `sort` query parameter. Each has a single natural order that's the only meaningful one for its shape, and the order is encoded directly in the OpenAPI `description` for the operation.
+
+| Endpoint                                          | Fixed sort order                                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `GET /api/v1/locations/{location_id}/ancestors`   | `depth` ascending (root first), `id` ascending as a tiebreaker.                             |
+| `GET /api/v1/locations/{location_id}/children`    | `name` ascending, `id` ascending as a tiebreaker.                                           |
+| `GET /api/v1/locations/{location_id}/descendants` | Depth-first tree order (preorder traversal of the subtree), `id` ascending as a tiebreaker. |
+
+The `id` tiebreaker makes the order deterministic across pages. Sending `?sort=...` on any of these three returns `400 validation_error` against the spec — the parameter isn't declared. Generated clients won't even produce the option.
+
 ## Validator behavior on writes
 
 Two rules govern how the validator handles `POST` and `PATCH` request bodies. They're separate from list-endpoint filters but they're the next thing partners ask about once they've done a `GET` and want to write back, so they live here:
 
-**Read-only fields are silently accepted on `PATCH`.** Fields that appear on the read shape but aren't part of the write schema — server-managed metadata (`id`, `created_at`, `updated_at`, the per-entity `*_deleted_at` timestamps, the derived ancestor fields `tree_path` / `depth` on locations), the natural key (`external_key`), and the embedded `tags` array — are accepted and discarded. A naive `GET` → mutate → `PATCH` of the entire response object succeeds; integrators don't need a strip-on-`PATCH` helper. The per-resource set is documented in [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape). The two read-only fields with dedicated mutation surfaces — `external_key` via `POST /…/rename`, `tags` via the tag subresource — are still mutated through those endpoints; sending them in a `PATCH` body is a no-op, not a mutation path.
+**Read-only fields are silently accepted on `PATCH`.** Fields that appear on the read shape but aren't part of the write schema — server-managed metadata (`id`, `created_at`, `updated_at`, the per-entity `deleted_at` timestamp, the derived ancestor fields `tree_path` / `depth` on locations), the natural key (`external_key`), the embedded `tags` array, and the natural-key form of paired FK relationships (`location_external_key` on assets, `parent_external_key` on locations — the surrogate form is the writable canonical) — are accepted and discarded. A naive `GET` → mutate → `PATCH` of the entire response object succeeds; integrators don't need a strip-on-`PATCH` helper. The per-resource set is documented in [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape). The two read-only fields with dedicated mutation surfaces — `external_key` via `POST /…/rename`, `tags` via the tag subresource — are still mutated through those endpoints; sending them in a `PATCH` body is a no-op, not a mutation path.
 
 **Truly unknown fields are rejected.** A field name that doesn't appear on either the read or the write schema (a typo, an off-resource field, a `metadata`-on-locations attempt) returns `400 validation_error` with `fields[].code: invalid_value`. The silent-accept rule above is reserved for fields the platform marks `readOnly: true` and that integrators can't avoid sending verbatim from a `GET` response — it isn't a general loose-mode.
 

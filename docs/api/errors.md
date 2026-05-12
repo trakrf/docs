@@ -168,6 +168,8 @@ Current `code` values (extensible):
 - `too_long` — string or collection length above the maximum
 - `too_small` — numeric value below the minimum
 - `too_large` — numeric value above the maximum
+- `fk_not_found` — a foreign-key field references a row that doesn't resolve. Returned uniformly across the surrogate form (`location_id: 99999999`) and the natural-key form (`location_external_key: "NOPE-XYZ"`); `fields[].field` names the form the caller sent. Branch on the code, not on which variant produced it. Applies to `POST` and `PATCH` bodies on `/assets` and `/locations`.
+- `ambiguous_fields` — both forms of a paired surrogate / natural-key relationship were supplied on a surface that requires one or the other. The surfaces that emit this code: `POST /api/v1/assets` and `POST /api/v1/locations` (request body — `location_id` vs `location_external_key`, `parent_id` vs `parent_external_key`), and the `GET` list filters on `/assets` and `/locations` (same pairs as query params). `PATCH` bodies never emit this code — the natural-key form is silently stripped before validation runs (see [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape)). `fields[]` carries one entry per offending parameter so a validation UI can highlight both.
 
 The `code` enum is extensible — TrakRF may add new validation codes in any v1 release. Treat unknown codes as generic invalid-value errors and surface the `message` field.
 
@@ -242,14 +244,14 @@ List endpoints validate their query string the same way, and every endpoint vali
     "type": "validation_error",
     "title": "Validation failed",
     "status": 400,
-    "detail": "Invalid 'from' timestamp; RFC3339 required",
+    "detail": "Invalid 'from' timestamp; expected RFC 3339, e.g. 2026-04-21T00:00:00Z",
     "instance": "/api/v1/assets/ASSET-0001/history",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
       {
         "field": "from",
         "code": "invalid_value",
-        "message": "Invalid 'from' timestamp; RFC3339 required"
+        "message": "Invalid 'from' timestamp; expected RFC 3339, e.g. 2026-04-21T00:00:00Z"
       }
     ]
   }
