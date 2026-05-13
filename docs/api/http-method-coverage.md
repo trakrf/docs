@@ -45,6 +45,8 @@ A `charset=utf-8` parameter on the media type is accepted; any other media type 
 
 **A missing `Content-Type` header is also rejected.** `POST` and `PATCH` requests that omit the header entirely return `415 unsupported_media_type` with the same method-aware detail string. The "Required `Content-Type`" column above is the value you must send — not "what's accepted if you choose to send one." The only write surface that accepts a non-JSON body is the internal bulk-CSV upload at `/api/v1/assets/bulk` (`multipart/form-data`); every public-surface write requires the JSON media type declared for its method.
 
+TypeScript integrators using [`openapi-fetch`](https://openapi-ts.dev/openapi-fetch/) need a small middleware to flip `Content-Type` on `PATCH` — see [Quickstart → TypeScript with `openapi-fetch`](./quickstart#openapi-fetch) for a drop-in snippet. Other TypeScript codegen targets (`openapi-generator-cli`'s `typescript-fetch`) and Python's `openapi-generator` handle merge-patch correctly out of the box.
+
 ## Discovering supported methods at runtime
 
 To probe which methods a path supports without consulting the spec, send any request that triggers a `405` and read the response `Allow` header (per [RFC 7231 §6.5.5](https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.5)). The same value lands in the error envelope's `detail`, so a JSON-only client can branch without reading raw headers:

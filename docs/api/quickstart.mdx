@@ -169,6 +169,27 @@ Feed either into `openapi-generator-cli`, NSwag, `oapi-codegen`, etc. to scaffol
 
 The spec declares its security scheme as `BearerAuth` (HTTP Bearer, JWT format), so class-emitting generators surface the credential as a Bearer access token — `openapi-generator-cli`'s `typescript-fetch` target produces a `Configuration` with an `accessToken` field, and the Java/Python targets follow the same shape. The wire format remains `Authorization: Bearer <jwt>`; pass the API key minted in step 2 wherever the generated client expects an access token.
 
+### TypeScript with `openapi-fetch` {#openapi-fetch}
+
+[`openapi-fetch`](https://openapi-ts.dev/openapi-fetch/) is the type-safe, lightweight alternative most TypeScript integrators reach for. It's intentionally schema-agnostic at runtime, so it can't tell which paths expect `application/merge-patch+json` — every `PATCH` returns `415` unless you override `Content-Type` per call. Copy [`docs/codegen/typescript/merge-patch.ts`](https://github.com/trakrf/platform/blob/main/docs/codegen/typescript/merge-patch.ts) into your project (≈30 lines: a `Middleware` plus an optional `createTrakrfClient` wrapper) and a single `client.use(mergePatchMiddleware)` registration handles every `PATCH` site:
+
+```ts
+import createClient from "openapi-fetch";
+import { mergePatchMiddleware } from "./merge-patch";
+import type { paths } from "./schema";
+
+const client = createClient<paths>({ baseUrl: "https://app.trakrf.id" });
+client.use(mergePatchMiddleware);
+
+await client.PATCH("/api/v1/assets/by-id/{id}", {
+  params: { path: { id: 42 } },
+  body: { name: "renamed" },
+});
+// → Content-Type: application/merge-patch+json on the wire, automatically
+```
+
+`openapi-generator-cli`'s `typescript-fetch` target and Python's `openapi-generator` already handle merge-patch correctly out of the box — this helper exists only for the `openapi-fetch` integration path.
+
 ## Next steps
 
 - [Interactive reference](/api) — every endpoint, request/response shape, try-it-now widget
