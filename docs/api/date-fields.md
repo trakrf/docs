@@ -50,9 +50,42 @@ Note that the second record's `valid_to` is **`null`, not absent** — the field
 
 Send `valid_from` / `valid_to` as **RFC 3339 in UTC** (e.g. `2026-04-24T15:30:00Z`). The OpenAPI spec declares both fields as `format: date-time`, and that is the contract — generated clients and spec validators will reject anything else. Use a date library to format your inputs (`Instant.toString()` in Java, `datetime.isoformat() + "Z"` in Python, `new Date().toISOString()` in JavaScript) rather than constructing the string by hand.
 
-The body validator rejects (with `400 validation_error`) every form the spec doesn't permit — date-only (`2026-05-10`), slash-separated (`2026/05/10`), empty string, and the Go zero-time `0001-01-01T00:00:00Z` are all explicit rejections, not silent coercions to a server-computed default. The error `detail` and `fields[].message` are the static string `"{field} must be an RFC 3339 timestamp"` (e.g. `"valid_from must be an RFC 3339 timestamp"`). Date-only support is not on the v1 launch surface and may be added in a later v1.x release; today, send a full RFC 3339 timestamp every time. To pick up the server's `valid_from` default on create, **omit the key entirely**; sending an empty string is a 400, not an auto-default trigger.
+The body validator rejects (with `400 validation_error`) every form the spec doesn't permit — date-only (`2026-05-10`), slash-separated (`2026/05/10`), and empty string are all explicit rejections, not silent coercions to a server-computed default. Format failures return `fields[].message` = `"{field} must be an RFC 3339 timestamp"` (e.g. `"valid_from must be an RFC 3339 timestamp"`). Two otherwise-valid RFC 3339 timestamps are also rejected as default-value sentinels — see [Default-value sentinels](#default-value-sentinels) below. Date-only support is not on the v1 launch surface and may be added in a later v1.x release; today, send a full RFC 3339 timestamp every time. To pick up the server's `valid_from` default on create, **omit the key entirely**; sending an empty string is a 400, not an auto-default trigger.
 
 Sub-microsecond precision is accepted on input but truncated at write — `2026-04-24T15:30:00.123456789Z` round-trips as `2026-04-24T15:30:00.123456Z`. Microsecond is the storage precision; nanosecond is a wire-format affordance for clients whose date libraries default there.
+
+### Default-value sentinels are rejected {#default-value-sentinels}
+
+Two otherwise-valid RFC 3339 timestamps are rejected as default-value sentinels:
+
+- `0001-01-01T00:00:00Z` — the Go zero time.
+- `1970-01-01T00:00:00Z` — the Unix epoch.
+
+Both are programming-language default-value markers that almost always mean an upstream serializer forgot to map "unset" to JSON `null`. Silent acceptance would produce rows that drop out of the [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) at read time and look like missing assets in reports — a worse surprise than rejecting at write time. The rejection is by exact instant, not a heuristic, so the documented list above is the full list; nearby real values (`1970-01-01T00:00:01Z`, `1969-12-31T23:59:59Z`) are accepted normally. Non-UTC offsets that resolve to the same instant (e.g. `1970-01-01T05:00:00+05:00`) are also rejected — changing the offset isn't a workaround.
+
+Sentinel rejections share `code: invalid_value` with other value-validation failures and have a distinct `message` that echoes the offending value and names JSON `null` as the unset signal:
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "title": "Validation failed",
+    "status": 400,
+    "detail": "valid_to must not be a default-value sentinel (1970-01-01T00:00:00Z); use JSON null to leave the field unset",
+    "instance": "/api/v1/assets/4287",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
+    "fields": [
+      {
+        "field": "valid_to",
+        "code": "invalid_value",
+        "message": "valid_to must not be a default-value sentinel (1970-01-01T00:00:00Z); use JSON null to leave the field unset"
+      }
+    ]
+  }
+}
+```
+
+For programmatic handling, branch on `fields[].code` as usual ([Errors → Validation errors](./errors#validation-errors)); the `message` is human-readable and not a wire contract. To send "unset" for `valid_to`, send JSON `null`; to leave a field unchanged on `PATCH`, omit it.
 
 ### `valid_from: null` on Create vs. Update
 
