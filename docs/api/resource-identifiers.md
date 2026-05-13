@@ -212,63 +212,61 @@ Asset and location updates use `PATCH /api/v1/{resource}/{id}` with `Content-Typ
 
 An empty body (`{}`) is a documented no-op and returns `200` with the resource unchanged. This is also the floor case for the "no writable fields" rule below.
 
-Request and response field _names_ match for every writable field (e.g., `location_id` reads and writes under the same name). Read responses carry fields that aren't part of the request schema — server-managed metadata and the natural-key form of paired FKs — and the validator routes those fields into three categories on `PATCH`:
+Request and response field _names_ match for every writable field. Read responses carry fields that aren't part of the request schema — server-managed metadata, the natural-key form of paired FKs, and the `tags` collection — and the validator routes those fields into two categories on `PATCH`:
 
-| Category                                                                     | Fields                                                                                                                                      | `PATCH` behavior                                                                                                                                                                              |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Round-trip safe — silent drop, returns `200`**                             | Assets: `id`, `created_at`, `updated_at`, `deleted_at`, `location_external_key`. Locations: `id`, `created_at`, `updated_at`, `deleted_at`. | Server-managed metadata, plus the asset-side FK natural-key form whose only legal mutation path is through the surrogate (`location_id`). Echoing them back from a `GET` response is a no-op. |
-| **Managed via subresource — `400 validation_error` / `code: invalid_value`** | `tags` on assets and locations.                                                                                                             | Mutate via `POST /api/v1/{resource}/{id}/tags` and `DELETE /api/v1/{resource}/{id}/tags/{tag_id}`. The rejection `message` names both subresource endpoints.                                  |
-| **Managed via rename — `400 validation_error` / `code: read_only`**          | `external_key` on assets and locations. `parent_external_key` on locations.                                                                 | Mutate via `POST /api/v1/{resource}/{id}/rename`. The rejection `message` names the rename endpoint.                                                                                          |
+| Category                                                                     | Fields                                                                                                                                                                                                                                                                  | `PATCH` behavior                                                                                                                                                                                                            |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Round-trip safe — silent drop, returns `200`**                             | `id`, `created_at`, `updated_at`, `deleted_at` on both resources.                                                                                                                                                                                                       | Server-managed metadata. Echoing them back from a `GET` response is a no-op.                                                                                                                                                |
+| **Accept-if-matches, reject-if-differs — `400 validation_error` / `code: read_only` on a different value** | Natural-key reference fields: `external_key` (assets, locations), `parent_external_key` (locations), `location_id` and `location_external_key` (assets).                                                                                                               | If the body value matches the current resource state the field is silently stripped from the update; if it differs, the request is rejected and the response `message` names the proper write path. See per-field table below. |
+| **Managed via subresource — `400 validation_error` / `code: invalid_value`** | `tags` on assets and locations.                                                                                                                                                                                                                                         | Mutate via `POST /api/v1/{resource}/{id}/tags` and `DELETE /api/v1/{resource}/{id}/tags/{tag_id}`. The rejection `message` names both subresource endpoints.                                                                |
 
-The three-category split is the post-launch contract. The pre-launch shape silently stripped every read-shape-only field on `PATCH`; that tolerance was narrowed so a read-modify-write integration that mistakenly sends `tags` or a rename-managed field surfaces the misuse at the wire instead of silently dropping the intended change.
+The five natural-key reference fields follow a single rule on PATCH:
 
-:::note Full-object PATCH round-trip needs the rejected keys popped first
-A naive `GET` → `PATCH` of the entire response object no longer succeeds — read responses carry `tags` and `external_key` (both resources) and `parent_external_key` (locations), and all three are rejected on `PATCH`. Two options: pop the rejected keys client-side before sending (`del(.tags, .external_key)` on assets; same plus `.parent_external_key` on locations), or send only the fields you're changing (merge-patch leaves omitted fields untouched — the minimal form below). The round-trip-safe set is still silently dropped, so `id` / timestamps / `location_external_key` (assets) can stay on the body. Strict-typed codegen (Pydantic, Java, Go with generated structs) already reshapes into the write schema (`UpdateAssetRequest` / `UpdateLocationRequest`), which excludes the round-trip-safe set by construction; the rejected fields are intentionally **kept** in the write schema so a strict client that sends them surfaces the runtime `400` rather than dropping the value silently before the request leaves the SDK.
+| Field                   | Endpoint                          | Reject-if-differs `message` names                                                                                |
+| ----------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `external_key`          | `PATCH /assets`, `PATCH /locations` | The matching rename endpoint: `POST /api/v1/{resource}/{id}/rename`.                                              |
+| `parent_external_key`   | `PATCH /locations`                | `POST /api/v1/locations/{id}/rename` — re-parent through the rename endpoint on the parent row.                  |
+| `location_id`           | `PATCH /assets`                   | "Asset location is derived from scan events and not directly settable; record a scan event to update asset location." |
+| `location_external_key` | `PATCH /assets`                   | Same as `location_id`.                                                                                            |
+
+`parent_id` on `PATCH /locations` is **not** in this rule — it is fully writable; re-parenting via the surrogate form is the canonical write path. The natural-key form `parent_external_key` is in the rule because its value names the parent's `external_key`, which is renameable through the parent row's rename endpoint.
+
+The four `location_*` cases on assets share their detail string because TrakRF is record-of-origin for asset location data: current location is derived from the scan-event stream, not a partner-side write. PATCH never moves an asset; record a scan event instead. (See [Scan events are a domain concept](#scan-event-vocabulary) for the broader framing.)
+
+:::note Verbatim GET → PATCH round-trips work for the natural-key fields
+The accept-if-matches half of the rule unlocks idempotent round-trips: read the resource, mutate any other field, send the whole body back, and the natural-key fields echo silently through. The only field that still needs to be stripped for a full-body round-trip is `tags` — its `invalid_value` rejection is presence-only, not value-aware, because tags are managed through their own subresource. Strict-typed codegen (Pydantic, Java, Go with generated structs) already reshapes into the write schema (`UpdateAssetRequest` / `UpdateLocationRequest`), so the read-only fields are excluded at the SDK boundary; hand-rolled clients sending the full read shape only need to pop `tags`.
 :::
 
 The rejected fields each have a dedicated mutation surface:
 
 - **`external_key`** — mutate via `POST /api/v1/assets/{asset_id}/rename` or `POST /api/v1/locations/{location_id}/rename`. See [Renaming an `external_key`](#renaming-an-external_key) for the operation shape and the partner-side join-disconnect contract.
+- **`parent_external_key`** — re-parent a location by sending `parent_id` (the surrogate, which **is** writable on `PATCH /locations`). Mutating the natural-key value reads back means renaming the parent row via `POST /api/v1/locations/{parent_id}/rename` on the parent.
+- **`location_id` / `location_external_key`** (assets) — record a scan event. The public API does not expose direct scan ingestion in v1; ingestion happens through reader integrations.
 - **`tags`** — mutate via `POST /api/v1/assets/{asset_id}/tags` and `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}` (and the location counterparts). See [Tag CRUD](#tag-crud).
-- **`parent_external_key`** — re-parent a location by sending its `parent_id` (the surrogate). Renaming the parent itself goes through the parent row's rename endpoint, not through a `PATCH` on the child.
 
-The two paired-FK natural-key forms — `location_external_key` on assets, `parent_external_key` on locations — look symmetric on the read shape but diverge on `PATCH`. Pick the action by intent:
-
-| Intent                          | Asset (`location_external_key`)                                                                                                   | Location (`parent_external_key`)                                                                                                            |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Move under a different row**  | `PATCH /assets/{id}` with `{"location_id": N}` (canonical), or send `location_external_key` as a targeted PATCH field             | `PATCH /locations/{id}` with `{"parent_id": N}`. Sending `parent_external_key` on a child returns `400 read_only` regardless of `parent_id` |
-| **Change the value reads back** | Mutate the location row's `external_key` via `POST /locations/{location_id}/rename` — the asset's `location_external_key` follows | Mutate the parent row's `external_key` via `POST /locations/{parent_id}/rename` on the parent — the child's `parent_external_key` follows   |
-| **Echo from a `GET` response**  | Silently dropped — supports a verbatim `GET` → `PATCH` round-trip                                                                 | Rejected with `400 read_only` — pop the field before sending, or use the minimal-form PATCH                                                 |
-
-The asset side is silently stripped because the surrogate (`location_id`) is the writable canonical and the natural-key form on the row has no coherent mutation semantic — there is no rename endpoint that touches `location_external_key`. The location side is rejected because its value names the parent's `external_key`, which **is** renameable (via `POST /api/v1/locations/{parent_id}/rename` on the parent row), so a `parent_external_key` write on a child looks like a rename of the parent through the wrong endpoint. Presence-detected reject surfaces the misuse; silent strip would hide it.
-
-The round-trip-safe set is otherwise server-managed: `id` is assigned at create, `created_at` and `deleted_at` are stamped by the server, `updated_at` reflects the last successful write.
-
-A request body that resolves to **no writable fields** — `{}`, or a body containing only round-trip-safe fields like `{"id": 999}` — returns `200` with the unchanged record.
+A request body that resolves to **no writable fields** — `{}`, a body containing only round-trip-safe fields, or a body whose natural-key reference fields all match the current state — returns `200` with the unchanged record.
 
 Strict-unknown-field validation still applies for fields that are **not** declared on either the read or the write schema — a typo'd or off-resource field name returns `400 validation_error` with `fields[].code: unknown_field`. See [Errors → Validation errors](./errors#validation-errors); the validator behavior is also covered globally in [Pagination, filtering, sorting → Validator behavior on writes](./pagination-filtering-sorting#validator-behavior-on-writes).
 
 ```bash
 # Minimal PATCH: only the field being changed. Omitted fields stay as-is.
-# Use the surrogate location_id; location_external_key on assets would be
-# silently stripped but staying with the surrogate sidesteps the rule split.
+# Asset writable fields: name, description, valid_to, metadata.
 curl -X PATCH \
      -H "Authorization: Bearer $TRAKRF_API_KEY" \
      -H "Content-Type: application/merge-patch+json" \
-     -d '{"location_id": 137}' \
+     -d '{"description": "back-stockroom shelf 3, bin B"}' \
      "$BASE_URL/api/v1/assets/4287"
 ```
 
-For a verbatim `GET` → `PATCH` round-trip — useful when an integration's data model mirrors the read shape one-to-one — pop the rejected keys before sending. Round-trip-safe fields can stay on the body:
+For a verbatim `GET` → `PATCH` round-trip — useful when an integration's data model mirrors the read shape one-to-one — pop `tags` before sending. Every natural-key reference field echoes through silently because its value matches the current state:
 
 ```bash
-# GET → mutate → PATCH round-trip. Pop the rejected keys; the round-trip-safe
-# set (id, created_at, updated_at, deleted_at, plus location_external_key on
-# assets) is silently dropped server-side. To actually move the asset, mutate
-# location_id — the surrogate form is the writable canonical.
+# GET → mutate → PATCH round-trip. Pop the tags collection (managed-via-subresource);
+# id, timestamps, external_key, location_id, location_external_key, and (for
+# locations) parent_external_key all silently match-strip server-side.
 curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/4287" \
-| jq '.data | del(.tags, .external_key) | .location_id = 137' \
+| jq '.data | del(.tags) | .description = "back-stockroom shelf 3, bin B"' \
 | curl -X PATCH \
        -H "Authorization: Bearer $TRAKRF_API_KEY" \
        -H "Content-Type: application/merge-patch+json" \
@@ -276,26 +274,26 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-The three-category split is encoded in the spec where it can be: round-trip-safe fields carry `readOnly: true`, which drives typed codegen tools to omit them from request shapes; the rejected fields are deliberately **kept** in the write schema (`UpdateAssetRequest` / `UpdateLocationRequest`) without `readOnly: true` so generated SDKs surface the rejection at the wire instead of silently dropping the value before the request leaves the client. Future resources may grow their own per-category fields; don't memorize per-resource lists — derive them from the spec, or rely on a generated client.
+The category split is encoded in the spec where it can be: round-trip-safe fields carry `readOnly: true`, which drives typed codegen tools to omit them from request shapes; the natural-key reference fields and `tags` are deliberately **kept** in the write schema (`UpdateAssetRequest` / `UpdateLocationRequest`) without `readOnly: true` so generated SDKs surface a rejection at the wire when a differing value is sent, instead of dropping the value silently before the request leaves the client. Future resources may grow their own per-category fields; don't memorize per-resource lists — derive them from the spec, or rely on a generated client.
 
 ### Paired-key behavior per verb {#paired-key-behavior-per-verb}
 
-Each paired FK relationship — `location_id` / `location_external_key` on assets, `parent_id` / `parent_external_key` on locations — has a single contract on `POST` and `GET` filter surfaces and diverges by resource on `PATCH`: **the surrogate form (`*_id`) is the writable canonical everywhere; the natural-key form is silently stripped on the asset `PATCH` surface and presence-rejected on the location `PATCH` surface.** The asymmetry is covered in [Read shape vs. write shape](#read-shape-vs-write-shape) above — the short version is that `parent_external_key` shares its value with a renameable field on the parent, so a write on a child surfaces as a misuse rather than a silent drop.
+Each paired FK relationship — `location_id` / `location_external_key` on assets, `parent_id` / `parent_external_key` on locations — has different contracts per HTTP verb:
 
-| Surface                                | one form supplied                                   | both forms supplied (agree)                                                          | both forms supplied (disagree)                                                       |
-| -------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `POST` body (assets and locations)     | accept                                              | `400 validation_error / ambiguous_fields`                                            | `400 validation_error / ambiguous_fields`                                            |
-| `PATCH /assets/{id}` body              | accept (surrogate writes; natural-key stripped)     | accept (natural-key stripped, no comparison)                                         | accept (natural-key stripped, no comparison)                                         |
-| `PATCH /locations/{id}` body           | accept on surrogate; `400 read_only` on natural-key | `400 validation_error / read_only` on `parent_external_key` (surrogate also written) | `400 validation_error / read_only` on `parent_external_key` (surrogate also written) |
-| `GET` list filter (assets / locations) | accept                                              | `400 validation_error / ambiguous_fields`                                            | `400 validation_error / ambiguous_fields`                                            |
+| Surface                                | one form supplied                                                              | both forms supplied (agree)                                                                                       | both forms supplied (disagree)                                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `POST` body (assets and locations)     | accept                                                                         | `400 validation_error / ambiguous_fields`                                                                         | `400 validation_error / ambiguous_fields`                                                                         |
+| `PATCH /assets/{id}` body              | accept-if-matches on either form; `400 read_only` if either differs            | accept-if-matches (both stripped); `400 read_only` if either differs                                              | `400 read_only` (each differing field generates a `fields[]` entry)                                               |
+| `PATCH /locations/{id}` body           | `parent_id` is writable; `parent_external_key` accept-if-matches / reject-if-differs | accept (surrogate written; natural-key stripped if it matches the resulting state, rejected with `read_only` if it differs) | `400 read_only` on `parent_external_key` if it differs from the current parent (regardless of `parent_id` value) |
+| `GET` list filter (assets / locations) | accept                                                                         | `400 validation_error / ambiguous_fields`                                                                         | `400 validation_error / ambiguous_fields`                                                                         |
 
 On `POST` and `GET` filter surfaces, supplying both forms is rejected outright — `fields[]` carries one entry per offending parameter so a validation UI can highlight both. The spec encodes this directly for `POST` bodies (`not: required: [location_id, location_external_key]` on `CreateAssetWithTagsRequest` and the location equivalent); the `GET`-filter rule is enforced handler-side because OpenAPI 3 cannot express mutual exclusion on query parameters.
 
-`PATCH` semantics diverge by resource. On `PATCH /assets/{id}`, the natural-key form `location_external_key` is silently stripped before validation runs — sending it is a no-op regardless of whether `location_id` is also present, and `location_id` is the only way to actually move an asset. On `PATCH /locations/{id}`, the natural-key form `parent_external_key` is presence-detected and rejected with `code: read_only` before any cross-validation runs — `ambiguous_fields` is never emitted on either `PATCH` surface, but the location side will return `read_only` whether or not `parent_id` is also present. Re-parent by sending `parent_id`; rename the parent itself via `POST /api/v1/locations/{parent_id}/rename` on the parent row.
+`PATCH` follows the uniform [accept-if-matches, reject-if-differs](#read-shape-vs-write-shape) rule for all four natural-key reference fields. The asset side does not expose a writable surrogate for location — current location is derived from scan events, so neither `location_id` nor `location_external_key` can move an asset via `PATCH`. The location side keeps `parent_id` writable for re-parenting; only the natural-key form `parent_external_key` is in the rule (it shares its value with a renameable field on the parent row).
 
-A foreign-key value that refers to a non-existent (or soft-deleted) row — `location_id: 99999999` or `location_external_key: "NOPE-XYZ"` — returns `400 validation_error` with `code: fk_not_found` regardless of which form you sent; `fields[].field` names the form. Branch on `code`, not on which FK variant the caller chose.
+A foreign-key value that refers to a non-existent (or soft-deleted) row — `location_id: 99999999` or `location_external_key: "NOPE-XYZ"` — returns `400 validation_error` with `code: fk_not_found` regardless of which form you sent; `fields[].field` names the form. Branch on `code`, not on which FK variant the caller chose. `fk_not_found` is checked after the accept-if-matches step on `PATCH`, so a bogus FK value that happens to match the current state (e.g., echoing a `null` from a relationship that's already unset) is silently stripped before any FK resolution runs.
 
-To **clear** a relationship on `PATCH`, send `null` on the surrogate form: `PATCH {"location_id": null}` clears `location_id`, and the server recomputes `location_external_key` to `null` on the next read. On assets, sending `null` on the natural-key form is a no-op because that form is stripped before validation; on locations, sending any value on `parent_external_key` — including `null` — returns `400 read_only` (the rejection is presence-only, not value-aware). The clear-with-null pattern matches every other writable-nullable field — `PATCH {"description": null}` clears the description; `PATCH {"valid_to": null}` clears the expiry. Sending an empty string (`""`) for a length-bearing nullable like `description` is **rejected** with `400 validation_error` / `code: too_short`, matching every other length-bearing field — send explicit `null` to clear, not `""`. Asset writable-nullables are `description`, `location_id`, `valid_to`; location writable-nullables are `description`, `parent_id`, `valid_to`. After a clear, the field reads back as `null` (see [Always present vs. present-as-null](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs) above; for `valid_to` specifically see [Date fields](./date-fields)).
+To **clear** a relationship on `PATCH`, send `null` on the surrogate form when the surrogate is writable: `PATCH {"parent_id": null}` clears a location's parent, and the server recomputes `parent_external_key` to `null` on the next read. The clear-with-null pattern matches every other writable-nullable field — `PATCH {"description": null}` clears the description; `PATCH {"valid_to": null}` clears the expiry. Sending an empty string (`""`) for a length-bearing nullable like `description` is **rejected** with `400 validation_error` / `code: too_short`, matching every other length-bearing field — send explicit `null` to clear, not `""`. Asset writable-nullables are `description`, `valid_to`; location writable-nullables are `description`, `parent_id`, `valid_to`. Asset location is **not** a writable-nullable — clearing it is not a PATCH operation; record a scan event instead. After a clear, the field reads back as `null` (see [Always present vs. present-as-null](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs) above; for `valid_to` specifically see [Date fields](./date-fields)).
 
 ## Renaming an `external_key` {#renaming-an-external_key}
 
@@ -350,7 +348,7 @@ The new `external_key` must satisfy the same per-org uniqueness rule as create �
 
 ### `external_key` in a `PATCH` body is rejected
 
-`external_key` in a `PATCH /api/v1/assets/{asset_id}` (or location) body returns `400 validation_error` / `code: read_only` with a `message` naming the rename endpoint. The visible-failure shape matches the broader [three-category PATCH split](#read-shape-vs-write-shape) — fields with a dedicated mutation surface surface a rejection at the wire rather than silently dropping the intended change. The only way to rename a row is `POST /api/v1/{resource}/{id}/rename`.
+An `external_key` value differing from the current resource state in a `PATCH /api/v1/assets/{asset_id}` (or location) body returns `400 validation_error` / `code: read_only` with a `message` naming the rename endpoint, under the uniform [accept-if-matches, reject-if-differs](#read-shape-vs-write-shape) rule for natural-key reference fields. Echoing the current `external_key` back through `PATCH` is silently stripped, so a verbatim round-trip is safe; the only way to actually change the value is `POST /api/v1/{resource}/{id}/rename`.
 
 ### Out of scope for v1
 
@@ -443,7 +441,7 @@ To pre-check before deleting, use the existing read endpoints to enumerate the b
 - Active descendant locations: [`GET /api/v1/locations/{location_id}/descendants`](#location-tree-endpoints) returns the full subtree.
 - Active placed assets: `GET /api/v1/assets?location_id={location_id}` (or `GET /api/v1/reports/asset-locations?location_id={location_id}` for the report shape).
 
-Reassign or remove the dependents (move assets via `PATCH /api/v1/assets/{asset_id}` with a new `location_id` / `location_external_key`; reparent or delete the descendants the same way), then retry the delete on the leaf.
+Reassign or remove the dependents (move placed assets out via a scan event recorded at the new location — `PATCH /api/v1/assets/{asset_id}` cannot change asset location; reparent the descendant locations via `PATCH /api/v1/locations/{location_id}` with a new `parent_id`, or delete them the same way), then retry the delete on the leaf.
 
 ## `external_key` is optional on create — both resources auto-mint {#external_key-is-optional-on-create}
 
