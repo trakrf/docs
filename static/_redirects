@@ -1,4 +1,0 @@
-# Canonical OpenAPI spec URL is /api/openapi.{json,yaml}.
-# The redocusaurus plugin emits its own copy at /redocusaurus/trakrf-api.yaml;
-# force-redirect it so we expose one canonical URL (TRA-598).
-/redocusaurus/trakrf-api.yaml  /api/openapi.yaml  301!
