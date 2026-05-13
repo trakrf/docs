@@ -11,6 +11,10 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
+### BB31 fix wave — date-time pattern removal
+
+- **RFC 3339 `pattern:` removed from every `format: date-time` property.** The strict regex `pattern:` previously paired with `format: date-time` is gone — `format: date-time` already implies RFC 3339, and the redundant pattern broke `openapi-generator-cli -g python` deserialization on every response carrying a timestamp (the generated `@field_validator` runs after Pydantic parses the string, then stringifies the `datetime` with a space separator before matching, which never satisfies a `T`-separator-anchored regex). The server's RFC 3339 input validation is unchanged and still returns `400 validation_error` for bad input; clients that relied on spec-level pattern matching should switch to validating against `format: date-time` instead. Reverses the Phase 3.5 entry below that announced the pattern addition. Non-breaking against any `v1.0.0`-or-later wire baseline.
+
 ### BB30 fix wave — spec + docs cleanup
 
 A consolidated BB30 fix wave covering five spec/server-side changes and eight docs-side clarifications. None of these break the wire contract against a `v1.0.0`-or-later baseline.
