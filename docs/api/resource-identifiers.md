@@ -250,7 +250,8 @@ Strict-unknown-field validation still applies for fields that are **not** declar
 
 ```bash
 # Minimal PATCH: only the field being changed. Omitted fields stay as-is.
-# Asset writable fields: name, description, valid_to, metadata.
+# Asset writable fields:    name, description, is_active, metadata, valid_from, valid_to.
+# Location writable fields: name, description, is_active, parent_id, valid_from, valid_to.
 curl -X PATCH \
      -H "Authorization: Bearer $TRAKRF_API_KEY" \
      -H "Content-Type: application/merge-patch+json" \
