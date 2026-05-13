@@ -33,12 +33,14 @@ The single-string form is covered in [Natural-key lookup uses `?external_key=`](
 
 **`external_key` and `tags[].value` are not symmetric.** Both are partner-supplied string handles, but their input rules diverge — and the gap is wide enough that a value valid as a tag will 400 as an `external_key`. Worth pinning up front so a CSV importer or migration script doesn't push the same column through both surfaces unmodified:
 
-| Surface        | Length | Pattern                        | Examples that pass                                               | Examples that pass on tags but fail on `external_key`                |
-| -------------- | ------ | ------------------------------ | ---------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `external_key` | 1–255  | `^[A-Za-z0-9-]+$` (alnum, `-`) | `SKU-7421-A`, `BACK-STORAGE-2`                                   | —                                                                    |
-| `tags[].value` | 1–255  | unrestricted (any UTF-8)       | `E2-8042-2D-19F0-AB10`, `a/b/c`, `X With Space`, `bin#3`, `漢字` | `a/b/c`, `X With Space`, `bin#3`, `漢字` (all 400 as `external_key`) |
+| Surface        | Length | Pattern                                                                                                                                      | Examples that pass                                                              | Examples that pass on tags but fail on `external_key`                               |
+| -------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `external_key` | 1–255  | `^[A-Za-z0-9-]+$` (alnum, `-`)                                                                                                               | `SKU-7421-A`, `BACK-STORAGE-2`                                                  | —                                                                                   |
+| `tags[].value` | 1–255  | Any character _except_ C0 controls (NUL through US, plus DEL).<br/>Tab (`\t`), newline (`\n`), and carriage return (`\r`) **are** permitted. | `E2-8042-2D-19F0-AB10`, `a/b/c`, `X With Space`, `bin#3`, `漢字`, `multi\nline` | `a/b/c`, `X With Space`, `bin#3`, `漢字`, `multi\nline` (all 400 as `external_key`) |
 
-The asymmetry is intentional: `external_key` flows into URL paths and log lines where the reserved characters would force quoting; `tags[].value` is opaque payload to the API (an EPC, a beacon ID, a barcode) and the service does not interpret its shape. See [`external_key` value rules](#external_key-value-rules) for the full reserved-character rationale and [Tags use a composite natural key](#tags-use-a-composite-natural-key) for the tag side.
+The Tag pattern is encoded in the spec as `^[^\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*$` — every printable character is allowed, plus the three whitespace bytes that legitimately appear in scanned payloads (tab, newline, CR). Other C0 controls (NUL, VT, FF, etc.) and DEL are rejected because they have no semantic place in a barcode/RFID/BLE identifier and would foul log lines, terminal output, or shell quoting downstream.
+
+The asymmetry is intentional. `external_key` flows into URL paths and log lines where the reserved characters would force quoting, so the input is constrained to URL-safe alphanumerics and the hyphen. `tags[].value` is opaque payload to the API (an EPC, a beacon ID, a barcode, sometimes a vendor-specific composite with internal separators) and the service does not interpret its shape — only its length and the C0-control rule above. **If your tag value happens to match the `external_key` pattern, that's a coincidence, not a guarantee**; round-tripping a tag value through the `external_key` surface still needs validation. See [`external_key` value rules](#external_key-value-rules) for the full reserved-character rationale and [Tags use a composite natural key](#tags-use-a-composite-natural-key) for the tag side.
 
 ## Path-param lookup uses `id`
 
@@ -150,11 +152,46 @@ The field is **always present on every row** — `null` for live records, popula
 
 The path-param read by `id` (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) applies the `WHERE deleted_at IS NULL` predicate at the storage layer and returns `404 not_found` once the row has been soft-deleted — the path-param read skips the currently-effective predicate (covered under [Effective dating and `is_active`](#effective-dating-and-is-active)) but not the soft-delete predicate. Dedicated by-id inspection of a soft-deleted record is roadmap, not v1; the list endpoints with `?include_deleted=true` are the public surface for "show me what's been retired."
 
+#### Ancestor identifiers are preserved across tombstones {#soft-delete-ancestor-projection}
+
+The natural-key form of the parent / location reference is projected through the join regardless of whether the referenced row is soft-deleted. On `GET /api/v1/locations?include_deleted=true`, a child whose parent is soft-deleted still carries the parent's `external_key` as its `parent_external_key` — the value lives on the parent row and is read across the `WHERE deleted_at IS NULL` cut. The same projection applies to `location_external_key` on `GET /api/v1/assets?include_deleted=true` when the asset's current location has been soft-deleted. Two reasons it works this way:
+
+1. The string handle is the partner-side join key — losing it across a tombstone would break downstream reconciliation precisely when integrators most need it (post-cleanup audits, retroactive lookups).
+2. The FK-pair invariant — both surrogate and natural-key form are non-null together or null together — stays intact. Without this projection, you'd see a `parent_id != null AND parent_external_key == null` shape that contradicts the contract documented under [Foreign-key fields in responses](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs).
+
+**Exception: `GET /api/v1/reports/asset-locations`.** The cross-resource report intentionally projects `location_external_key` as `null` when the location row has been soft-deleted, because the report is current-state-of-the-world and a soft-deleted location is, by definition, no longer current. Integrators who need the raw natural-key identifier across a tombstone should fall back to `GET /api/v1/locations?include_deleted=true&id=<location_id>` (or the per-asset `GET /api/v1/assets/{asset_id}` followed by `GET /api/v1/locations/{location_id}` on the surrogate) — the per-resource list preserves the value where the report drops it.
+
 ## Asset `metadata` vs. location `tags`: side-channel data {#asset-metadata-vs-location-tags}
 
 `AssetView` carries an open-ended `metadata` object (`additionalProperties: true`) for partner-side annotations the API does not interpret — a CRM record id, an ERP cost-center code, a partner SKU. Locations do **not** have a `metadata` field; the asymmetry is intentional for v1.
 
 On write, `metadata` must be a JSON object. Scalars, arrays, and booleans (e.g. `"metadata": "x"`, `"metadata": [1, 2]`, `"metadata": true`) are rejected at the validator boundary with `400 validation_error` / `invalid_value`. The `additionalProperties: true` declaration governs what's allowed _inside_ the object; the wrapper itself is type-restricted.
+
+### `metadata` is stored opaquely {#metadata-opaque}
+
+The `metadata` field is stored opaquely. `PATCH` replaces the entire `metadata` object with the value sent — **the server performs no merging within the `metadata` field, even inside a JSON Merge Patch request**. The RFC 7396 deep-merge semantic stops at the top-level field boundary; `metadata` is treated as a single opaque value at that boundary, not a nested document to merge into.
+
+```bash
+# Existing on the asset:
+#   "metadata": {"erp_id": "E-99", "owner": "ops"}
+
+# PATCH sends a new metadata value:
+curl -X PATCH "$BASE_URL/api/v1/assets/$ASSET_ID" \
+  -H "Authorization: Bearer $TRAKRF_API_KEY" \
+  -H "Content-Type: application/merge-patch+json" \
+  -d '{"metadata": {"owner": "logistics"}}'
+
+# Result on the asset:
+#   "metadata": {"owner": "logistics"}   ← "erp_id" is gone
+```
+
+Clients that need to preserve existing keys should:
+
+1. `GET` the resource and read the current `metadata` object.
+2. Compute the desired result client-side using whatever merge strategy is appropriate (deep-merge, shallow-merge, replace, or anything in between).
+3. Send the resulting object as the `metadata` value on `PATCH`.
+
+This puts the merge strategy in the client's hands — TrakRF does not assume which one is right for your data. To clear `metadata` entirely on PATCH, send `{}` — the update schema declares `metadata` as a non-nullable object, so the empty object is the documented "no keys" shape. (The create request schema accepts `null` for `metadata`; the update schema does not.)
 
 The pattern we recommend mirrors the schemas:
 
@@ -163,7 +200,7 @@ The pattern we recommend mirrors the schemas:
 | **Assets**    | `metadata` — free-form key/value, no schema, round-trips through `GET` → `PATCH`.                |
 | **Locations** | `tags` — typed natural-key pairs (`tag_type`, `value`), enforced unique within the organization. |
 
-Locations were not given an open `metadata` field because the practical "what would I stuff in here" use cases on a location (a CRM site id, a partner facility code) are already addressable through `tags` with a partner-defined `tag_type`. If you have a use case that genuinely needs schemaless side-channel data on a location, [contact us](mailto:support@trakrf.id) — same evaluation track as the v2 capability requests.
+Locations were not given an open `metadata` field because the practical "what would I stuff in here" use cases on a location (a CRM site id, a partner facility code) are already addressable through `tags` with a partner-defined `tag_type`. Reintroduction of an opaque `metadata` field on locations is a v1.1 consideration, not a v1 commitment — generated clients should not assume the field will appear and should branch on its presence if a future spec adds it. If you have a use case that genuinely needs schemaless side-channel data on a location today, [contact us](mailto:support@trakrf.id) — same evaluation track as the v2 capability requests.
 
 ## Read shape vs. write shape
 
@@ -195,7 +232,15 @@ The rejected fields each have a dedicated mutation surface:
 - **`tags`** — mutate via `POST /api/v1/assets/{asset_id}/tags` and `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}` (and the location counterparts). See [Tag CRUD](#tag-crud).
 - **`parent_external_key`** — re-parent a location by sending its `parent_id` (the surrogate). Renaming the parent itself goes through the parent row's rename endpoint, not through a `PATCH` on the child.
 
-The two paired-FK natural-key forms — `location_external_key` on assets, `parent_external_key` on locations — look symmetric on the read shape but diverge on `PATCH`. The asset side is silently stripped because the surrogate (`location_id`) is the writable canonical and the natural-key form on the row has no coherent mutation semantic — there is no rename endpoint that touches `location_external_key`. The location side is rejected because its value names the parent's `external_key`, which **is** renameable (via `POST /api/v1/locations/{parent_id}/rename` on the parent row), so a `parent_external_key` write on a child looks like a rename of the parent through the wrong endpoint. Presence-detected reject surfaces the misuse; silent strip would hide it.
+The two paired-FK natural-key forms — `location_external_key` on assets, `parent_external_key` on locations — look symmetric on the read shape but diverge on `PATCH`. Pick the action by intent:
+
+| Intent                          | Asset (`location_external_key`)                                                                                                   | Location (`parent_external_key`)                                                                                                            |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Move under a different row**  | `PATCH /assets/{id}` with `{"location_id": N}` (canonical), or send `location_external_key` as a targeted PATCH field             | `PATCH /locations/{id}` with `{"parent_id": N}`. Sending `parent_external_key` on a child returns `400 read_only` regardless of `parent_id` |
+| **Change the value reads back** | Mutate the location row's `external_key` via `POST /locations/{location_id}/rename` — the asset's `location_external_key` follows | Mutate the parent row's `external_key` via `POST /locations/{parent_id}/rename` on the parent — the child's `parent_external_key` follows   |
+| **Echo from a `GET` response**  | Silently dropped — supports a verbatim `GET` → `PATCH` round-trip                                                                 | Rejected with `400 read_only` — pop the field before sending, or use the minimal-form PATCH                                                 |
+
+The asset side is silently stripped because the surrogate (`location_id`) is the writable canonical and the natural-key form on the row has no coherent mutation semantic — there is no rename endpoint that touches `location_external_key`. The location side is rejected because its value names the parent's `external_key`, which **is** renameable (via `POST /api/v1/locations/{parent_id}/rename` on the parent row), so a `parent_external_key` write on a child looks like a rename of the parent through the wrong endpoint. Presence-detected reject surfaces the misuse; silent strip would hide it.
 
 The round-trip-safe set is otherwise server-managed: `id` is assigned at create, `created_at` and `deleted_at` are stamped by the server, `updated_at` reflects the last successful write.
 
@@ -511,7 +556,7 @@ Tags follow the same principle as assets and locations, with a composite shape: 
 
 Don't conflate `external_key` with `tags[].value`: assets and locations have a single string natural key (`external_key`); tags have a composite one. The `value` field _inside_ a tag is the tag's own partner-supplied handle (an EPC, a beacon ID, a barcode), scoped by `tag_type`. The `external_key` _on_ an asset or location is the resource's partner-supplied handle, scoped by resource type. They sit at different levels and are not interchangeable — an asset's `external_key` and one of its tags' `value` answer different questions.
 
-`tag_type` defaults to `rfid` when omitted on a write — the OpenAPI spec carries `default: rfid`, so a `POST /api/v1/assets/{asset_id}/tags` body of `{"value": "E2-..."}` is equivalent to `{"tag_type": "rfid", "value": "E2-..."}`. Codegen-derived clients surface the same default at the type-system level. Send `tag_type` explicitly when the tag is `ble` or `barcode`.
+`tag_type` defaults to `rfid` when omitted **or sent as `null`** on a write — the OpenAPI spec carries `default: rfid`, and the server treats both shapes the same on `POST /api/v1/assets/{asset_id}/tags` (and the location counterpart). A body of `{"value": "E2-..."}`, `{"tag_type": null, "value": "E2-..."}`, and `{"tag_type": "rfid", "value": "E2-..."}` are all equivalent — the row is stored with `tag_type: rfid`. Codegen-derived clients surface the same default at the type-system level. Send `tag_type` explicitly when the tag is `ble` or `barcode`.
 
 Tag responses still carry a canonical integer `id` for path-param access (e.g., `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`):
 
