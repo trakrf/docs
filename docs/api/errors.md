@@ -78,7 +78,9 @@ The catalog above covers `405 method_not_allowed`. `HEAD` and `OPTIONS` are not 
 
 ### `validation_error` vs `bad_request`
 
-The split between the two 400-class types is whether the API can name the offending input. Anything the schema validator catches — body-field violations, query-parameter violations, path-parameter violations against the declared schema bounds, plus unknown JSON keys and unknown query parameters — returns `validation_error` with a populated `fields[]` array. Anything the API rejects at a structural level — invalid JSON syntax, or a value the decoder rejects before knowing which field it belongs to — returns `bad_request` with no `fields[]`.
+The split between the two 400-class types is **parse-time vs. validate-time**. `bad_request` is returned when the request couldn't be parsed at all — invalid JSON syntax, or a body field whose value couldn't be decoded as the expected type — so the API can't enumerate which fields failed. `fields[]` is not populated; `detail` describes the parse error (and names the offending field when the decoder can identify it). `validation_error` is returned when the request parsed cleanly but one or more field values failed validation against the schema — body-field violations, query-parameter violations, path-parameter violations against the declared bounds, plus unknown JSON keys and unknown query parameters. `fields[]` is populated with one entry per offending field.
+
+Branch on `error.type` first (`bad_request` → log `detail`, fix the request shape; `validation_error` → iterate `fields[]`, branch on each `code`). The pattern keeps your error handler tolerant of new field-level codes appearing in `validation_error` without changing how you handle decoder-level failures.
 
 Type mismatches on body fields take this `bad_request` path because they fail at decode time, before the schema validator runs that would otherwise produce `fields[]`. The offending field name is surfaced in `detail` when the decoder can identify it:
 

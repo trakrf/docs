@@ -190,7 +190,7 @@ Sortable fields vary per resource. The exact enum each endpoint accepts:
 | `GET /api/v1/reports/asset-locations`   | `last_seen`, `asset_external_key`, `location_external_key` |
 | `GET /api/v1/assets/{asset_id}/history` | `timestamp`                                                |
 
-Unknown sort fields return `400 validation_error`. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering — `external_key` ascending, with `id` ascending as a deterministic tiebreaker, on the asset and location collections; `/reports/asset-locations` defaults to `-last_seen`.
+Unknown sort fields on an endpoint with a sort allowlist return `400 validation_error` with `fields[].message: "unknown sort field: <name>"` — fix the field name and retry. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering — `external_key` ascending, with `id` ascending as a deterministic tiebreaker, on the asset and location collections; `/reports/asset-locations` defaults to `-last_seen`.
 
 ### Sub-resource list endpoints use a fixed sort order
 
@@ -202,7 +202,7 @@ The three location-tree subresource lists — `/ancestors`, `/children`, `/desce
 | `GET /api/v1/locations/{location_id}/children`    | `name` ascending, `id` ascending as a tiebreaker.                                           |
 | `GET /api/v1/locations/{location_id}/descendants` | Depth-first tree order (preorder traversal of the subtree), `id` ascending as a tiebreaker. |
 
-The `id` tiebreaker makes the order deterministic across pages. Sending `?sort=...` on any of these three returns `400 validation_error` against the spec — the parameter isn't declared. Generated clients won't even produce the option.
+The `id` tiebreaker makes the order deterministic across pages. Sending `?sort=...` on any of these three returns `400 validation_error` with `fields[].message: "sort parameter not supported on this endpoint"` — distinct from the `"unknown sort field: <name>"` wording emitted on endpoints _with_ a sort allowlist, so a client doesn't misread the rejection as a typo in the field name. Generated clients won't produce the option in the first place because the parameter isn't declared in the OpenAPI spec.
 
 ## Validator behavior on writes
 
