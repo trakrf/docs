@@ -102,7 +102,8 @@ ASSET=$(curl -s -X POST "$BASE_URL/api/v1/assets" \
         "external_key": "ASSET-QUICKSTART",
         "name": "Quickstart test asset"
       }')
-ASSET_ID=$(echo "$ASSET" | jq -r '.data.id')
+ASSET_ID=$(echo "$ASSET" | python3 -c "import json,sys; print(json.load(sys.stdin)['data']['id'])")
+# Or, if jq is installed: ASSET_ID=$(echo "$ASSET" | jq -r '.data.id')
 
 # Read it back by canonical id
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
@@ -125,22 +126,22 @@ Each request echoes back the resource (or `204 No Content` on delete) wrapped in
 
 ### Round-trip: `GET` → mutate → `PATCH` {#round-trip-patch}
 
-The minimal-form `PATCH` above sent only the field being changed. When your integration's data model mirrors the read shape one-to-one — you have an in-memory asset object you've been mutating — you'll want to send the whole thing back instead. A naive `GET` → `PATCH` of the full response body fails because read responses carry fields that are rejected on `PATCH`: `tags` (subresource-managed) and `external_key` / `parent_external_key` (rename-managed). Pop the rejected keys client-side before sending; the round-trip-safe fields (`id`, `created_at`, `updated_at`, `deleted_at`, plus `location_external_key` on assets) can stay on the body — they're silently dropped server-side.
+The minimal-form `PATCH` above sent only the field being changed. When your integration's data model mirrors the read shape one-to-one — you have an in-memory asset object you've been mutating — you'll want to send the whole thing back instead. The natural-key reference fields (`external_key`, `location_id`, `location_external_key`; plus `parent_external_key` on locations) follow an [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule on `PATCH`, so echoing them straight back from a `GET` response is safe. The only field that still needs to be stripped is `tags` (managed via subresource — `POST /…/tags`); server-managed metadata (`id`, `created_at`, `updated_at`, `deleted_at`) is silently dropped.
 
 ```bash
-# GET → strip rejected keys → mutate → PATCH on an asset
+# GET → strip tags → mutate → PATCH on an asset
 curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/$ASSET_ID" \
-| jq '.data
-      | del(.tags, .external_key)
-      | .name = "Quickstart test asset (renamed again)"' \
+| python3 -c "import json,sys; d=json.load(sys.stdin)['data']; d.pop('tags',None); d['name']='Quickstart test asset (renamed again)'; print(json.dumps(d))" \
 | curl -X PATCH "$BASE_URL/api/v1/assets/$ASSET_ID" \
        -H "Authorization: Bearer $TRAKRF_API_KEY" \
        -H "Content-Type: application/merge-patch+json" \
        -d @-
 ```
 
-For locations, drop `parent_external_key` in addition to `tags` and `external_key`: `del(.tags, .external_key, .parent_external_key)`. To re-locate an asset, mutate `location_id` (the surrogate is the writable canonical); to re-parent a location, mutate `parent_id`. To rename, use `POST /api/v1/{resource}/{id}/rename` — `external_key` is rejected on `PATCH` so the rename surfaces in audit logs distinctly.
+(If `jq` is installed, the equivalent pipeline stage is `jq '.data | del(.tags) | .name = "Quickstart test asset (renamed again)"'`.)
+
+For locations the same pattern holds — `tags` is the only field requiring an explicit strip; every natural-key reference field echoes silently. To re-parent a location, mutate `parent_id` (the surrogate is the writable canonical for the parent relationship). To rename, use `POST /api/v1/{resource}/{id}/rename` — sending a *different* `external_key` on `PATCH` returns `400 read_only`, so the rename surfaces in audit logs distinctly. Asset location specifically cannot be set via `PATCH` under any form; current location is derived from scan events.
 
 Strict-typed codegen (Pydantic, Java with generated POJOs, Go with generated structs) already separates the read schema from `UpdateAssetRequest` / `UpdateLocationRequest`, so the rejected keys are excluded by construction in those clients. Hand-rolled clients and `curl`-based pipelines need the explicit pop. Full per-field treatment: [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape).
 
