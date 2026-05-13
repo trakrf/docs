@@ -66,6 +66,31 @@ Verify every claim in the docs against the live service. When the docs and the s
 
 **If onboarding fails before you can authenticate against the API, that is the report.** Document the failure point with verbatim error output and stop. Do not infer findings about endpoints you couldn't reach. A short report that says "I could not get past step 3 of the quickstart, here is exactly what I saw" is more useful than a long report padded with speculation.
 
+## Pre-flight: spec-sync coherence check
+
+Before running the OpenAPI spec contract check below, verify that the spec the docs site is serving is **byte-equivalent** to the spec the deployed service was built from. The docs site mirrors the platform's published spec via a manual sync; if a platform release has landed but the docs mirror hasn't been refreshed yet, you'll see a clean drift between docs-spec and live-service that **is not a real spec/service disagreement** — it's a mirror lag, and findings rooted in it are false positives.
+
+Run:
+
+```bash
+bash tests/blackbox/check-spec-sync.sh
+```
+
+The script reads `$API_TEST_APP_URL` and `$API_TEST_DOCS_URL` and checks three things:
+
+1. `docs/api/platform-meta.json` declares a platform commit.
+2. The docs mirror at `docs/api/openapi.yaml` is byte-equivalent to `trakrf/platform:docs/api/openapi.public.yaml` at the declared commit.
+3. The app's live spec at `app/api/openapi.yaml` (served by the deployed binary) is also byte-equivalent to the same platform file.
+
+Exit codes:
+
+- **0** — All three agree. BB testing is safe to proceed; any spec/service mismatch you find from here on is a real finding.
+- **2** — Docs mirror diverged from its own declared commit. Internal inconsistency on the docs side; flag to the docs maintainer.
+- **3** — Platform deployed code differs from the docs mirror. The typical race: a platform release landed without a corresponding docs-mirror refresh. **Stop BB and ask the docs maintainer to run `scripts/refresh-openapi.sh` and merge a refresh PR.** Resuming BB before this is reconciled will produce findings about the stale spec that aren't bugs in the service.
+- **1** — Connectivity or environment problem (missing env var, unreachable host, malformed `platform-meta.json`). Not a finding about TrakRF; resolve before continuing.
+
+The script output names the platform commit and the timestamp of the last docs refresh — both belong in your environment summary. If you do find a spec/service mismatch downstream, including the commit sha and refresh timestamp in the finding lets the docs maintainer attribute it correctly in seconds rather than reconstructing the timeline from build logs.
+
 ## OpenAPI spec contract check
 
 After your exploratory evaluation, run a mechanical pass against the published OpenAPI spec. An integration partner will auto-generate a connector from this spec — if the spec and the service disagree, the connector breaks.
@@ -73,6 +98,8 @@ After your exploratory evaluation, run a mechanical pass against the published O
 ### 1. Fetch the spec
 
 The OpenAPI spec is published at `$API_TEST_DOCS_URL/api/openapi.yaml` (JSON variant: `$API_TEST_DOCS_URL/api/openapi.json`). If that path 404s, that is itself a finding worth reporting. If the docs don't link to it from a discoverable location, that's also a finding.
+
+The spec-sync pre-flight above asserts this URL serves byte-for-byte the same content as the platform's source-of-truth spec — when the pre-flight returns `0`, the spec at this URL is the contract you're testing against.
 
 ### 2. Walk every path
 
