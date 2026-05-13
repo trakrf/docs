@@ -164,10 +164,10 @@ Field entries:
 
 Current `code` values (extensible):
 
-- `required` — a mandatory field was omitted on a request that needed it (no length-bearing minimum applies — see `too_short` for empty length-bearing fields)
+- `required` — the JSON key was absent from the request body, **or** the value was sent as explicit `null` on a non-nullable field. The omitted and null-on-non-nullable cases are treated identically: both surface as `required`, including on length-bearing fields like `name`. Empty strings on length-bearing fields are a distinct case — see `too_short` below.
 - `invalid_value` — a value-validation failure: the value isn't one of the allowed values, fails a format check (email, URL, UUID), fails an enum check, or fails a validation TrakRF has not mapped to a more specific code. Use this code's path when the field _name_ was recognized but the value was wrong; see `unknown_field` for the unrecognized-name case.
 - `unknown_field` — the request body contains a top-level key the schema does not declare. Distinct from `invalid_value` so integrators can branch on "typo'd field name" vs. "wrong value." Emitted by the strict-decoder pass that drives [`additionalProperties: false`](./pagination-filtering-sorting#validator-behavior-on-writes) on write request bodies; `fields[].field` names the offending key.
-- `too_short` — string or collection length below the minimum. Length-bearing fields with a non-zero minimum (e.g. `minLength: 1`) report `too_short` when sent as empty **or** when omitted — `"name": ""` and an absent `name` both surface as `too_short`, not `required`
+- `too_short` — the field was present in the request body with a length below the documented minimum (e.g. `"name": ""` on a `min_length: 1` string field). Distinct from `required`, which covers the absent-key and explicit-`null` cases. `params.min_length` carries the constraint value.
 - `too_long` — string or collection length above the maximum
 - `too_small` — numeric value below the minimum
 - `too_large` — numeric value above the maximum
