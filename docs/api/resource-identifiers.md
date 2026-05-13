@@ -170,7 +170,7 @@ Locations were not given an open `metadata` field because the practical "what wo
 Asset and location updates use `PATCH /api/v1/{resource}/{id}` with `Content-Type: application/merge-patch+json` (JSON Merge Patch, [RFC 7396](https://datatracker.ietf.org/doc/html/rfc7396)). Three rules cover the body semantics:
 
 - **Field present, scalar value** — set the field to that value.
-- **Field present, value `null`** — clear the field. Only legal for writable-nullable fields (listed at the end of this section); sending `null` for a non-nullable field returns `400 validation_error` / `code: invalid_value`.
+- **Field present, value `null`** — clear the field. Only legal for writable-nullable fields (listed at the end of this section); sending `null` for a non-nullable field is treated the same as omitting a required field and returns `400 validation_error` / `code: required`.
 - **Field omitted** — leave the existing value unchanged.
 
 An empty body (`{}`) is a documented no-op and returns `200` with the resource unchanged. This is also the floor case for the "no writable fields" rule below.
