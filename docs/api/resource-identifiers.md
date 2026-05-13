@@ -191,7 +191,7 @@ Clients that need to preserve existing keys should:
 2. Compute the desired result client-side using whatever merge strategy is appropriate (deep-merge, shallow-merge, replace, or anything in between).
 3. Send the resulting object as the `metadata` value on `PATCH`.
 
-This puts the merge strategy in the client's hands — TrakRF does not assume which one is right for your data. To clear `metadata` entirely on PATCH, send `{}` — the update schema declares `metadata` as a non-nullable object, so the empty object is the documented "no keys" shape. (The create request schema accepts `null` for `metadata`; the update schema does not.)
+This puts the merge strategy in the client's hands — TrakRF does not assume which one is right for your data. To clear `metadata` entirely on PATCH, send `{}` — both the create and update request schemas declare `metadata` as a non-nullable object, so the empty object is the documented "no keys" shape and `metadata: null` is rejected on both `POST` and `PATCH`.
 
 The pattern we recommend mirrors the schemas:
 

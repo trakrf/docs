@@ -87,20 +87,9 @@ Sentinel rejections share `code: invalid_value` with other value-validation fail
 
 For programmatic handling, branch on `fields[].code` as usual ([Errors → Validation errors](./errors#validation-errors)); the `message` is human-readable and not a wire contract. To send "unset" for `valid_to`, send JSON `null`; to leave a field unchanged on `PATCH`, omit it.
 
-### `valid_from: null` on Create vs. Update
+### `valid_from: null` is rejected on both Create and Update {#valid-from-null-rejected}
 
-`valid_from` is **nullable on create** request schemas and **non-nullable on update** request schemas. The asymmetry is intentional: on `POST`, sending `valid_from: null` is equivalent to omitting the field — both mean "use the server default of now," which is the useful semantic for ETL or migration code whose JSON serializer emits explicit `null` rather than omitting keys. On `PATCH`, sending `valid_from: null` returns `400 validation_error` / `code: invalid_value` — there is no "use server default" semantic on update, so explicit `null` is a malformed request. To leave `valid_from` unchanged on `PATCH`, omit the field.
-
-| Request                           | `valid_from` body field                | Result                                   |
-| --------------------------------- | -------------------------------------- | ---------------------------------------- |
-| `POST /api/v1/assets`             | omitted                                | Server default: now                      |
-| `POST /api/v1/assets`             | `"valid_from": null`                   | Server default: now (same as omit)       |
-| `POST /api/v1/assets`             | `"valid_from": "2026-04-24T15:30:00Z"` | Stored as supplied                       |
-| `PATCH /api/v1/assets/{asset_id}` | omitted                                | Unchanged                                |
-| `PATCH /api/v1/assets/{asset_id}` | `"valid_from": null`                   | `400 validation_error` / `invalid_value` |
-| `PATCH /api/v1/assets/{asset_id}` | `"valid_from": "2026-04-24T15:30:00Z"` | Set to supplied value                    |
-
-The same asymmetry applies to `POST /api/v1/locations` vs. `PATCH /api/v1/locations/{location_id}`, and to any future bitemporal resource. `valid_to` follows a different pattern — nullable on both create and update, where `null` means "no expiry."
+Sending `"valid_from": null` returns `400 validation_error` / `code: invalid_value` on both `POST` and `PATCH`. The unset signal is **key omission**, not explicit null: omit the key on `POST` to pick up the server default of now, and omit it on `PATCH` to leave the value unchanged. `valid_to` follows a different pattern — nullable on both create and update, where `null` means "no expiry."
 
 ## Example
 
