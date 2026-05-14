@@ -554,11 +554,13 @@ If your business logic needs to surface an expired record (e.g., to render a "de
 
 `Tag` is a polymorphic resource attached to an asset or a location. The `tag_type` discriminator selects one of three kinds:
 
-- `rfid` — RFID transponder
-- `ble` — Bluetooth Low Energy beacon
-- `barcode` — 1D/2D barcode
+- `rfid` — RFID transponder, surfaced in generated clients as `RfidTag` (and `RfidTagRequest`)
+- `ble` — Bluetooth Low Energy beacon, surfaced as `BleTag` (and `BleTagRequest`)
+- `barcode` — 1D/2D barcode, surfaced as `BarcodeTag` (and `BarcodeTagRequest`)
 
-All three kinds share the same `Tag` schema, the same wire shape, and the same endpoints. The `/assets/{asset_id}/tags` and `/locations/{location_id}/tags` subresources accept and return all three kinds; the kind travels in the request body via `tag_type`, not in the URL. There is no per-kind subresource (no `/tags/rfid`, no `/tags/ble`), no per-kind path variation, and no per-kind schema variation — codegen-derived clients see one Tag type regardless of kind, with `tag_type` as the discriminator field.
+All three kinds share the same wire shape and the same endpoints. The `/assets/{asset_id}/tags` and `/locations/{location_id}/tags` subresources accept and return all three kinds; the kind travels in the request body via `tag_type`, not in the URL. There is no per-kind subresource (no `/tags/rfid`, no `/tags/ble`) and no per-kind path variation.
+
+At the spec level, `Tag` and `TagRequest` are `oneOf` discriminated unions over the three named subtypes above, with `tag_type` as the discriminator (`propertyName: tag_type`; mapping entries `rfid` / `ble` / `barcode`). Generated SDKs surface the three subtypes by name and narrow on `tag_type` — TypeScript clients get a discriminated union usable with `switch (tag.tag_type)`, Python clients get three concrete model classes plus the `Tag` union alias. Server-side, the resource is one row shape and the storage layer is uniform across kinds; the polymorphism is a client-side type-discoverability split, not a wire-format change.
 
 :::note "Tag" is a noun with two senses
 In the API surface (and this page), **tag** is a typed data primitive: the `(tag_type, value)` pair attached to an asset or a location. In RFID-domain prose elsewhere on the docs site (and in user-facing UI copy), "tag" can also mean the physical hardware label a scanner reads. Both senses are valid; this page operates on the data-primitive sense, with `tag_type` selecting which kind of physical artifact a given record represents.
@@ -570,7 +572,7 @@ Tags follow the same principle as assets and locations, with a composite shape: 
 
 Don't conflate `external_key` with `tags[].value`: assets and locations have a single string natural key (`external_key`); tags have a composite one. The `value` field _inside_ a tag is the tag's own partner-supplied handle (an EPC, a beacon ID, a barcode), scoped by `tag_type`. The `external_key` _on_ an asset or location is the resource's partner-supplied handle, scoped by resource type. They sit at different levels and are not interchangeable — an asset's `external_key` and one of its tags' `value` answer different questions.
 
-`tag_type` defaults to `rfid` when omitted **or sent as `null`** on a write — the OpenAPI spec carries `default: rfid`, and the server treats both shapes the same on `POST /api/v1/assets/{asset_id}/tags` (and the location counterpart). A body of `{"value": "E2-..."}`, `{"tag_type": null, "value": "E2-..."}`, and `{"tag_type": "rfid", "value": "E2-..."}` are all equivalent — the row is stored with `tag_type: rfid`. Codegen-derived clients surface the same default at the type-system level. Send `tag_type` explicitly when the tag is `ble` or `barcode`.
+`tag_type` defaults to `rfid` on the wire when omitted **or sent as `null`** on a write. The server treats both shapes the same on `POST /api/v1/assets/{asset_id}/tags` (and the location counterpart): a body of `{"value": "E2-..."}`, `{"tag_type": null, "value": "E2-..."}`, and `{"tag_type": "rfid", "value": "E2-..."}` are all equivalent — the row is stored with `tag_type: rfid`. The default lives in the server, not the spec: each `*TagRequest` subtype declares `tag_type` as `required` for OpenAPI discriminator semantics, so generated SDKs ask for `tag_type` explicitly on every attach call. Hand-written raw-HTTP callers may still rely on the server-side default; codegen consumers should expect to pass `tag_type` for all three kinds.
 
 Tag responses still carry a canonical integer `id` for path-param access (e.g., `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`):
 
@@ -600,6 +602,8 @@ Tags are managed as subresources of their parent asset or location. Two write en
 
 Tag writes use the parent resource's write scope, not a separate `tags:write` — there is no per-tag scope.
 
+The same endpoint accepts all three kinds — the discriminator travels in the body:
+
 ```bash
 # Attach an RFID tag to an asset
 curl -X POST \
@@ -607,13 +611,27 @@ curl -X POST \
      -H "Content-Type: application/json" \
      -d '{"tag_type": "rfid", "value": "E2-8042-2D-19F0-AB10"}' \
      "$BASE_URL/api/v1/assets/4287/tags"
+
+# Attach a BLE beacon to the same asset
+curl -X POST \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"tag_type": "ble", "value": "C0:1A:DA:7E:F0:01"}' \
+     "$BASE_URL/api/v1/assets/4287/tags"
+
+# Attach a barcode to a location
+curl -X POST \
+     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"tag_type": "barcode", "value": "0123456789012"}' \
+     "$BASE_URL/api/v1/locations/82/tags"
 ```
 
-`tag_type` is an open enum (`rfid`, `ble`, `barcode`); each maps to a different physical artifact. The API does **not** validate the per-type shape of `value` — there's no length check that rejects a 12-byte EPC sent as `tag_type: barcode`, no UUID check on `ble`. The constraints are the global ones: `value` must be 1–255 characters and the `(tag_type, value)` pair must be unique within the organization for live (non-deleted) rows. Inserting a duplicate live pair returns `409 conflict`; the [errors](./errors) page covers the response shape.
+`tag_type` is a closed discriminator enum (`rfid`, `ble`, `barcode`); each maps to a different physical artifact and to a named subtype in the discriminated union (`RfidTag`, `BleTag`, `BarcodeTag`). Adding a fourth kind would be a spec change and a regeneration step for typed clients, not a silent value-set expansion. The API does **not** validate the per-kind shape of `value` — there's no length check that rejects a 12-byte EPC sent as `tag_type: barcode`, no UUID check on `ble`. The constraints are the global ones: `value` must be 1–255 characters and the `(tag_type, value)` pair must be unique within the organization for live (non-deleted) rows. Inserting a duplicate live pair returns `409 conflict`; the [errors](./errors) page covers the response shape.
 
 `value` is matched **as an exact string** within `(org_id, tag_type)` for uniqueness, attach, and the embedded `tags[]` array on parent reads. There is no normalization (no case-folding, no whitespace stripping). Substring search across tag values is available only through the parent resource's [`?q=`](./pagination-filtering-sorting#substring-search) filter, which restricts to active and currently-effective tags.
 
-`tag_type` defaults to `rfid` (covered above), so a body of `{"value": "E2-..."}` on an asset POST is equivalent to `{"tag_type": "rfid", "value": "E2-..."}`. Send `tag_type` explicitly when attaching `ble` or `barcode`.
+`tag_type` defaults to `rfid` on the wire (covered above), so a raw-HTTP body of `{"value": "E2-..."}` on an asset POST is equivalent to `{"tag_type": "rfid", "value": "E2-..."}`. Generated SDKs require `tag_type` on every attach because the discriminated subtypes declare it `required`; only hand-written HTTP clients see the omission default.
 
 ## "Scan event" is a domain concept, not an API resource {#scan-event-vocabulary}
 
