@@ -52,7 +52,7 @@ Send `valid_from` / `valid_to` as **RFC 3339 in UTC** (e.g. `2026-04-24T15:30:00
 
 The body validator rejects (with `400 validation_error`) every form the spec doesn't permit — date-only (`2026-05-10`), slash-separated (`2026/05/10`), and empty string are all explicit rejections, not silent coercions to a server-computed default. Format failures return `fields[].message` = `"{field} must be an RFC 3339 timestamp"` (e.g. `"valid_from must be an RFC 3339 timestamp"`). Two otherwise-valid RFC 3339 timestamps are also rejected as default-value sentinels — see [Default-value sentinels](#default-value-sentinels) below. Date-only support is not on the v1 launch surface and may be added in a later v1.x release; today, send a full RFC 3339 timestamp every time. To pick up the server's `valid_from` default on create, **omit the key entirely**; sending an empty string is a 400, not an auto-default trigger.
 
-Sub-microsecond precision is accepted on input but truncated at write — `2026-04-24T15:30:00.123456789Z` round-trips as `2026-04-24T15:30:00.123456Z`. Microsecond is the storage precision; nanosecond is a wire-format affordance for clients whose date libraries default there.
+Sub-microsecond precision is accepted on input but rounded to the nearest microsecond at write (half-to-even) — `2026-04-24T15:30:00.123456789Z` round-trips as `2026-04-24T15:30:00.123457Z` (the `.789` tail rounds up). Microsecond is the storage precision; nanosecond is a wire-format affordance for clients whose date libraries default there. Rounding follows the underlying `timestamp with time zone` column's banker's-rounding rule at the microsecond boundary — `.123456499Z` rounds down to `.123456Z`, `.123456500Z` ties to even and rounds down to `.123456Z`, `.123456501Z` rounds up to `.123457Z`. The behavior is deterministic but not "truncation"; if your test fixtures previously asserted a truncated tail (`.123456Z` for input `.123456789Z`), refresh them against the rounded value.
 
 ### Default-value sentinels are rejected {#default-value-sentinels}
 
@@ -165,7 +165,7 @@ A history-item row:
 }
 ```
 
-Sub-microsecond precision is a wire-format affordance — clients whose date libraries default to nanosecond won't see it on outbound (storage truncates to microsecond), but inbound parsing should tolerate any RFC 3339 fractional-second precision. Use the same date-library helpers covered in [Inbound: RFC 3339 only](#inbound-rfc3339-only).
+Sub-microsecond precision is a wire-format affordance — clients whose date libraries default to nanosecond won't see it on outbound (storage rounds half-to-even to microsecond, per [Inbound: RFC 3339 only](#inbound-rfc3339-only)), but inbound parsing should tolerate any RFC 3339 fractional-second precision. Use the same date-library helpers covered in [Inbound: RFC 3339 only](#inbound-rfc3339-only).
 
 ### `duration_seconds` on asset history rows
 
