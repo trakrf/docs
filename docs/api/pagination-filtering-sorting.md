@@ -187,10 +187,10 @@ Sortable fields vary per resource. The exact enum each endpoint accepts:
 | --------------------------------------- | ---------------------------------------------------------- |
 | `GET /api/v1/assets`                    | `external_key`, `name`, `created_at`, `updated_at`         |
 | `GET /api/v1/locations`                 | `external_key`, `name`, `created_at`                       |
-| `GET /api/v1/reports/asset-locations`   | `last_seen`, `asset_external_key`, `location_external_key` |
-| `GET /api/v1/assets/{asset_id}/history` | `timestamp`                                                |
+| `GET /api/v1/reports/asset-locations`   | `asset_last_seen`, `asset_external_key`, `location_external_key` |
+| `GET /api/v1/assets/{asset_id}/history` | `event_observed_at`                                              |
 
-Unknown sort fields on an endpoint with a sort allowlist return `400 validation_error` with `fields[].message: "unknown sort field: <name>"` — fix the field name and retry. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering — `external_key` ascending, with `id` ascending as a deterministic tiebreaker, on the asset and location collections; `/reports/asset-locations` defaults to `-last_seen`.
+Unknown sort fields on an endpoint with a sort allowlist return `400 validation_error` with `fields[].message: "unknown sort field: <name>"` — fix the field name and retry. Generated clients with strict typing reject unknown sort fields at compile time; weaker generators receive the 400 from the server. When no `sort` is supplied, results default to the resource's natural ordering — `external_key` ascending, with `id` ascending as a deterministic tiebreaker, on the asset and location collections; `/reports/asset-locations` defaults to `-asset_last_seen`.
 
 ### Sub-resource list endpoints use a fixed sort order
 
@@ -240,7 +240,7 @@ Where each asset was last seen — one row per asset. Filter by the location(s) 
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/reports/asset-locations?location_external_key=DOCK-1&sort=-last_seen"
+     "$BASE_URL/api/v1/reports/asset-locations?location_external_key=DOCK-1&sort=-asset_last_seen"
 ```
 
 ### History
@@ -249,7 +249,7 @@ Asset movement history over a window, newest event first (path takes the canonic
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
-     "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&sort=-timestamp&limit=200"
+     "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&sort=-event_observed_at&limit=200"
 ```
 
 ## Related

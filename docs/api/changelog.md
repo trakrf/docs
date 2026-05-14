@@ -11,7 +11,15 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
-### BB33 spec restructure — `Tag` is a discriminated union with three named subtypes
+### BB34 polish batch — scan-event field renames, outbound precision guidance, filter pattern spec residual
+
+Pre-launch polish from BB34 (F2, F3, F5 carry-over). Wire-format renames have no breakage cost before launch — no partner integrations yet.
+
+- **Scan-event timestamp fields renamed for cross-endpoint cohesion.** `GET /api/v1/assets/{asset_id}/history` rows now expose `event_observed_at` (was `timestamp`); `GET /api/v1/reports/asset-locations` rows now expose `asset_last_seen` (was `last_seen`). Both names follow the qualifier-prefix pattern already used by `asset_deleted_at` on the same report row, preserving the event-row vs asset-most-recent semantic split. Sort allowlists move with the fields: `?sort=event_observed_at` / `-event_observed_at` on history, and `?sort=asset_last_seen` / `-asset_last_seen` on the asset-locations report (alongside the unchanged `asset_external_key`, `location_external_key`). The `-asset_last_seen` default sort on `/reports/asset-locations` is unchanged in meaning. Storage column names are unchanged — this is a wire-shape rename only. Non-breaking against any `v1.0.0`-or-later wire baseline. See [Date fields → Scan-event date fields](./date-fields#scan-event-date-fields) and [Pagination, filtering, sorting → Sortable fields](./pagination-filtering-sorting).
+- **Outbound fractional precision is documented as variable per RFC 3339 §5.6.** Sub-second timestamp suffixes on the wire trim trailing zeros (`time.RFC3339Nano` default) — `.123000Z` may render as `.123Z`; `.752440Z` may render as `.75244Z`. Mainstream language stdlibs (Pydantic v2, Go `time`, Java `Instant`, JS `Date.parse`) parse the trimmed shape correctly; hand-rolled regex parsers that hard-code `\.\d{6}Z$` will fail. Service behavior is unchanged — this is a docs-only addition with explicit RFC 3339-tolerant-parser guidance for client authors. See [Date fields → Wire format](./date-fields#scan-event-date-fields).
+- **Spec residual — `external_key`-typed filter param patterns tightened in the spec.** Server-side filter validation was tightened in the BB33 fix wave above; the spec YAML declarations still carried the loose tag-value pattern `^[^\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*$`. Five parameter declarations now carry the strict field pattern `^[A-Za-z0-9-]+$`: `assets.external_key`, `assets.location_external_key`, `locations.external_key`, `locations.parent_external_key`, and `reports.location_external_key`. Generated clients that validate input against the spec now reject `abc/def` at the client-validation layer instead of letting it through and surprising the caller with a server-side 400. No service-side behavior change.
+
+
 
 Spec-level restructure from BB33 (C1). Wire format is byte-identical; this is a client-side type-discoverability change.
 
