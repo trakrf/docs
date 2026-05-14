@@ -11,6 +11,13 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
+### BB33 spec hygiene — `x-required-scopes` canonicalized as the machine-readable scope source
+
+Spec-level fix from BB33 (F6, F7). The `allOf`-with-siblings restructure on `TagRequest.tag_type` is internal to the spec and does not affect prose; the F7 extension change does.
+
+- **`x-required-scopes` extension now appears on every operation, not just scope-gated ones.** `GET /api/v1/orgs/me` — previously the only public operation without a scope requirement — now carries `x-required-scopes: []`. The empty array is the explicit "any authenticated key works" signal, intended for codegen ingestors and policy tooling minting minimal-scope keys: presence of the extension with an empty value is a positive signal, not a missing-field ambiguity. Every other operation carries the same one-element array shape introduced earlier in this v1.0 wave (e.g. `x-required-scopes: [assets:write]` on `POST /api/v1/assets`).
+- **The extension is the canonical machine-readable scope source.** [Authentication → `x-required-scopes` on operations](./authentication#x-required-scopes-on-operations) is rewritten to say so explicitly: scope-aware partners and codegen consumers should read the extension rather than parsing the **Required scope:** prose marker. Both views are auto-derived from the same server-side annotations and must stay in sync — drift is a spec-generation bug, not a documentation choice. The prose remains the canonical reference for human readers.
+
 ### BB33 docs reconciliation — truncation policy, PATCH verb-scope callouts, `x-request-id` distinction
 
 Three docs-only fixes from BB33; no service-side change.
