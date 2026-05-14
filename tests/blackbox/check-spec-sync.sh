@@ -45,8 +45,26 @@ fetch() {
   curl -fsSL --max-time 15 "$1"
 }
 
+# Strip deploy-env-aware fields before hashing so the byte-compare doesn't
+# spuriously diverge across the deploy-env split. As of TRA-717 F4,
+# info.contact.url is env-aware:
+#   - platform repo (committed): https://app.trakrf.id/api (production canonical)
+#   - app.preview.trakrf.id/api/v1/openapi.yaml: runtime-swapped to
+#     https://app.preview.trakrf.id/api by the platform service when
+#     APP_ENV=preview
+#   - docs.preview.trakrf.id/api/openapi.yaml: build-time swapped to the
+#     same preview URL by scripts/swap-openapi-env.mjs on CF Pages preview
+#     builds (so readers see the env-appropriate URL)
+# All three preview-side emissions canonicalize back to the production URL
+# for hash purposes, restoring the platform↔docs↔app byte-equivalence the
+# preflight depends on. servers[] entries use the bare host (no /api suffix)
+# and are unaffected by this targeted substitution.
+canonicalize_env_fields() {
+  sed 's|https://app\.preview\.trakrf\.id/api|https://app.trakrf.id/api|g'
+}
+
 sha() {
-  fetch "$1" | sha256sum | awk '{print $1}'
+  fetch "$1" | canonicalize_env_fields | sha256sum | awk '{print $1}'
 }
 
 echo "BB spec-sync pre-flight"
