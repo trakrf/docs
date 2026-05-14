@@ -113,7 +113,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?location_id=42&location_id=43"
 ```
 
-Comma-separated values in a single `location_external_key=LOC-A,LOC-B` parameter are **not** parsed as multiple filters — the server sees a single value with a literal comma.
+Comma-separated values in a single `location_external_key=LOC-A,LOC-B` parameter are **not** parsed as multiple filters — the server sees a single value with a literal comma. For `external_key`-typed filters (`external_key`, `location_external_key`, `parent_external_key`) this returns `400 validation_error` / `code: invalid_value` because the comma is outside the [`external_key` regex](./resource-identifiers#external_key-value-rules); the same boundary applies to slashes, colons, spaces, and any other reserved character. Pass the parameter once per value to express "any of".
 
 ### Boolean filters
 
