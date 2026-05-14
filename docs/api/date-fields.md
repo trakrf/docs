@@ -6,6 +6,10 @@ sidebar_position: 4
 
 Every timestamped resource in the TrakRF v1 API uses the same two effective-date fields: `valid_from` and `valid_to`. This page describes their shape on the wire and what the API accepts on input. Audit timestamps (`created_at`, `updated_at`) follow a different convention and are not covered here. Soft-deletion surfaces as `deleted_at` on per-resource list rows (`/assets`, `/locations`) and as `asset_deleted_at` on the cross-resource report row from `/reports/asset-locations` — see [Resource identifiers → Soft-delete visibility on lists](./resource-identifiers#soft-delete-visibility) for the rule and the field-naming asymmetry.
 
+:::note Audit timestamps in one paragraph
+`created_at`, `updated_at`, and `deleted_at` are server-managed read-only fields. Outbound they share the wire shape used by everything else on the public API: RFC 3339 in UTC with fixed three-digit millisecond precision (`.NNNZ`). They cannot be set on `POST` or `PATCH` — any value differing from the current state returns `400 validation_error` / `code: read_only`. A verbatim `GET` → `PATCH` echo is accepted: the comparator matches by instant, so any RFC 3339 representation of the same point in time round-trips cleanly even when a generated client re-serializes via its language default (e.g. `+00:00` instead of `Z`, or microsecond fractional precision). See [Pagination, filtering, sorting → Validator behavior on writes](./pagination-filtering-sorting#validator-behavior-on-writes) and [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape) for the full accept-if-matches contract.
+:::
+
 The history-derived endpoints carry their own per-row timestamp: `event_observed_at` on `GET /api/v1/assets/{asset_id}/history` and `asset_last_seen` on `GET /api/v1/reports/asset-locations`. Both share the outbound RFC 3339-UTC convention documented below for `valid_from`; their semantics and nullability are covered separately under [Scan-event date fields](#scan-event-date-fields).
 
 ## The two fields at a glance
