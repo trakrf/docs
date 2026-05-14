@@ -126,24 +126,24 @@ Each request echoes back the resource (or `204 No Content` on delete) wrapped in
 
 ### Round-trip: `GET` → mutate → `PATCH` {#round-trip-patch}
 
-The minimal-form `PATCH` above sent only the field being changed. When your integration's data model mirrors the read shape one-to-one — you have an in-memory asset object you've been mutating — you'll want to send the whole thing back instead. The natural-key reference fields (`external_key`, `location_id`, `location_external_key`; plus `parent_external_key` on locations) follow an [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule on `PATCH`, so echoing them straight back from a `GET` response is safe. The only field that still needs to be stripped is `tags` (managed via subresource — `POST /…/tags`); server-managed metadata (`id`, `created_at`, `updated_at`, `deleted_at`) is silently dropped.
+The minimal-form `PATCH` above sent only the field being changed. When your integration's data model mirrors the read shape one-to-one — you have an in-memory asset object you've been mutating — you'll want to send the whole thing back instead. Every read-only field on the read shape (server-managed `id` / `created_at` / `updated_at` / `deleted_at`, the `tags` collection, and the natural-key reference fields `external_key`, `location_id`, `location_external_key`, plus `parent_external_key` on locations) follows an [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule on `PATCH`, so echoing them straight back from a `GET` response is safe. No client-side scrubbing required.
 
 ```bash
-# GET → strip tags → mutate → PATCH on an asset
+# GET → mutate → PATCH on an asset (full-body round-trip; no fields stripped)
 curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets/$ASSET_ID" \
-| python3 -c "import json,sys; d=json.load(sys.stdin)['data']; d.pop('tags',None); d['name']='Quickstart test asset (renamed again)'; print(json.dumps(d))" \
+| python3 -c "import json,sys; d=json.load(sys.stdin)['data']; d['name']='Quickstart test asset (renamed again)'; print(json.dumps(d))" \
 | curl -X PATCH "$BASE_URL/api/v1/assets/$ASSET_ID" \
        -H "Authorization: Bearer $TRAKRF_API_KEY" \
        -H "Content-Type: application/merge-patch+json" \
        -d @-
 ```
 
-(If `jq` is installed, the equivalent pipeline stage is `jq '.data | del(.tags) | .name = "Quickstart test asset (renamed again)"'`.)
+(If `jq` is installed, the equivalent pipeline stage is `jq '.data | .name = "Quickstart test asset (renamed again)"'`.)
 
-For locations the same pattern holds — `tags` is the only field requiring an explicit strip; every natural-key reference field echoes silently. To re-parent a location, mutate `parent_id` (the surrogate is the writable canonical for the parent relationship). To rename, use `POST /api/v1/{resource}/{id}/rename` — sending a *different* `external_key` on `PATCH` returns `400 read_only`, so the rename surfaces in audit logs distinctly. Asset location specifically cannot be set via `PATCH` under any form; current location is derived from scan events.
+For locations the same pattern holds — no explicit strip is needed for any read-only field; every value echoes silently. To re-parent a location, mutate `parent_id` (the surrogate is the writable canonical for the parent relationship). To rename, use `POST /api/v1/{resource}/{id}/rename` — sending a *different* `external_key` on `PATCH` returns `400 read_only`, so the rename surfaces in audit logs distinctly. Asset location specifically cannot be set via `PATCH` under any form; current location is derived from scan events. Mutating `tags` likewise uses the dedicated subresource — `POST /…/tags` and `DELETE /…/tags/{tag_id}` — and a *different* tags collection on `PATCH` returns `400 read_only`.
 
-Strict-typed codegen (Pydantic, Java with generated POJOs, Go with generated structs) already separates the read schema from `UpdateAssetRequest` / `UpdateLocationRequest`, so the rejected keys are excluded by construction in those clients. Hand-rolled clients and `curl`-based pipelines need the explicit pop. Full per-field treatment: [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape).
+Strict-typed codegen (Pydantic, Java with generated POJOs, Go with generated structs) already separates the read schema from `UpdateAssetRequest` / `UpdateLocationRequest`, so the read-only fields are excluded by construction in those clients. Hand-rolled clients and `curl`-based pipelines can send the full read shape back without scrubbing. Full per-field treatment: [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape).
 
 ## 4. Alternative: Postman
 
