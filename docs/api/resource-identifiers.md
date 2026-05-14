@@ -251,6 +251,8 @@ The four `location_*` cases on assets share their detail string because TrakRF i
 
 :::note Verbatim GET → PATCH round-trips work without scrubbing
 No client-side scrubbing is required for any read-only field. A verbatim `GET` → `PATCH` round-trip succeeds without modification — every read-only field whose value matches the current resource state is silently normalized out, and any differing value returns `400 read_only` with a hint pointing at the proper write path. Strict-typed codegen (Pydantic, Java, Go with generated structs) already reshapes into the write schema (`UpdateAssetRequest` / `UpdateLocationRequest`), so the read-only fields are excluded at the SDK boundary; hand-rolled clients sending the full read shape don't need a strip step at all.
+
+For `created_at`, `updated_at`, and `deleted_at` the match is by instant rather than wire bytes: any RFC 3339 representation of the same point in time is accepted. A client that deserializes the GET response into a typed `datetime` and re-serializes via the language default (Go `time.Time.MarshalJSON` emits `+00:00`; Pydantic v2's `model_dump(mode='json')` emits `.NNNNNN+00:00`) round-trips cleanly even though the bytes differ from the server's canonical `Z` shape; a differing instant still rejects with `read_only`. The other read-only fields (`id`, `tags`, `external_key`, `*_external_key`, `location_*`) admit a single byte form for any given value, so byte-canonical comparison is correct for them.
 :::
 
 The rejected fields each have a dedicated mutation surface:
