@@ -181,8 +181,8 @@ import type { paths } from "./schema";
 const client = createClient<paths>({ baseUrl: "https://app.trakrf.id" });
 client.use(mergePatchMiddleware);
 
-await client.PATCH("/api/v1/assets/by-id/{id}", {
-  params: { path: { id: 42 } },
+await client.PATCH("/api/v1/assets/{asset_id}", {
+  params: { path: { asset_id: 42 } },
   body: { name: "renamed" },
 });
 // → Content-Type: application/merge-patch+json on the wire, automatically
