@@ -39,13 +39,26 @@ For server-to-server or scripted integrations, the supported credential is an **
 {
   "data": {
     "id": 123,
-    "name": "Example Organization"
+    "name": "Example Organization",
+    "scopes": ["assets:read", "assets:write", "tracking:read"],
+    "api_key_id": "550e8400-e29b-41d4-a716-446655440000"
   }
 }
 ```
 
+| Field        | Purpose                                                                                                                                                                                                                                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`         | The organization's surrogate id.                                                                                                                                                                                                                                                                           |
+| `name`       | The organization's display name.                                                                                                                                                                                                                                                                           |
+| `scopes`     | The scope strings carried by the presented bearer. Use this to diagnose a `403 forbidden` without decoding the JWT locally — if the scope the failing endpoint requires is not in this list, the key was minted without it and needs to be re-minted ([Authentication → Scopes](./authentication#scopes)). |
+| `api_key_id` | The UUID of the API key (matches the JWT's `sub` claim). Useful when filing a support ticket — quoting this lets TrakRF identify which of an organization's keys was in use without you having to share the JWT itself.                                                                                    |
+
+`scopes` is a flat string array of the [extensible scope enum](./authentication#scopes). Treat unknown values as forward-compatible; new scope strings may appear in any v1 release.
+
 :::note API-key authentication only
 `/orgs/me` accepts API keys only. Session JWTs from the web app return `401 unauthorized` on this endpoint. All other public-read and public-write endpoints accept both credential types.
+
+Session JWTs don't carry an `api_key_id` analogue, so the response shape — which includes the presented key's UUID — is API-key-only by construction.
 :::
 
 If you're using `/orgs/me` as a health check, consider also probing a "real" endpoint (e.g. `GET /api/v1/assets?limit=1`) so your checks exercise the database path, not just the token verification path.

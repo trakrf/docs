@@ -82,6 +82,24 @@ Filter parameters are specific to each resource. All filters are query parameter
 - `?include_deleted=true` returns currently-effective rows AND soft-deleted rows. Each row carries a deletion timestamp — `deleted_at` on the per-resource lists `/assets` and `/locations`, `asset_deleted_at` on the cross-resource report `/reports/asset-locations` — `null` for live rows, populated with the deletion timestamp for soft-deleted ones. Null-check the field, don't key-check. See [Resource identifiers → Soft-delete visibility on lists](./resource-identifiers#soft-delete-visibility) for why the per-resource form drops the prefix.
   :::
 
+### Three axes of liveness {#three-axes-of-liveness}
+
+The list-endpoint default scope is a join of three independent filter dimensions. They look similar at a glance — all three answer "is this row visible right now?" — and partner-side code that conflates them produces surprising results. The split:
+
+| Axis                  | Field(s)                             | Type             | Dimension                                                                                                                                                                          |
+| --------------------- | ------------------------------------ | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Soft-delete state** | `deleted_at` (or `asset_deleted_at`) | timestamp / null | Has the row been retired? Hidden by default; surfaced with `?include_deleted=true`.                                                                                                |
+| **Activation**        | `is_active`                          | boolean          | Is the row currently active per business logic? Either value comes back by default; narrow with `?is_active=true` / `false`.                                                       |
+| **Temporal validity** | `valid_from`, `valid_to`             | timestamps       | Is the row currently effective? `valid_from` ≤ now AND (`valid_to` IS NULL OR `valid_to` > now). Always applied by default on lists; cannot be opted out of from the list surface. |
+
+These dimensions are orthogonal — a row may sit at any one of the eight `(soft-deleted, active, currently-effective)` combinations. The default list scope returns `(NOT soft-deleted, any is_active, currently-effective)` rows; the two toggles widen the soft-delete and is_active filters but neither lifts the temporal-validity predicate. Notable consequences:
+
+- `asset_deleted_at: null` on a `/reports/asset-locations` row does **not** imply the asset is currently effective — `valid_to` may have elapsed independently, which is why the row would be dropped from the report by default unless other filters bring it back in. See [Resource identifiers → /reports/asset-locations scopes to currently-effective assets](./resource-identifiers#asset-locations-effective-scope).
+- `?is_active=true` returns active currently-effective rows; pairing it with `?include_deleted=true` returns active rows that are either currently-effective live OR soft-deleted, and excludes temporally inactive live rows.
+- The path-param reads (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) skip the temporal-validity predicate — they apply only the soft-delete predicate — so a client holding a stale `id` can still inspect an expired record. Use the path-param surface (not the list) for retrospective lookups by `id`.
+
+The fullest treatment of the temporal-validity axis lives in [Resource identifiers → Effective dating and `is_active`](./resource-identifiers#effective-dating-and-is-active); the soft-delete axis lives in [Soft-delete visibility on lists](./resource-identifiers#soft-delete-visibility). This section is the single-page index of how the three combine on filter surfaces.
+
 | Endpoint                                | Filter params                                                                                                                                        |
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q` |
@@ -183,10 +201,10 @@ All list endpoints take a `sort` parameter. Comma-separated for multi-key sorts,
 
 Sortable fields vary per resource. The exact enum each endpoint accepts:
 
-| Endpoint                                | Sort fields (each also accepts `-` prefix for descending)  |
-| --------------------------------------- | ---------------------------------------------------------- |
-| `GET /api/v1/assets`                    | `external_key`, `name`, `created_at`, `updated_at`         |
-| `GET /api/v1/locations`                 | `external_key`, `name`, `created_at`                       |
+| Endpoint                                | Sort fields (each also accepts `-` prefix for descending)        |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| `GET /api/v1/assets`                    | `external_key`, `name`, `created_at`, `updated_at`               |
+| `GET /api/v1/locations`                 | `external_key`, `name`, `created_at`                             |
 | `GET /api/v1/reports/asset-locations`   | `asset_last_seen`, `asset_external_key`, `location_external_key` |
 | `GET /api/v1/assets/{asset_id}/history` | `event_observed_at`                                              |
 

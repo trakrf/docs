@@ -158,6 +158,8 @@ export BASE_URL=https://app.preview.trakrf.id
 
 Preview-scoped keys will not authenticate against production and vice versa — make sure `BASE_URL` matches the environment your key was minted on.
 
+**The API and the SPA share the same origin.** `$BASE_URL` resolves to the application host that also serves the web app — `app.trakrf.id` is both the SPA URL and the API host, and the OpenAPI spec's `servers[]` entries match these hosts one-for-one. Generated clients can point at `servers[0]` directly without a separate API-host override; the `/api/v1/` prefix is the only path differentiation between SPA routes and API routes.
+
 ## Server-to-server design {#server-to-server}
 
 The TrakRF API is intended for **server-to-server** integration. Responses do not include `Access-Control-Allow-Origin` headers, so browser-based JavaScript calls are blocked by the browser's CORS policy. Call the API from a backend service and never ship API keys in client-side code — the CORS block is also a guardrail against leaking keys to end-user devices.

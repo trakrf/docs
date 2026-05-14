@@ -58,12 +58,14 @@ A successful response:
 {
   "data": {
     "id": 42,
-    "name": "Acme Logistics"
+    "name": "Acme Logistics",
+    "scopes": ["assets:read", "assets:write", "tracking:read"],
+    "api_key_id": "550e8400-e29b-41d4-a716-446655440000"
   }
 }
 ```
 
-If the `name` matches the organization you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface.
+If the `name` matches the organization you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface. The `scopes` array echoes the scope strings on the bearer — useful for diagnosing a later `403 forbidden` without decoding the JWT locally — and `api_key_id` is the UUID of the API key (matches the JWT's `sub` claim), worth quoting in any support ticket. Per-field detail: [Private endpoints → Response shape: `/orgs/me`](./private-endpoints#orgs-me).
 
 Troubleshooting:
 
@@ -141,7 +143,7 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
 
 (If `jq` is installed, the equivalent pipeline stage is `jq '.data | .name = "Quickstart test asset (renamed again)"'`.)
 
-For locations the same pattern holds — no explicit strip is needed for any read-only field; every value echoes silently. To re-parent a location, mutate `parent_id` (the surrogate is the writable canonical for the parent relationship). To rename, use `POST /api/v1/{resource}/{id}/rename` — sending a *different* `external_key` on `PATCH` returns `400 read_only`, so the rename surfaces in audit logs distinctly. Asset location specifically cannot be set via `PATCH` under any form; current location is derived from scan events. Mutating `tags` likewise uses the dedicated subresource — `POST /…/tags` and `DELETE /…/tags/{tag_id}` — and a *different* tags collection on `PATCH` returns `400 read_only`.
+For locations the same pattern holds — no explicit strip is needed for any read-only field; every value echoes silently. To re-parent a location, mutate `parent_id` (the surrogate is the writable canonical for the parent relationship). To rename, use `POST /api/v1/{resource}/{id}/rename` — sending a _different_ `external_key` on `PATCH` returns `400 read_only`, so the rename surfaces in audit logs distinctly. Asset location specifically cannot be set via `PATCH` under any form; current location is derived from scan events. Mutating `tags` likewise uses the dedicated subresource — `POST /…/tags` and `DELETE /…/tags/{tag_id}` — and a _different_ tags collection on `PATCH` returns `400 read_only`.
 
 Strict-typed codegen (Pydantic, Java with generated POJOs, Go with generated structs) already separates the read schema from `UpdateAssetRequest` / `UpdateLocationRequest`, so the read-only fields are excluded by construction in those clients. Hand-rolled clients and `curl`-based pipelines can send the full read shape back without scrubbing. Full per-field treatment: [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape).
 
