@@ -46,9 +46,13 @@ Every `valid_from` on the response is RFC 3339 in UTC. `valid_to` is either RFC 
 
 Note that the second record's `valid_to` is **`null`, not absent** — the field is always emitted, with the OpenAPI spec marking it `nullable: true` and required. Null-check the value, don't key-check.
 
-## Inbound: RFC 3339 only {#inbound-rfc3339-only}
+## Inbound: RFC 3339, any offset {#inbound-rfc3339-only}
 
-Send `valid_from` / `valid_to` as **RFC 3339 in UTC** (e.g. `2026-04-24T15:30:00Z`). The OpenAPI spec declares both fields as `format: date-time`, and that is the contract — generated clients and spec validators will reject anything else. Use a date library to format your inputs (`Instant.toString()` in Java, `datetime.isoformat() + "Z"` in Python, `new Date().toISOString()` in JavaScript) rather than constructing the string by hand.
+Send `valid_from` / `valid_to` as **RFC 3339** (e.g. `2026-04-24T15:30:00Z`). The OpenAPI spec declares both fields as `format: date-time`, and that is the contract — generated clients and spec validators will reject anything else. Use a date library to format your inputs (`Instant.toString()` in Java, `datetime.isoformat() + "Z"` in Python, `new Date().toISOString()` in JavaScript) rather than constructing the string by hand.
+
+The service accepts any valid RFC 3339 timestamp regardless of offset — both `Z` and a numeric offset like `+05:00` parse. **Non-UTC offsets are silently converted to UTC at write**, so a `valid_from` sent as `2026-04-24T20:30:00+05:00` is stored — and emitted on the next read — as `2026-04-24T15:30:00Z`. The conversion is lossless on the instant: an integrator who sends a non-UTC offset gets the same point in time back, just normalized to `Z`. The one exception is the sentinel rejection rule below: non-UTC offsets that resolve to a rejected instant (e.g. `1970-01-01T05:00:00+05:00`) are still rejected — see [Default-value sentinels](#default-value-sentinels).
+
+If you want your client-side pipeline to surface local-timezone bugs before they reach the server, **normalize to `Z` at the client** rather than relying on the service's silent conversion to mask them. Otherwise either form round-trips correctly to the same instant.
 
 The body validator rejects (with `400 validation_error`) every form the spec doesn't permit — date-only (`2026-05-10`), slash-separated (`2026/05/10`), and empty string are all explicit rejections, not silent coercions to a server-computed default. Format failures return `fields[].message` = `"{field} must be an RFC 3339 timestamp"` (e.g. `"valid_from must be an RFC 3339 timestamp"`). Two otherwise-valid RFC 3339 timestamps are also rejected as default-value sentinels — see [Default-value sentinels](#default-value-sentinels) below. Date-only support is not on the v1 launch surface and may be added in a later v1.x release; today, send a full RFC 3339 timestamp every time. To pick up the server's `valid_from` default on create, **omit the key entirely**; sending an empty string is a 400, not an auto-default trigger.
 

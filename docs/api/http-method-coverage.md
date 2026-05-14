@@ -21,6 +21,8 @@ curl -I -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 `HEAD` is not enumerated as a separate operation per path — assume it wherever `GET` is declared.
 
+The spec carries no `head:` entries by design — declaring 22 of them would balloon the surface without adding contract that isn't already implied by the `GET` declarations. The runtime signal is the `Allow` header on a `405` response, which lists `HEAD` alongside the methods the route declares ([Discovering supported methods at runtime](#discovering-supported-methods-at-runtime)). **Generated typed clients (`openapi-generator-cli`, `openapi-fetch`, `oapi-codegen`, NSwag, etc.) will not expose a `HEAD` method on their client classes** because no spec entry drives the codegen; reach for raw `fetch` / `requests` / `http.NewRequest` when you need a `HEAD` probe from a generated SDK.
+
 ## `OPTIONS` — uniformly 405 on the public surface {#options}
 
 The TrakRF API is **server-to-server only — no third-party browser origins are permitted**, so the production and preview deploys ship with CORS disabled. Under that posture, `OPTIONS` is treated as an unsupported verb and returns `405 Method Not Allowed` with an `Allow` header listing the methods the path actually supports — the same shape as any other `405` ([Discovering supported methods at runtime](#discovering-supported-methods-at-runtime)). There is no `Access-Control-Allow-Origin` (and no other `Access-Control-Allow-*` headers). A browser issuing the automatic preflight before a cross-origin call sees the `405`, refuses the actual call, and surfaces a CORS error to your console — which is the intended outcome. Call the API from a backend service instead (see [Authentication → Server-to-server design](./authentication#server-to-server)).
