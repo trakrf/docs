@@ -56,6 +56,17 @@ The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/
 
 Per-call specifics (the offending field, the unparseable value, the resource id that didn't resolve) live in `detail` or `fields[]`, never in `title`.
 
+### Filing support tickets {#filing-support-tickets}
+
+When filing a support ticket, include the `error.request_id` value (or the equivalent **`x-request-id`** response header) — that ULID is the TrakRF service's in-band correlation id and is what support uses to find your call in service-side logs.
+
+The hosting edge layer adds a separate **`x-railway-request-id`** response header on top of every response. It is **not** the service-side correlation id — it identifies the request to the Railway edge, not to the TrakRF service. Logging or quoting `x-railway-request-id` instead of `x-request-id` will send support triage to the wrong log surface.
+
+| Header                 | Source               | Use for                                                                                         |
+| ---------------------- | -------------------- | ----------------------------------------------------------------------------------------------- |
+| `x-request-id`         | TrakRF service       | Filing support tickets; matches `error.request_id` in the envelope. **This is the one to log.** |
+| `x-railway-request-id` | Railway hosting edge | Hosting-level diagnostics only. Not used for TrakRF service-side correlation.                   |
+
 ## Error type catalog
 
 | `type`                   | HTTP status | When you'll see it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Retry?                                                                            |
