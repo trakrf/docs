@@ -80,7 +80,11 @@ Additional scopes may be added in any v1 release. Clients should tolerate unknow
 
 ### `x-required-scopes` on operations
 
-The OpenAPI spec's `BearerAuth` scheme (HTTP Bearer, JWT format) can't express scope-per-operation, so each scope-gated operation also carries an `x-required-scopes` extension listing the scope strings the endpoint requires (e.g. `x-required-scopes: [assets:write]`). Standard codegen tools won't surface the extension automatically — it's metadata, not part of the runtime contract a generic Bearer client implements — but scope-aware partners and policy tooling can read it programmatically rather than scraping this page. The table above is the human-readable view of the same data.
+Every operation in the public spec carries an `x-required-scopes` extension listing the scope strings the endpoint requires (e.g. `x-required-scopes: [assets:write]` on `POST /api/v1/assets`). An empty array — `x-required-scopes: []` — means "any authenticated key works, no scope required" and currently appears only on `GET /api/v1/orgs/me`, the lightweight health-check endpoint integrators hit to confirm a key is live. The extension is present on every operation precisely so the absence of a required scope is a positive signal (empty array) rather than a missing-field ambiguity.
+
+This is the canonical machine-readable scope source. Codegen ingestors, policy tooling, and scope-aware partners minting minimal-scope keys should read this extension rather than parsing the **Required scope:** marker in each operation's prose description. The OpenAPI spec's `BearerAuth` scheme (HTTP Bearer, JWT format) can't express scope-per-operation by itself; the extension fills that gap. Standard codegen tools won't surface it automatically — it's metadata, not part of the runtime contract a generic Bearer client implements — but anything programmatic can read it directly off the spec.
+
+The table above and the **Required scope:** markers in operation descriptions are the canonical reference for human readers. Both views are auto-derived from the same server-side `@Security BearerAuth[scope]` annotations at spec-publish time and must stay in sync — any drift between prose and extension is a spec-generation bug, not a documentation choice.
 
 ### Internal scope: `keys:admin` {#internal-scopes}
 
