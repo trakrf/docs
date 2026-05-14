@@ -11,6 +11,13 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
+### BB33 fix wave — `parent_external_key` hint corrected, `external_key`-typed filters tightened
+
+Two small server-side fixes from BB33 (F3, F5, C2).
+
+- **`PATCH /api/v1/locations/{id}` no longer points at `/rename` to re-parent.** The reject-if-differs hint returned for `parent_external_key` previously named `POST /api/v1/locations/{id}/rename` as an alternative re-parent path. `RenameLocationRequest` only carries `external_key` — the rename endpoint cannot change parentage. The hint now names `parent_id` as the only write path that re-parents (`null` clears the FK). The matching [Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape) admonition and the per-field rejection table on [Resource identifiers](./resource-identifiers) are corrected. Adjacent sweep on every other PATCH reject-if-differs message — `external_key → /rename`, `deleted_at → DELETE`, `tags → /tags` — confirmed each names an endpoint that actually does what the message claims.
+- **`external_key`-typed list filters now reject invalid characters at the boundary.** Filter params on `?external_key=`, `?location_external_key=`, and `?parent_external_key=` (on `/api/v1/assets`, `/api/v1/locations`, and `/api/v1/reports/asset-locations`) previously used a loose printable-string regex that admitted any non-control character; a slash, colon, comma, or space silently returned `200` with empty data because no row can ever carry such a value (the write side rejects the same input). The filter regex is tightened to match the field regex `^[A-Za-z0-9-]+$`, and invalid input now returns `400 validation_error` / `code: invalid_value` with one `fields[]` entry per offending parameter. Behavior change for callers that probed these filters with reserved characters: the response status moves from `200` (empty data) to `400` (validation error). Non-breaking against any `v1.0.0`-or-later wire baseline (pre-launch tightening; no real row could match the rejected inputs). See [Resource identifiers → `external_key` value rules](./resource-identifiers#external_key-value-rules) and [Pagination, filtering, sorting → Repeatable filters](./pagination-filtering-sorting#repeatable-filters).
+
 ### BB33 spec hygiene — `x-required-scopes` canonicalized as the machine-readable scope source
 
 Spec-level fix from BB33 (F6, F7). The `allOf`-with-siblings restructure on `TagRequest.tag_type` is internal to the spec and does not affect prose; the F7 extension change does.
