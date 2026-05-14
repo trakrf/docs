@@ -6,7 +6,7 @@ sidebar_position: 4
 
 Every timestamped resource in the TrakRF v1 API uses the same two effective-date fields: `valid_from` and `valid_to`. This page describes their shape on the wire and what the API accepts on input. Audit timestamps (`created_at`, `updated_at`) follow a different convention and are not covered here. Soft-deletion surfaces as `deleted_at` on per-resource list rows (`/assets`, `/locations`) and as `asset_deleted_at` on the cross-resource report row from `/reports/asset-locations` — see [Resource identifiers → Soft-delete visibility on lists](./resource-identifiers#soft-delete-visibility) for the rule and the field-naming asymmetry.
 
-The history-derived endpoints carry their own per-row timestamp: `timestamp` on `GET /api/v1/assets/{asset_id}/history` and `last_seen` on `GET /api/v1/reports/asset-locations`. Both share the outbound RFC 3339-UTC convention documented below for `valid_from`; their semantics and nullability are covered separately under [Scan-event date fields](#scan-event-date-fields).
+The history-derived endpoints carry their own per-row timestamp: `event_observed_at` on `GET /api/v1/assets/{asset_id}/history` and `asset_last_seen` on `GET /api/v1/reports/asset-locations`. Both share the outbound RFC 3339-UTC convention documented below for `valid_from`; their semantics and nullability are covered separately under [Scan-event date fields](#scan-event-date-fields).
 
 ## The two fields at a glance
 
@@ -132,12 +132,14 @@ The response carries `"valid_to": null` because the asset has no expiry. If a la
 
 The two history-derived endpoints expose a per-row scan timestamp under different field names. Both reflect when a reader observed the tag, not when the surrounding asset or location record was created or last edited; they're projections of the underlying scan-event stream ([scan events are a domain concept, not an API resource](./resource-identifiers#scan-event-vocabulary)).
 
-| Field       | Endpoint                                | Always present?                  | Meaning                                                                                                |
-| ----------- | --------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `timestamp` | `GET /api/v1/assets/{asset_id}/history` | Yes — never `null`, never absent | When this scan event was observed for the asset.                                                       |
-| `last_seen` | `GET /api/v1/reports/asset-locations`   | Yes — never `null`, never absent | When the asset's most recent scan was observed. Drives the `-last_seen` default sort on this endpoint. |
+| Field               | Endpoint                                | Always present?                  | Meaning                                                                                                      |
+| ------------------- | --------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `event_observed_at` | `GET /api/v1/assets/{asset_id}/history` | Yes — never `null`, never absent | When this scan event was observed for the asset.                                                             |
+| `asset_last_seen`   | `GET /api/v1/reports/asset-locations`   | Yes — never `null`, never absent | When the asset's most recent scan was observed. Drives the `-asset_last_seen` default sort on this endpoint. |
 
-Both fields are declared `required` on their respective response schemas (`AssetHistoryItem.timestamp`, `AssetLocationItem.last_seen`) and **not** marked `nullable`. `/reports/asset-locations` returns one row per scanned asset, so an asset that has never been scanned does not appear in the response — there is no "scanned but `last_seen: null`" state.
+Both fields are declared `required` on their respective response schemas (`AssetHistoryItem.event_observed_at`, `AssetLocationItem.asset_last_seen`) and **not** marked `nullable`. `/reports/asset-locations` returns one row per scanned asset, so an asset that has never been scanned does not appear in the response — there is no "scanned but `asset_last_seen: null`" state.
+
+Both names follow the qualifier-prefix pattern shared with `asset_deleted_at` on the same report row — same-primitive cross-endpoint cohesion that preserves the event-row vs asset-most-recent semantic split.
 
 ### Wire format: RFC 3339 in UTC, sub-second precision
 
@@ -150,7 +152,7 @@ Both fields are RFC 3339 timestamps in UTC. They are emitted at sub-second preci
   "location_id": 42,
   "location_external_key": "DOCK-1",
   "asset_deleted_at": null,
-  "last_seen": "2026-04-28T00:33:38.021257Z"
+  "asset_last_seen": "2026-04-28T00:33:38.021257Z"
 }
 ```
 
@@ -158,7 +160,7 @@ A history-item row:
 
 ```json
 {
-  "timestamp": "2026-04-28T00:33:38.021257Z",
+  "event_observed_at": "2026-04-28T00:33:38.021257Z",
   "location_id": 42,
   "location_external_key": "DOCK-1",
   "duration_seconds": 1843
@@ -167,14 +169,16 @@ A history-item row:
 
 Sub-microsecond precision is a wire-format affordance — clients whose date libraries default to nanosecond won't see it on outbound (storage truncates toward zero to microsecond, per [Inbound: RFC 3339 only](#inbound-rfc3339-only)), but inbound parsing should tolerate any RFC 3339 fractional-second precision. Use the same date-library helpers covered in [Inbound: RFC 3339 only](#inbound-rfc3339-only).
 
+Outbound fractional precision is variable (0–6 digits, trailing zeros trimmed per RFC 3339 §5.6). `.123000Z` may render as `.123Z`; `.752440Z` may render as `.75244Z`. Use an RFC 3339-tolerant parser (mainstream language stdlibs all qualify); avoid fixed-width regex patterns like `\.\d{6}Z$`.
+
 ### `duration_seconds` on asset history rows
 
-`AssetHistoryItem` carries a sibling field next to `timestamp` — `duration_seconds: integer | null` — that measures how long the asset stayed at the **previous** location before this row's scan moved it. The semantics:
+`AssetHistoryItem` carries a sibling field next to `event_observed_at` — `duration_seconds: integer | null` — that measures how long the asset stayed at the **previous** location before this row's scan moved it. The semantics:
 
-| Value                | Meaning                                                                                                                     |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `null`               | This is the earliest scan event in the asset's history; there is no previous location to measure dwell against.             |
-| Non-negative integer | Whole seconds elapsed between the previous scan-event timestamp and this row's `timestamp`, while at the previous location. |
+| Value                | Meaning                                                                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `null`               | This is the earliest scan event in the asset's history; there is no previous location to measure dwell against.                     |
+| Non-negative integer | Whole seconds elapsed between the previous scan-event timestamp and this row's `event_observed_at`, while at the previous location. |
 
 The field is declared `required` and `nullable: true` on `AssetHistoryItem` — always emitted, `null` only on the earliest row. Codegen-derived clients surface it as a non-optional nullable integer. Null-check the value, don't key-check.
 
@@ -182,4 +186,4 @@ The field is declared `required` and `nullable: true` on `AssetHistoryItem` — 
 
 ### These fields are read-only
 
-`timestamp`, `last_seen`, and `duration_seconds` are server-derived from the scan-event stream and have no inbound write path on the public API. There's no `POST /api/v1/asset_scans` or analogous endpoint for partner-side ingestion of scan events in v1; scan ingestion happens out-of-band through the reader integrations. The three fields above are pure projections — null-safe to read, never sent on a write.
+`event_observed_at`, `asset_last_seen`, and `duration_seconds` are server-derived from the scan-event stream and have no inbound write path on the public API. There's no `POST /api/v1/asset_scans` or analogous endpoint for partner-side ingestion of scan events in v1; scan ingestion happens out-of-band through the reader integrations. The three fields above are pure projections — null-safe to read, never sent on a write.

@@ -25,6 +25,24 @@ echo "Fetching OpenAPI spec from ${PLATFORM_REPO}@${PLATFORM_REF}..."
 curl -fsSL "${SPEC_BASE}/openapi.public.json" -o "${OUT_DIR}/openapi.json"
 curl -fsSL "${SPEC_BASE}/openapi.public.yaml" -o "${OUT_DIR}/openapi.yaml"
 
+# When refreshing for a preview-environment deploy, rewrite info.contact.url to
+# match the preview environment. The committed source spec is production-canonical
+# (https://app.trakrf.id/api); the backend runtime swaps this server-side at
+# app.preview.trakrf.id/api/v1/openapi.*, but the docs-site copy served at
+# docs.preview.trakrf.id/api/openapi.* is otherwise stuck on the production URL.
+# The contact URL appears exactly once per file (the "/api" suffix is unique to
+# info.contact.url), so the substitution is targeted.
+if [ "${DEPLOY_ENV:-}" = "preview" ]; then
+  echo "DEPLOY_ENV=preview — rewriting info.contact.url to preview host..."
+  for f in "${OUT_DIR}/openapi.json" "${OUT_DIR}/openapi.yaml"; do
+    if ! grep -q "https://app.trakrf.id/api" "$f"; then
+      echo "  WARNING: $f has no production contact URL to swap; skipping" >&2
+      continue
+    fi
+    sed -i 's|https://app.trakrf.id/api|https://app.preview.trakrf.id/api|g' "$f"
+  done
+fi
+
 echo "Wrote:"
 wc -l "${OUT_DIR}/openapi.json" "${OUT_DIR}/openapi.yaml"
 
