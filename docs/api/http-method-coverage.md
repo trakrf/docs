@@ -80,7 +80,7 @@ Content-Type: application/json
 
 Top-level `POST` creates return a `Location` header pointing at the canonical resource URL — `POST /api/v1/assets` and `POST /api/v1/locations` both set `Location: /api/v1/{resource}/{id}` on the `201` response, mirroring the `{ "data": { "id": ..., ... } }` body. Use either signal to discover the freshly-assigned id; an integrator who already reads the response body doesn't need the header.
 
-Sub-resource `POST` creates — `POST /api/v1/assets/{asset_id}/tags` and `POST /api/v1/locations/{location_id}/tags` — do **not** set a `Location` header. The parent URL is already known to the caller, and tags have no top-level canonical URL of their own (see [Tag CRUD](./resource-identifiers#tag-crud)) — emitting a header pointing to the parent or to a non-routable per-tag path would mislead more than help. The omission is by design and is enforced by a Spectral rule on the spec; future sub-resource creates will follow the same policy.
+Sub-resource `POST` creates — `POST /api/v1/assets/{asset_id}/tags` and `POST /api/v1/locations/{location_id}/tags` — also set a `Location` header pointing at the canonical subresource URL `/api/v1/{resource}/{id}/tags/{tag_id}`. The URL matches the path the `DELETE /api/v1/{resource}/{id}/tags/{tag_id}` endpoint accepts, so a caller that wants to detach a freshly-attached tag can follow the `Location` value verbatim. Tags have no top-level canonical URL of their own (see [Tag CRUD](./resource-identifiers#tag-crud)); the header points at the parent-qualified path, not a non-routable bare `/tags/{tag_id}`. The spec declares the header on both subresource POSTs alongside the existing top-level pair.
 
 ## Related
 
