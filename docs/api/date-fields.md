@@ -52,7 +52,7 @@ Send `valid_from` / `valid_to` as **RFC 3339 in UTC** (e.g. `2026-04-24T15:30:00
 
 The body validator rejects (with `400 validation_error`) every form the spec doesn't permit — date-only (`2026-05-10`), slash-separated (`2026/05/10`), and empty string are all explicit rejections, not silent coercions to a server-computed default. Format failures return `fields[].message` = `"{field} must be an RFC 3339 timestamp"` (e.g. `"valid_from must be an RFC 3339 timestamp"`). Two otherwise-valid RFC 3339 timestamps are also rejected as default-value sentinels — see [Default-value sentinels](#default-value-sentinels) below. Date-only support is not on the v1 launch surface and may be added in a later v1.x release; today, send a full RFC 3339 timestamp every time. To pick up the server's `valid_from` default on create, **omit the key entirely**; sending an empty string is a 400, not an auto-default trigger.
 
-Sub-microsecond precision is accepted on input but **truncated toward zero** to the microsecond at write — `2026-04-24T15:30:00.123456789Z` round-trips as `2026-04-24T15:30:00.123456Z` (the `.789` tail is dropped). Microsecond is the storage precision; nanosecond is a wire-format affordance for clients whose date libraries default there. Truncation toward zero is uniform across the boundary and applies regardless of the dropped tail's value: `.0000015Z` writes as `.000001Z`, `.9999999Z` writes as `.999999Z`. The behavior is deterministic; if you need a specific microsecond on the wire, send no more precision than that.
+Sub-microsecond precision is accepted on input but **truncated toward zero** to the microsecond at write. Storage is microsecond; the wire is millisecond. The combined round-trip for `2026-04-24T15:30:00.123456789Z` is: stored as `2026-04-24T15:30:00.123456` in Postgres (the `.789` tail dropped at the µs boundary), emitted on a subsequent read as `2026-04-24T15:30:00.123Z` (the `.456` tail dropped at the ms boundary, per [Wire format](#scan-event-date-fields) on outbound). Truncation toward zero is uniform at both boundaries — `.0000015Z` stores as `.000001`, `.9999999Z` stores as `.999999`; the wire then keeps only the leading three digits. The behavior is deterministic; if you need a specific millisecond on the wire, send no more precision than that.
 
 ### Default-value sentinels are rejected {#default-value-sentinels}
 
@@ -141,9 +141,9 @@ Both fields are declared `required` on their respective response schemas (`Asset
 
 Both names follow the qualifier-prefix pattern shared with `asset_deleted_at` on the same report row — same-primitive cross-endpoint cohesion that preserves the event-row vs asset-most-recent semantic split.
 
-### Wire format: RFC 3339 in UTC, sub-second precision
+### Wire format: RFC 3339 in UTC, fixed millisecond precision
 
-Both fields are RFC 3339 timestamps in UTC. They are emitted at sub-second precision — typically microsecond, mirroring the storage column's `timestamp with time zone` type. Sample row from `/reports/asset-locations`:
+Both fields are RFC 3339 timestamps in UTC, emitted with **fixed three-digit millisecond fractional precision** — every outbound timestamp on the public API carries `.NNNZ`, never `.NNNNNNZ`, never a bare `Z`. Sample row from `/reports/asset-locations`:
 
 ```json
 {
@@ -152,7 +152,7 @@ Both fields are RFC 3339 timestamps in UTC. They are emitted at sub-second preci
   "location_id": 42,
   "location_external_key": "DOCK-1",
   "asset_deleted_at": null,
-  "asset_last_seen": "2026-04-28T00:33:38.021257Z"
+  "asset_last_seen": "2026-04-28T00:33:38.021Z"
 }
 ```
 
@@ -160,16 +160,16 @@ A history-item row:
 
 ```json
 {
-  "event_observed_at": "2026-04-28T00:33:38.021257Z",
+  "event_observed_at": "2026-04-28T00:33:38.021Z",
   "location_id": 42,
   "location_external_key": "DOCK-1",
   "duration_seconds": 1843
 }
 ```
 
-Sub-microsecond precision is a wire-format affordance — clients whose date libraries default to nanosecond won't see it on outbound (storage truncates toward zero to microsecond, per [Inbound: RFC 3339 only](#inbound-rfc3339-only)), but inbound parsing should tolerate any RFC 3339 fractional-second precision. Use the same date-library helpers covered in [Inbound: RFC 3339 only](#inbound-rfc3339-only).
+The wire shape is uniform: no trailing-zero trimming, no nanosecond suffix. A regex match like `\.\d{3}Z$` is safe on every outbound timestamp the public API emits. The underlying `timestamp with time zone` column stores microsecond precision; the wire is truncated to millisecond because server-receipt-time on the reader path carries millisecond-scale network jitter, so the bottom three digits would be false precision relative to what reader clients can act on.
 
-Outbound fractional precision is variable (0–6 digits, trailing zeros trimmed per RFC 3339 §5.6). `.123000Z` may render as `.123Z`; `.752440Z` may render as `.75244Z`. Use an RFC 3339-tolerant parser (mainstream language stdlibs all qualify); avoid fixed-width regex patterns like `\.\d{6}Z$`.
+Inbound parsing on the `from` / `to` query parameters of `GET /api/v1/assets/{asset_id}/history` accepts any RFC 3339 fractional-second precision (0–9 digits) — a client may copy an emitted `event_observed_at` value verbatim into a filter without parse rejection, and a client whose date library emits nanosecond precision can pass it through unchanged. Use the same date-library helpers covered in [Inbound: RFC 3339 only](#inbound-rfc3339-only).
 
 ### `duration_seconds` on asset history rows
 
