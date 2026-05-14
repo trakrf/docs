@@ -123,6 +123,8 @@ When a resource references another resource, the response includes both forms as
 
 Both fields are populated whenever the relationship exists — no nested object, no follow-up call to resolve the related resource's natural key. If you need the `id` for a downstream API call, it's there; if you need the `external_key` to write back to your system of record, it's there too. When the relationship is unset (an asset that has never been scanned, a root location with no parent), both fields are still **present in the response, set to `null`**. The OpenAPI spec declares them `nullable: true` and the service emits them on every response; clients should null-check, not key-presence-check.
 
+The two paired-FK shapes look symmetric on the read side but their PATCH surfaces differ: **asset `location_id` / `location_external_key` are derived from the scan-event stream and cannot be moved via PATCH** — record a scan event instead — while **location `parent_id` is fully writable on PATCH** (re-parent by sending a new id, or `null` to detach to root). See [Read shape vs. write shape](#read-shape-vs-write-shape) for the per-resource PATCH scope.
+
 That makes two response-shape behaviors that coexist on these resources, and it's worth knowing which is which:
 
 | Behavior              | Fields                                                                                                                                     | Test for         |
@@ -204,7 +206,21 @@ Locations were not given an open `metadata` field because the practical "what wo
 
 ## Read shape vs. write shape
 
-Asset and location updates use `PATCH /api/v1/{resource}/{id}` with `Content-Type: application/merge-patch+json` (JSON Merge Patch, [RFC 7396](https://datatracker.ietf.org/doc/html/rfc7396)). Three rules cover the body semantics:
+Asset and location updates use `PATCH /api/v1/{resource}/{id}` with `Content-Type: application/merge-patch+json` (JSON Merge Patch, [RFC 7396](https://datatracker.ietf.org/doc/html/rfc7396)).
+
+:::important Scope of `PATCH /api/v1/assets/{asset_id}`
+Asset PATCH does **not** move the asset. `location_id` and `location_external_key` appear on the read shape but are not part of `UpdateAssetRequest` — sending a value that differs from the current state returns `400 validation_error` / `code: read_only` with the message `"record a scan event to update asset location"`. Asset location is derived from the scan-event stream, not from a partner-side write. To change where an asset lives, [record a scan event](#scan-event-vocabulary), not a PATCH.
+
+The asset PATCH writable surface is `name`, `description`, `is_active`, `metadata`, `valid_from`, `valid_to`. Mutate `external_key` via `POST /api/v1/assets/{asset_id}/rename`; mutate `tags` via the tag subresource ([Tag CRUD](#tag-crud)).
+:::
+
+:::important Scope of `PATCH /api/v1/locations/{location_id}`
+Location PATCH **does** move the location in the tree. `parent_id` is part of `UpdateLocationRequest` and is fully writable — send a new id to re-parent, or send `null` to detach the location to root. The natural-key form `parent_external_key` is read-only on PATCH (accept-if-matches, reject-if-differs) because its value is shared with a renameable field on the parent row; re-parenting via the natural key uses `POST /api/v1/locations/{location_id}/rename` on the parent. The asymmetry with the asset side is deliberate — asset location is scan-derived; location parentage is a partner-managed tree.
+
+The location PATCH writable surface is `name`, `description`, `is_active`, `parent_id`, `valid_from`, `valid_to`. Mutate `external_key` via `POST /api/v1/locations/{location_id}/rename`; mutate `tags` via the tag subresource.
+:::
+
+Three rules cover the body semantics:
 
 - **Field present, scalar value** — set the field to that value.
 - **Field present, value `null`** — clear the field. Only legal for writable-nullable fields (listed at the end of this section); sending `null` for a non-nullable field is treated the same as omitting a required field and returns `400 validation_error` / `code: required`.
@@ -280,12 +296,12 @@ The split is encoded in the spec where it can be: the server-managed surrogate i
 
 Each paired FK relationship — `location_id` / `location_external_key` on assets, `parent_id` / `parent_external_key` on locations — has different contracts per HTTP verb:
 
-| Surface                                | one form supplied                                                              | both forms supplied (agree)                                                                                       | both forms supplied (disagree)                                                                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `POST` body (assets and locations)     | accept                                                                         | `400 validation_error / ambiguous_fields`                                                                         | `400 validation_error / ambiguous_fields`                                                                         |
-| `PATCH /assets/{id}` body              | accept-if-matches on either form; `400 read_only` if either differs            | accept-if-matches (both stripped); `400 read_only` if either differs                                              | `400 read_only` (each differing field generates a `fields[]` entry)                                               |
+| Surface                                | one form supplied                                                                    | both forms supplied (agree)                                                                                                 | both forms supplied (disagree)                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `POST` body (assets and locations)     | accept                                                                               | `400 validation_error / ambiguous_fields`                                                                                   | `400 validation_error / ambiguous_fields`                                                                        |
+| `PATCH /assets/{id}` body              | accept-if-matches on either form; `400 read_only` if either differs                  | accept-if-matches (both stripped); `400 read_only` if either differs                                                        | `400 read_only` (each differing field generates a `fields[]` entry)                                              |
 | `PATCH /locations/{id}` body           | `parent_id` is writable; `parent_external_key` accept-if-matches / reject-if-differs | accept (surrogate written; natural-key stripped if it matches the resulting state, rejected with `read_only` if it differs) | `400 read_only` on `parent_external_key` if it differs from the current parent (regardless of `parent_id` value) |
-| `GET` list filter (assets / locations) | accept                                                                         | `400 validation_error / ambiguous_fields`                                                                         | `400 validation_error / ambiguous_fields`                                                                         |
+| `GET` list filter (assets / locations) | accept                                                                               | `400 validation_error / ambiguous_fields`                                                                                   | `400 validation_error / ambiguous_fields`                                                                        |
 
 On `POST` and `GET` filter surfaces, supplying both forms is rejected outright — `fields[]` carries one entry per offending parameter so a validation UI can highlight both. The spec encodes this directly for `POST` bodies (`not: required: [location_id, location_external_key]` on `CreateAssetWithTagsRequest` and the location equivalent); the `GET`-filter rule is enforced handler-side because OpenAPI 3 cannot express mutual exclusion on query parameters.
 
