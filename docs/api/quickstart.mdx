@@ -130,6 +130,8 @@ Each request echoes back the resource (or `204 No Content` on delete) wrapped in
 
 The minimal-form `PATCH` above sent only the field being changed. When your integration's data model mirrors the read shape one-to-one — you have an in-memory asset object you've been mutating — you'll want to send the whole thing back instead. Every read-only field on the read shape (server-managed `id` / `created_at` / `updated_at` / `deleted_at`, the `tags` collection, and the natural-key reference fields `external_key`, `location_id`, `location_external_key`, plus `parent_external_key` on locations) follows an [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule on `PATCH`, so echoing them straight back from a `GET` response is safe. No client-side scrubbing required.
 
+When you cache a GET response and `PATCH` later, `updated_at` is the field that may drift — it's advanced by every successful write to that resource, so a stale cached value will fail the accept-if-matches check. Either re-`GET` immediately before `PATCH`, or strip `updated_at` from the cached body before sending. This is optimistic concurrency working as designed: the accept-if-matches rule on `updated_at` is how the API prevents lost updates from concurrent edits — a feature, not a quirk you need to fight.
+
 ```bash
 # GET → mutate → PATCH on an asset (full-body round-trip; no fields stripped)
 curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
