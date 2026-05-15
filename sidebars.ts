@@ -48,6 +48,7 @@ const sidebars: SidebarsConfig = {
         "api/errors",
         "api/http-method-coverage",
         "api/rate-limits",
+        "api/design-notes",
         "api/versioning",
         "api/changelog",
         "api/webhooks",
