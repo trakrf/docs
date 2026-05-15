@@ -197,11 +197,16 @@ The relationship between the spec and the prose is the load-bearing axis here. T
 
 ## Report findings
 
-### Consult the design-notes page first
+### Consult the project registries before filing
 
-Before classifying a finding as novel, consult [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes). If the finding matches a documented design choice, classify it as a DESIGN NOTE confirmation rather than as a novel finding (see [Triage taxonomy](#triage-taxonomy) below for the exact format). The page shouldn't be re-litigated unless the documented rationale has changed.
+Before classifying a finding as novel, consult both project registries:
 
-The design-notes page is the canonical home for integrator-visible deliberate states. For harness-only deliberate states (methodology, not API design), see [Internal-only deliberate states](#internal-only-deliberate-states) below.
+1. [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes) — customer-visible design choices. If the finding matches a documented choice, classify it as a **DESIGN NOTE** confirmation.
+2. [`BACKLOG.md`](./BACKLOG.md) — internal-only deliberate states and deferred work. If the finding matches a registry entry, classify as **INTERNAL DELIBERATE STATE** or **DEFERRED WORK** accordingly.
+
+Documented decisions shouldn't be re-litigated unless the underlying rationale has changed. See [Triage taxonomy](#triage-taxonomy) below for the exact FINDINGS.md format for each class.
+
+BB.md itself is pure methodology — project-specific content (design choices, deferred work, internal deliberate states) lives in the two registries above, not in this file. The next API project forks BB.md unchanged and starts fresh `design-notes` and `BACKLOG.md` artifacts.
 
 ### Before flagging a docs gap
 
@@ -260,12 +265,12 @@ Use this framing instead of abstract High/Medium/Low priority. Integration partn
 
 #### Interaction matrix
 
-|                       | Fix now             | Defer with intent                                                | Won't fix                                                                |
-| --------------------- | ------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| **Contract breakage** | Pre-ship (default)  | Pre-ship anyway (unusual; means the fix is itself breaking)      | (rare — would mean breakage is bounded and the fix is disruptive)        |
-| **Hygiene**           | Pre-ship (cheap)    | Post-ship backlog ([Deferred work](#deferred-work) below)        | Deliberate-state registry (design-notes page or internal registry below) |
+|                       | Fix now             | Defer with intent                                                | Won't fix                                                                              |
+| --------------------- | ------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| **Contract breakage** | Pre-ship (default)  | Pre-ship anyway (unusual; means the fix is itself breaking)      | (rare — would mean breakage is bounded and the fix is disruptive)                      |
+| **Hygiene**           | Pre-ship (cheap)    | Post-ship backlog ([`BACKLOG.md`](./BACKLOG.md))                 | [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes) (customer-facing) or [`BACKLOG.md`](./BACKLOG.md) (internal) |
 
-Integrator-visible deliberate states (the bottom-right corner) live in [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes). Harness-only deliberate states live in [Internal-only deliberate states](#internal-only-deliberate-states) below.
+Integrator-visible deliberate states live in `/docs/api/design-notes`. Harness-only deliberate states and deferred work with trigger conditions live in `BACKLOG.md`. BB.md does not duplicate either.
 
 #### FINDINGS.md format
 
@@ -284,30 +289,16 @@ F1. <finding title>. (DESIGN NOTE — see /docs/api/design-notes; no action)
 For internal-only deliberate states surfaced again:
 
 ```
-F1. <finding title>. (INTERNAL DELIBERATE STATE — see BB.md; no action)
+F1. <finding title>. (INTERNAL DELIBERATE STATE — see BACKLOG.md; no action)
 ```
 
-This makes the cycle's finding count honest: a probe that surfaces 5 things where 3 are design-note confirmations is "2 actionable findings + 3 confirmations," not "5 findings."
+For deferred work surfaced again:
 
-### Internal-only deliberate states
+```
+F1. <finding title>. (DEFERRED WORK — see BACKLOG.md, triggered by X; no action)
+```
 
-Methodology constraints not surfaced to integrators, because they describe how the harness operates rather than how the API is designed. Integrator-visible deliberate states live in [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes), not here.
-
-| State                                       | Origin        | Rationale                                                                                                                                                                                                                                |
-| ------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BSL licensing wrinkle on evaluator probes   | BB.md design  | Code is publicly available but most evaluators won't pull and inspect the repo before forming first impressions. The persona constraint replicates this. Internal methodology consideration; not a customer-facing design choice.        |
-
-If future cycles surface other internal-only deliberate states, add them here. Anything integrator-visible goes to `/docs/api/design-notes`.
-
-### Deferred work
-
-Internal post-launch backlog. Customer-facing roadmap publication is a separate product decision; this table is for orchestrator/maintainer use when grooming after launch.
-
-| Work                                  | Origin                | Trigger to revisit                                                                                                                                                                                                                                                          |
-| ------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bigint storage migration              | TRA-720               | When cloud catches up to preview schema state AND customer volume hits the int32 ceiling (or enterprise data-residency requirements force it sooner). Retires the wire-vs-runtime int64 soft contract entirely; path-param maximum constraint (TRA-726) removed in same PR. |
-| OpenAPI 3.1 migration                 | BB37 F5 context       | When the generator ecosystem stabilizes 3.1 support across all targets we care about. Fixes `datamodel-codegen` nullable handling without per-generator workarounds; would let us drop the nullable design note.                                                            |
-| Path-param maximum constraint removal | BB37 F2 / TRA-726     | Same trigger as bigint storage migration (TRA-720). Documented in TRA-726 acceptance criteria.                                                                                                                                                                              |
+This makes the cycle's finding count honest: a probe that surfaces 5 things where 3 are design-note or backlog confirmations is "2 actionable findings + 3 confirmations," not "5 findings."
 
 ## Cleanup
 
