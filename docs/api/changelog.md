@@ -11,6 +11,10 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
+### BB36 fix wave — `401 unauthorized` `detail` strings harmonized across endpoints
+
+- **Every endpoint now emits identical `error.detail` wording for identical 401 conditions.** Two distinct auth middleware paths previously emitted their own literals: `GET /api/v1/orgs/me` returned `"Authorization header is required"` for the missing-header case, while `/assets`, `/locations`, and `/reports/asset-locations` returned `"Missing authorization header"`. The split was service-vs-service drift within a single API. All paths now route through one set of canonical constants — `"Missing authorization header"` (no `Authorization` header), `"Invalid authorization header format"` (wrong scheme such as `Basic` or a non-`Bearer` prefix), `"Invalid or expired token"` (malformed or expired JWT), `"API key has been revoked"`, `"API key has expired"`, and `"Use Authorization: Bearer <token>"` (the `X-API-Key` mistake hint). The [Quickstart `401` envelope example](./quickstart#2-verify-your-key-works) and the [`X-API-Key` callout in Authentication](./authentication#request-header) already showed the canonical wording; the `/orgs/me` deviation is what changed. Programmatic handlers should keep branching on `error.type` (`unauthorized`) — `detail` remains explanatory text, not a contract — see [Errors → unauthorized](./errors#error-type-catalog). Non-breaking against any `v1.0.0`-or-later wire baseline (pre-launch harmonization; the pre-fix state was inconsistent rather than load-bearing).
+
 ### BB34 polish batch — scan-event field renames, outbound millisecond precision, filter pattern spec residual
 
 Pre-launch polish from BB34 (F2, F3, F5 carry-over). Wire-format renames and precision pinning have no breakage cost before launch — no partner integrations yet.
