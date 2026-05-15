@@ -197,6 +197,12 @@ The relationship between the spec and the prose is the load-bearing axis here. T
 
 ## Report findings
 
+### Consult the design-notes page first
+
+Before classifying a finding as novel, consult [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes). If the finding matches a documented design choice, classify it as a DESIGN NOTE confirmation rather than as a novel finding (see [Triage taxonomy](#triage-taxonomy) below for the exact format). The page shouldn't be re-litigated unless the documented rationale has changed.
+
+The design-notes page is the canonical home for integrator-visible deliberate states. For harness-only deliberate states (methodology, not API design), see [Internal-only deliberate states](#internal-only-deliberate-states) below.
+
 ### Before flagging a docs gap
 
 If you're about to write "X is never documented," search the docs site for X first and read at least the first hit. The docs span multiple pages — absence in `quickstart.mdx` doesn't mean absence in `resource-identifiers.md` or elsewhere. The motivating example: a recent cycle reported `tree_path` as undocumented while `resource-identifiers.md` carries the canonical definition.
@@ -229,26 +235,79 @@ Independent of correctness, do one pass focused on vocabulary:
 
 Report these as "coherence findings" separately from correctness findings. A coherent vocabulary is a precondition for an AI-driven integration partner to reason about the API. Substring overlap defeats qualifier-based disambiguation in any context where the qualifier isn't visible (URL path segments, generated identifier types, log lines).
 
-### Triage: would an AI integration partner trip on this?
+### Triage taxonomy
 
-For each finding, tag it with: would an AI-driven integration partner running ingestion against this API trip on it?
+Each finding gets explicit triage on two independent axes. The primary axis (severity) determines pre-ship vs post-ship; the secondary axis (economic disposition) determines whether to act on the finding or document a deliberate state.
 
-- **Yes** → pre-launch (Launch label, Todo).
-- **No** — internal hygiene, polish, or DX improvement that doesn't break integration → post-launch (post-v1 label, Backlog).
+#### Primary axis: severity (impact)
 
-Use this framing instead of abstract High/Medium/Low priority. Integration partners are the realistic first audience for the public API, and "trips an AI ingestor" is a concrete test that "Medium priority" is not.
+- **Contract breakage:** generated clients break, integrators get wrong behavior, the API surface lies about itself in a way that produces silent wrong-data. MUST fix pre-ship. The bar:
+  - Would a careful integrator silently lose data, misclassify data, or write code that compiles but produces nonsense at runtime?
+  - Would a generated client emit method/class names that an integrator would refactor before checking in?
+  - Would the integrator have to read multiple pages or hit the service with trial-and-error to learn a contract the docs should have stated directly?
+- **Hygiene / cosmetic:** the spec describes the same thing the service emits, just suboptimally. Doesn't break anything; could ship as-is. The bar:
+  - Cosmetic naming or organization concerns that an integrator would file as feedback, not as a bug.
+  - DX improvements that would be nice but don't block any documented use case.
+  - Findings whose fix would be a breaking change with low integrator-impact.
 
-The bar for "Yes":
+Use this framing instead of abstract High/Medium/Low priority. Integration partners are the realistic first audience for the public API, and "would this trip an AI integration partner" is the concrete test behind the severity bar.
 
-- Would a careful integrator silently lose data, misclassify data, or write code that compiles but produces nonsense at runtime?
-- Would a generated client emit method/class names that an integrator would refactor before checking in?
-- Would the integrator have to read multiple pages or hit the service with trial-and-error to learn a contract the docs should have stated directly?
+#### Secondary axis: economic disposition (cost-benefit)
 
-The bar for "No":
+- **Fix now:** cheap fix relative to permanent tracking cost. Do it regardless of severity.
+- **Defer with intent:** real fix exists but cost-benefit deliberately chose to wait. Has a documented trigger condition for revisit (e.g., "when cloud catches up to preview AND customer volume hits threshold X").
+- **Won't fix:** deliberate state, not a bug, just looks like one to a naive observer. Documented for future cycles. No trigger condition — would only revisit if underlying constraints change.
 
-- Cosmetic naming or organization concerns that an integrator would file as feedback, not as a bug.
-- DX improvements that would be nice but don't block any documented use case.
-- Findings whose fix would be a breaking change with low integrator-impact (rename a path that no one's complaining about, etc.).
+#### Interaction matrix
+
+|                       | Fix now             | Defer with intent                                                | Won't fix                                                                |
+| --------------------- | ------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Contract breakage** | Pre-ship (default)  | Pre-ship anyway (unusual; means the fix is itself breaking)      | (rare — would mean breakage is bounded and the fix is disruptive)        |
+| **Hygiene**           | Pre-ship (cheap)    | Post-ship backlog ([Deferred work](#deferred-work) below)        | Deliberate-state registry (design-notes page or internal registry below) |
+
+Integrator-visible deliberate states (the bottom-right corner) live in [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes). Harness-only deliberate states live in [Internal-only deliberate states](#internal-only-deliberate-states) below.
+
+#### FINDINGS.md format
+
+Each novel finding in FINDINGS.md is tagged with both axes:
+
+```
+F1. <finding title>. (Severity: contract breakage | hygiene; Disposition: fix now | defer | won't fix)
+```
+
+For known design notes surfaced again:
+
+```
+F1. <finding title>. (DESIGN NOTE — see /docs/api/design-notes; no action)
+```
+
+For internal-only deliberate states surfaced again:
+
+```
+F1. <finding title>. (INTERNAL DELIBERATE STATE — see BB.md; no action)
+```
+
+This makes the cycle's finding count honest: a probe that surfaces 5 things where 3 are design-note confirmations is "2 actionable findings + 3 confirmations," not "5 findings."
+
+### Internal-only deliberate states
+
+Methodology constraints not surfaced to integrators, because they describe how the harness operates rather than how the API is designed. Integrator-visible deliberate states live in [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes), not here.
+
+| State                                       | Origin        | Rationale                                                                                                                                                                                                                                |
+| ------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BSL licensing wrinkle on evaluator probes   | BB.md design  | Code is publicly available but most evaluators won't pull and inspect the repo before forming first impressions. The persona constraint replicates this. Internal methodology consideration; not a customer-facing design choice.        |
+
+If future cycles surface other internal-only deliberate states, add them here. Anything integrator-visible goes to `/docs/api/design-notes`.
+
+### Deferred work
+
+Internal post-launch backlog. Customer-facing roadmap publication is a separate product decision; this table is for orchestrator/maintainer use when grooming after launch.
+
+| Work                                  | Origin                | Trigger to revisit                                                                                                                                                                                                                                                          |
+| ------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bigint storage migration              | TRA-720               | When cloud catches up to preview schema state AND customer volume hits the int32 ceiling (or enterprise data-residency requirements force it sooner). Retires the wire-vs-runtime int64 soft contract entirely; path-param maximum constraint (TRA-726) removed in same PR. |
+| OpenAPI 3.1 migration                 | BB37 F5 context       | When the generator ecosystem stabilizes 3.1 support across all targets we care about. Fixes `datamodel-codegen` nullable handling without per-generator workarounds; would let us drop the nullable design note.                                                            |
+| Path-param maximum constraint removal | BB37 F2 / TRA-726     | Same trigger as bigint storage migration (TRA-720). Documented in TRA-726 acceptance criteria.                                                                                                                                                                              |
 
 ## Cleanup
 
