@@ -114,7 +114,7 @@ No v2 is currently planned.
 ## Seeing changes as they land
 
 - **Interactive reference** — [`/api`](/api) is regenerated from the Go handlers on every platform release, so it always reflects the running surface.
-- **Raw spec** — [`/api/openapi.json`](/api/openapi.json) or [`.yaml`](/api/openapi.yaml) for diffing between releases with your own tooling.
+- **Raw spec** — <a href="/api/openapi.json"><code>/api/openapi.json</code></a> or <a href="/api/openapi.yaml"><code>.yaml</code></a> for diffing between releases with your own tooling.
 - **Changelog** — [Changelog](./changelog) lists public-API-affecting changes with `added` / `deprecated` / `removed` categories.
 
 ## Related
