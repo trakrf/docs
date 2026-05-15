@@ -8,8 +8,11 @@ node_modules/
 build/
 .docusaurus/
 
-# Generated build artifact (see scripts/write-health-json.mjs)
+# Generated build artifacts
+# health.json — scripts/write-health-json.mjs (prebuild)
+# postman collection — scripts/generate-postman.mjs (prebuild + predev)
 /static/health.json
+/static/api/trakrf-api.postman_collection.json
 
 # Environment variables
 .env
