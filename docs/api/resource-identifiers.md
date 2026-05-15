@@ -293,7 +293,14 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-The split is encoded in the spec where it can be: the server-managed surrogate id and timestamps carry `readOnly: true`, which drives typed codegen tools to omit them from request shapes; the natural-key reference fields and `tags` are deliberately **kept** in the write schema (`UpdateAssetRequest` / `UpdateLocationRequest`) without `readOnly: true` so generated SDKs surface a rejection at the wire when a differing value is sent, instead of dropping the value silently before the request leaves the client. Future resources may grow their own read-only fields; don't memorize per-resource lists — derive them from the spec, or rely on a generated client.
+The split is encoded in the spec where it can be: the server-managed surrogate id and timestamps carry `readOnly: true`, which drives typed codegen tools to omit them from request shapes. The natural-key reference fields and `tags` are handled differently per schema, with a corresponding integrator-side asymmetry:
+
+- **`UpdateLocationRequest` keeps `parent_id` and `parent_external_key`** because they are themselves writable on PATCH for re-parenting. A differing `external_key` field is still surfaced as `400 read_only` by the [accept-if-matches](#read-shape-vs-write-shape) rule, but the parent FK pair travels through the write schema by design.
+- **`UpdateAssetRequest` declares only `[description, is_active, metadata, name, valid_from, valid_to]`** — the natural-key reference fields (`external_key`, `location_id`, `location_external_key`) and `tags` are **not** declared on the write schema. Strict-typed SDKs (Pydantic models, generated Java POJOs, Go structs built from the spec) reshape into `UpdateAssetRequest` before sending, so these fields are scrubbed client-side by construction and the wire-level `400 read_only` rejection never reaches the integrator from a typed SDK call path.
+
+The practical consequence: the [accept-if-matches, reject-if-differs](#read-shape-vs-write-shape) wire-level rule is real, but most integrators won't observe the reject side through their SDK on the asset surface. Only hand-rolled callers (curl, raw `fetch`, hand-built `requests` payloads) send the unscrubbed read shape and see the `400` directly. The full [verbatim `GET` → `PATCH` round-trip](#read-shape-vs-write-shape) still succeeds across both call paths: strict-typed SDKs scrub the unwritable fields before the request leaves the client; hand-rolled callers send everything and the server silently strips matching read-only values.
+
+Future resources may grow their own read-only fields; don't memorize per-resource lists — derive them from the spec, or rely on a generated client.
 
 ### Paired-key behavior per verb {#paired-key-behavior-per-verb}
 
