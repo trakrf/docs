@@ -65,7 +65,7 @@ Out-of-range path-param ids (zero, negative, the `2³¹` overflow case shown abo
 
 ## What this means for clients
 
-- **Typed-client integrators** — your generated client already represents ids at int64 width. Treat the int64 type as the contract; the runtime cap is a service-side constraint you only see if you synthesize ids yourself.
+- **Typed-client integrators** — your generated client already represents ids at int64 width. Path- and query-parameter id schemas additionally declare `maximum: 2147483647` so a value above the runtime cap surfaces at the client-validation layer (when the generator honors `maximum`) instead of round-tripping to a server-side `400 too_large`. Request-body id fields stay descriptive int64 with no maximum, so a body-supplied id above the cap still reaches the server and returns the same `400` envelope. Treat the int64 type as the contract; the runtime cap is a service-side constraint you only need to plan around if you synthesize ids yourself.
 - **Pasting / URL construction** — when an id reaches your code from a URL or a CSV row, validate it fits in int32 before sending. The `400` envelope above tells you when you missed.
 - **No migration planning required for v1** — TrakRF's v1 stability commitment ([Versioning](./versioning)) covers both the wire type (won't narrow) and the runtime ceiling (won't tighten without a major-version cut). If the runtime ceiling widens during v1, that's an additive change — clients already typed wide enough see no impact.
 
