@@ -56,10 +56,9 @@ fi
 
 echo
 echo "Regenerating Postman collection..."
-pnpm dlx openapi-to-postmanv2 \
-  -s "${OUT_DIR}/openapi.json" \
-  -o "${OUT_DIR}/trakrf-api.postman_collection.json" \
-  -p -O folderStrategy=Paths
+# Shared with the `prebuild` hook so build-time and refresh-time
+# regeneration use the same generator and options.
+node scripts/generate-postman.mjs
 
 echo
 echo "Resolving ${PLATFORM_REF} to a commit SHA via git ls-remote..."
