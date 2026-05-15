@@ -38,3 +38,11 @@ Generator behavior varies:
 For integrators using `datamodel-codegen`, switch to one of the verified-working targets, or apply `--use-annotated --use-union-operator` flags with custom post-processing.
 
 We'll migrate to OpenAPI 3.1 type-union syntax when the generator ecosystem stabilizes 3.1 support across all targets we care about.
+
+## `descendant_count_affected` on `RenameAssetResponse` is always `0`
+
+The rename verb shares response shape across `POST /assets/{asset_id}/rename` and `POST /locations/{location_id}/rename`. Locations legitimately use `descendant_count_affected` to surface the live count of descendant rows reachable through the `parent_id` chain — a non-zero value is the client's cue to refresh any subtree state cached under the old natural key. Assets have no hierarchy, so the field always returns `0`.
+
+The shared envelope is preserved for ergonomic symmetry: a client that consumes both rename endpoints can read `descendant_count_affected` off either response without branching on resource type, then act on it only when non-zero. On the asset side it is structural padding.
+
+See [Resource identifiers → Location rename](./resource-identifiers#location-rename) for the location semantics.
