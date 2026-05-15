@@ -124,6 +124,10 @@ curl -X DELETE "$BASE_URL/api/v1/assets/$ASSET_ID" \
   -H "Authorization: Bearer $TRAKRF_API_KEY"
 ```
 
+:::tip TypeScript with `openapi-fetch`?
+`openapi-fetch` is schema-agnostic at runtime — it won't read `application/merge-patch+json` from the spec, and every `PATCH` returns `415 unsupported_media_type` unless you override `Content-Type` per call or register a middleware. See [§5 — TypeScript with `openapi-fetch`](#openapi-fetch) below for the drop-in middleware that handles every `PATCH` site automatically.
+:::
+
 Each request echoes back the resource (or `204 No Content` on delete) wrapped in the standard `{ "data": ... }` envelope. The path-param routes take the canonical integer `id`; if you only have the natural key, filter the list endpoint first with `GET /api/v1/assets?external_key=ASSET-QUICKSTART` and read `id` off `.data[0]` (empty array on a miss). Full convention: [Resource identifiers](./resource-identifiers).
 
 ### Round-trip: `GET` → mutate → `PATCH` {#round-trip-patch}
