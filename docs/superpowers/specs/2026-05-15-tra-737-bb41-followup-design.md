@@ -6,15 +6,15 @@
 
 ## Disposition summary
 
-| # | Subject | Finding disposition | Action this PR |
-| --- | --- | --- | --- |
-| F1 | `openapi-fetch` (TS) doesn't auto-detect `application/merge-patch+json`; every PATCH 415s on first try | hygiene; defer | **Ship a discoverability fix** — add a tip in quickstart §3 pointing TS readers to the existing §5.1 middleware |
-| F2 | Pydantic `datamodel-codegen` drops `nullable: true` | confirms `BACKLOG.md` "OpenAPI 3.1 migration" + `design-notes.md` "Nullable fields…" | none — verified |
-| F3 | Pydantic emits `TagType`/`TagType2`/`TagType4` per-variant enums | confirms `design-notes.md` "Tag schema uses three single-value enums…" | none — verified |
-| F4 | HEAD supported on every GET; spec deliberately omits it | confirms `design-notes.md` "HEAD method not declared…" | none — verified |
-| F5 | `descendant_count_affected: 0` on asset rename | confirms `design-notes.md` "`descendant_count_affected` on `RenameAssetResponse`…" (shipped in TRA-736 F5, `cf42657`) | none — verified |
-| F6 | `metadata` PATCH replaces wholesale | confirms `resource-identifiers.md#metadata-opaque` | none — verified |
-| F7 | `id` is int64 on wire, int32 runtime | confirms `id-format.md` + `BACKLOG.md` "Bigint storage migration" | none — verified |
+| #   | Subject                                                                                                | Finding disposition                                                                                                   | Action this PR                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| F1  | `openapi-fetch` (TS) doesn't auto-detect `application/merge-patch+json`; every PATCH 415s on first try | hygiene; defer                                                                                                        | **Ship a discoverability fix** — add a tip in quickstart §3 pointing TS readers to the existing §5.1 middleware |
+| F2  | Pydantic `datamodel-codegen` drops `nullable: true`                                                    | confirms `BACKLOG.md` "OpenAPI 3.1 migration" + `design-notes.md` "Nullable fields…"                                  | none — verified                                                                                                 |
+| F3  | Pydantic emits `TagType`/`TagType2`/`TagType4` per-variant enums                                       | confirms `design-notes.md` "Tag schema uses three single-value enums…"                                                | none — verified                                                                                                 |
+| F4  | HEAD supported on every GET; spec deliberately omits it                                                | confirms `design-notes.md` "HEAD method not declared…"                                                                | none — verified                                                                                                 |
+| F5  | `descendant_count_affected: 0` on asset rename                                                         | confirms `design-notes.md` "`descendant_count_affected` on `RenameAssetResponse`…" (shipped in TRA-736 F5, `cf42657`) | none — verified                                                                                                 |
+| F6  | `metadata` PATCH replaces wholesale                                                                    | confirms `resource-identifiers.md#metadata-opaque`                                                                    | none — verified                                                                                                 |
+| F7  | `id` is int64 on wire, int32 runtime                                                                   | confirms `id-format.md` + `BACKLOG.md` "Bigint storage migration"                                                     | none — verified                                                                                                 |
 
 ## F1 — what the gap actually is
 
@@ -22,7 +22,7 @@ The substantive fix shipped in TRA-718 (`833446d`) / TRA-716 (`e2d6de8`): `docs/
 
 The BB41 tester ran cleanly against §3's curl walkthrough first, then translated those calls to `openapi-fetch` in a smoke script before reaching §5. The 415 hit in their §10 codegen test reflects that ordering: §5.1 exists, but isn't surfaced where a TS reader is most likely to write their first PATCH.
 
-The finding text already names the fix: *"a short note in the quickstart's 'Step 3 — Update'"*.
+The finding text already names the fix: _"a short note in the quickstart's 'Step 3 — Update'"_.
 
 ## Change
 

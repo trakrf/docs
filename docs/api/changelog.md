@@ -11,6 +11,12 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
+### BB41 follow-up — TypeScript `openapi-fetch` `PATCH` 415 surfaced from §3
+
+Single docs-discoverability item from BB41. No spec or wire change.
+
+- **Quickstart §3 now points TypeScript `openapi-fetch` readers to the merge-patch middleware in §5 before the first PATCH.** The substantive fix — a copyable `mergePatchMiddleware` plus a `createTrakrfClient` wrapper — has been at [§5 — TypeScript with `openapi-fetch`](./quickstart#openapi-fetch) since the TRA-718 cycle. A reader following the curl walkthrough in §3, then translating to `openapi-fetch` before reaching §5, would still hit `415 unsupported_media_type` on their first `PATCH`. A short `:::tip` admonition now lands next to the §3 PATCH curl example, naming the failure mode and cross-linking to the existing middleware. Pure docs polish; no wire change. See [Quickstart §3](./quickstart#3-round-trip-create-read-update-delete).
+
 ### BB40 — Master-data / scan-data API bifurcation
 
 The asset-create surface and the asset PATCH surface now treat asset location identically: scan-data, not master-data. Both reject `location_id` and `location_external_key`. The error detail names the ingestion paths (fixed-reader MQTT and handheld UI submission) so an integrator who tried to set initial location on POST lands on the right consumption surface. Pre-launch behavioral / spec tightening; no `v1.0.0`-or-later wire baseline to break.
