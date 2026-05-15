@@ -217,7 +217,7 @@ The asset PATCH writable surface is `name`, `description`, `is_active`, `metadat
 :::
 
 :::important Scope of `PATCH /api/v1/locations/{location_id}`
-Location PATCH **does** move the location in the tree. Both `parent_id` (surrogate) and `parent_external_key` (natural key) are writable on `UpdateLocationRequest` — symmetric with `CreateLocationRequest` — and either form accepts `null` to detach the location to root. Send one form or the other in a single body; supplying both returns `400 validation_error` / `code: ambiguous_fields`, matching the create-side rule. The asymmetry with the asset side is deliberate — asset location is scan-derived; location parentage is a partner-managed tree.
+Location PATCH **does** move the location in the tree. Both `parent_id` (surrogate) and `parent_external_key` (natural key) are writable on `UpdateLocationRequest` — symmetric with `CreateLocationRequest` — and either form accepts `null` to detach the location to root. Send one form or the other in a single body; supplying both with matching values is accepted (silently normalized to a single re-parent operation), and supplying both with differing values returns `400 validation_error` / `code: ambiguous_fields`. The asymmetry with the asset side is deliberate — asset location is scan-derived; location parentage is a partner-managed tree.
 
 The location PATCH writable surface is `name`, `description`, `is_active`, `parent_id` **or** `parent_external_key`, `valid_from`, `valid_to`. Mutate `external_key` via `POST /api/v1/locations/{location_id}/rename`; mutate `tags` via the tag subresource.
 :::
@@ -225,7 +225,7 @@ The location PATCH writable surface is `name`, `description`, `is_active`, `pare
 Three rules cover the body semantics:
 
 - **Field present, scalar value** — set the field to that value.
-- **Field present, value `null`** — clear the field. Only legal for writable-nullable fields (listed at the end of this section); sending `null` for a non-nullable field is treated the same as omitting a required field and returns `400 validation_error` / `code: required`.
+- **Field present, value `null`** — clear the field. Only legal for writable-nullable fields (listed at the end of this section); sending `null` for a non-nullable field returns `400 validation_error` / `code: invalid_value` (distinct from `required`, which fires when the key is absent — see [Errors → Validation errors](./errors#validation-errors)).
 - **Field omitted** — leave the existing value unchanged.
 
 An empty body (`{}`) is a documented no-op and returns `200` with the resource unchanged. This is also the floor case for the "no writable fields" rule below.
@@ -245,7 +245,7 @@ Request and response field _names_ match for every writable field. Read response
 | `location_id`           | `PATCH /assets`                     | "Asset location is derived from scan events and not directly settable; record a scan event to update asset location."                              |
 | `location_external_key` | `PATCH /assets`                     | Same as `location_id`.                                                                                                                             |
 
-Both `parent_id` and `parent_external_key` on `PATCH /locations` are **not** in this rule — they are both fully writable (either form re-parents; supplying both in the same body returns `ambiguous_fields`, symmetric with create). The rename endpoint changes the row's own `external_key`, not its parentage.
+Both `parent_id` and `parent_external_key` on `PATCH /locations` are **not** in this rule — they are both fully writable (either form re-parents; supplying both with matching values is accepted, supplying both with differing values returns `ambiguous_fields`). The rename endpoint changes the row's own `external_key`, not its parentage.
 
 The four `location_*` cases on assets share their detail string because TrakRF is record-of-origin for asset location data: current location is derived from the scan-event stream, not a partner-side write. PATCH never moves an asset; record a scan event instead. (See [Scan events are a domain concept](#scan-event-vocabulary) for the broader framing.)
 
@@ -258,7 +258,7 @@ For `created_at`, `updated_at`, and `deleted_at` the match is by instant rather 
 The rejected fields each have a dedicated mutation surface:
 
 - **`external_key`** — mutate via `POST /api/v1/assets/{asset_id}/rename` or `POST /api/v1/locations/{location_id}/rename`. See [Renaming an `external_key`](#renaming-an-external_key) for the operation shape and the partner-side join-disconnect contract.
-- **`parent_external_key`** — writable on `PATCH /locations` (symmetric with create): send either `parent_id` or `parent_external_key` to re-parent (`null` on either form clears the FK; supplying both returns `ambiguous_fields`). The rename endpoint changes the row's own `external_key`, not its parentage; to make the value that reads back as `parent_external_key` change without re-parenting, rename the parent row itself via `POST /api/v1/locations/{parent_id}/rename`.
+- **`parent_external_key`** — writable on `PATCH /locations` (symmetric with create): send either `parent_id` or `parent_external_key` to re-parent (`null` on either form clears the FK; supplying both with matching values is accepted, supplying both with differing values returns `ambiguous_fields`). The rename endpoint changes the row's own `external_key`, not its parentage; to make the value that reads back as `parent_external_key` change without re-parenting, rename the parent row itself via `POST /api/v1/locations/{parent_id}/rename`.
 - **`location_id` / `location_external_key`** (assets) — record a scan event. The public API does not expose direct scan ingestion in v1; ingestion happens through reader integrations.
 - **`tags`** — mutate via `POST /api/v1/assets/{asset_id}/tags` and `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}` (and the location counterparts). See [Tag CRUD](#tag-crud).
 
@@ -293,22 +293,29 @@ curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
        "$BASE_URL/api/v1/assets/4287"
 ```
 
-The split is encoded in the spec where it can be: the server-managed surrogate id and timestamps carry `readOnly: true`, which drives typed codegen tools to omit them from request shapes; the natural-key reference fields and `tags` are deliberately **kept** in the write schema (`UpdateAssetRequest` / `UpdateLocationRequest`) without `readOnly: true` so generated SDKs surface a rejection at the wire when a differing value is sent, instead of dropping the value silently before the request leaves the client. Future resources may grow their own read-only fields; don't memorize per-resource lists — derive them from the spec, or rely on a generated client.
+The split is encoded in the spec where it can be: the server-managed surrogate id and timestamps carry `readOnly: true`, which drives typed codegen tools to omit them from request shapes. The natural-key reference fields and `tags` are handled differently per schema, with a corresponding integrator-side asymmetry:
+
+- **`UpdateLocationRequest` keeps `parent_id` and `parent_external_key`** because they are themselves writable on PATCH for re-parenting. A differing `external_key` field is still surfaced as `400 read_only` by the [accept-if-matches](#read-shape-vs-write-shape) rule, but the parent FK pair travels through the write schema by design.
+- **`UpdateAssetRequest` declares only `[description, is_active, metadata, name, valid_from, valid_to]`** — the natural-key reference fields (`external_key`, `location_id`, `location_external_key`) and `tags` are **not** declared on the write schema. Strict-typed SDKs (Pydantic models, generated Java POJOs, Go structs built from the spec) reshape into `UpdateAssetRequest` before sending, so these fields are scrubbed client-side by construction and the wire-level `400 read_only` rejection never reaches the integrator from a typed SDK call path.
+
+The practical consequence: the [accept-if-matches, reject-if-differs](#read-shape-vs-write-shape) wire-level rule is real, but most integrators won't observe the reject side through their SDK on the asset surface. Only hand-rolled callers (curl, raw `fetch`, hand-built `requests` payloads) send the unscrubbed read shape and see the `400` directly. The full [verbatim `GET` → `PATCH` round-trip](#read-shape-vs-write-shape) still succeeds across both call paths: strict-typed SDKs scrub the unwritable fields before the request leaves the client; hand-rolled callers send everything and the server silently strips matching read-only values.
+
+Future resources may grow their own read-only fields; don't memorize per-resource lists — derive them from the spec, or rely on a generated client.
 
 ### Paired-key behavior per verb {#paired-key-behavior-per-verb}
 
 Each paired FK relationship — `location_id` / `location_external_key` on assets, `parent_id` / `parent_external_key` on locations — has different contracts per HTTP verb:
 
-| Surface                                | one form supplied                                                                                    | both forms supplied (agree)                                          | both forms supplied (disagree)                                                       |
-| -------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `POST` body (assets and locations)     | accept                                                                                               | `400 validation_error / ambiguous_fields`                            | `400 validation_error / ambiguous_fields`                                            |
-| `PATCH /assets/{id}` body              | accept-if-matches on either form; `400 read_only` if either differs                                  | accept-if-matches (both stripped); `400 read_only` if either differs | `400 read_only` (each differing field generates a `fields[]` entry)                  |
-| `PATCH /locations/{id}` body           | both `parent_id` and `parent_external_key` writable; either re-parents (or accepts `null` to detach) | `400 validation_error / ambiguous_fields` (same XOR rule as create)  | `400 validation_error / ambiguous_fields` (XOR rule applies before value comparison) |
-| `GET` list filter (assets / locations) | accept                                                                                               | `400 validation_error / ambiguous_fields`                            | `400 validation_error / ambiguous_fields`                                            |
+| Surface                                | one form supplied                                                                                    | both forms supplied (agree)                                          | both forms supplied (disagree)                                      |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `POST` body (assets and locations)     | accept                                                                                               | `400 validation_error / ambiguous_fields`                            | `400 validation_error / ambiguous_fields`                           |
+| `PATCH /assets/{id}` body              | accept-if-matches on either form; `400 read_only` if either differs                                  | accept-if-matches (both stripped); `400 read_only` if either differs | `400 read_only` (each differing field generates a `fields[]` entry) |
+| `PATCH /locations/{id}` body           | both `parent_id` and `parent_external_key` writable; either re-parents (or accepts `null` to detach) | accept (silently normalized to a single re-parent operation)         | `400 validation_error / ambiguous_fields`                           |
+| `GET` list filter (assets / locations) | accept                                                                                               | `400 validation_error / ambiguous_fields`                            | `400 validation_error / ambiguous_fields`                           |
 
 On `POST` and `GET` filter surfaces, supplying both forms is rejected outright — `fields[]` carries one entry per offending parameter so a validation UI can highlight both. The spec encodes this directly for `POST` bodies (`not: required: [location_id, location_external_key]` on `CreateAssetWithTagsRequest` and the location equivalent); the `GET`-filter rule is enforced handler-side because OpenAPI 3 cannot express mutual exclusion on query parameters.
 
-`PATCH` follows the uniform [accept-if-matches, reject-if-differs](#read-shape-vs-write-shape) rule for the two asset-side natural-key reference fields. The asset side does not expose a writable surrogate for location — current location is derived from scan events, so neither `location_id` nor `location_external_key` can move an asset via `PATCH`. The location side keeps both `parent_id` and `parent_external_key` writable for re-parenting (under the same XOR rule as create); the rename endpoint changes `external_key`, not parentage.
+`PATCH` follows the uniform [accept-if-matches, reject-if-differs](#read-shape-vs-write-shape) rule for the two asset-side natural-key reference fields. The asset side does not expose a writable surrogate for location — current location is derived from scan events, so neither `location_id` nor `location_external_key` can move an asset via `PATCH`. The location side keeps both `parent_id` and `parent_external_key` writable for re-parenting; supplying both with matching values is accepted (silently normalized to a single re-parent), and only a value disagreement returns `ambiguous_fields`. The rename endpoint changes `external_key`, not parentage.
 
 A foreign-key value that refers to a non-existent (or soft-deleted) row — `location_id: 99999999` or `location_external_key: "NOPE-XYZ"` — returns `400 validation_error` with `code: fk_not_found` regardless of which form you sent; `fields[].field` names the form. Branch on `code`, not on which FK variant the caller chose. `fk_not_found` is checked after the accept-if-matches step on `PATCH`, so a bogus FK value that happens to match the current state (e.g., echoing a `null` from a relationship that's already unset) is silently stripped before any FK resolution runs.
 
@@ -361,7 +368,7 @@ curl -X POST \
 
 `descendant_count_affected` is the live count of descendant rows reachable through the `parent_id` chain — the renamed row itself is **not** included. The TrakRF response carries `parent_id` (surrogate) and `parent_external_key` (the renamed value will propagate through `parent_external_key` on descendants automatically because that field is recomputed on read). A non-zero value is your cue to refresh any subtree state your own side caches under the old natural key. Zero means there are no descendants — for example, a leaf-location rename — and no client-side refresh is needed.
 
-A same-value rename (new `external_key` equals the current one) is idempotent: returns `200` with `descendant_count_affected: 0` and no audit-log noise to special-case. Safe to retry on partial-failure without branching for "already at the target value."
+A same-value rename (new `external_key` equals the current one) is fully idempotent: returns `200` with `descendant_count_affected: 0`, no audit-log noise to special-case, and **`updated_at` does not advance** — the row is observably unchanged. Safe to retry on partial-failure without branching for "already at the target value," and a cached-body `PATCH` after a same-value rename retry remains safe because the cached `updated_at` still matches the live value. A real rename (new value differs from current) advances `updated_at` like any other write, so any cached body needs a re-`GET` before the next `PATCH` — see [Round-trip: `GET` → mutate → `PATCH`](./quickstart#round-trip-patch) for the optimistic-concurrency framing.
 
 ### Uniqueness collisions return `409`
 
