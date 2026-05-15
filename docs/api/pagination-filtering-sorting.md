@@ -100,20 +100,22 @@ These dimensions are orthogonal — a row may sit at any one of the eight `(soft
 
 The fullest treatment of the temporal-validity axis lives in [Resource identifiers → Effective dating and `is_active`](./resource-identifiers#effective-dating-and-is-active); the soft-delete axis lives in [Soft-delete visibility on lists](./resource-identifiers#soft-delete-visibility). This section is the single-page index of how the three combine on filter surfaces.
 
-| Endpoint                                | Filter params                                                                                                                                        |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q` |
-| `GET /api/v1/locations`                 | `external_key` (repeatable), `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`     |
-| `GET /api/v1/reports/asset-locations`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted` (default `false`), `q`                                           |
-| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps); also accepts the standard `limit` / `offset` / `sort` from the [Pagination](#pagination) section                 |
+| Endpoint                                | Filter params                                                                                                                                                          |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`                   |
+| `GET /api/v1/locations`                 | `external_key` (repeatable), `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`                       |
+| `GET /api/v1/reports/asset-locations`   | `location_id` (repeatable), `location_external_key` (repeatable), `asset_id` (repeatable), `asset_external_key` (repeatable), `include_deleted` (default `false`), `q` |
+| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps); also accepts the standard `limit` / `offset` / `sort` from the [Pagination](#pagination) section                                   |
 
 The `external_key` filter on `/assets` and `/locations` is the [`?external_key=` natural-key lookup](./resource-identifiers#natural-key-lookup-uses-external_key) — repeatable as `?external_key=A&external_key=B` for batch resolution.
 
 ### Paired-by-id-and-by-natural-key filters are mutually exclusive
 
-When a list endpoint accepts both an id form and a natural-key form for the same logical relationship — `location_id` / `location_external_key` on `/assets`, `parent_id` / `parent_external_key` on `/locations` — the two forms are **mutually exclusive in a single request**. Sending both returns `400 validation_error` with `code: ambiguous_fields` and one `fields[]` entry per offending param. State the rule once for all such pairs rather than per-parameter.
+When a list endpoint accepts both an id form and a natural-key form for the same logical relationship — `location_id` / `location_external_key` on `/assets` and on `/reports/asset-locations`, `parent_id` / `parent_external_key` on `/locations`, `asset_id` / `asset_external_key` on `/reports/asset-locations` — the two forms are **mutually exclusive in a single request**. Sending both returns `400 validation_error` with `code: ambiguous_fields` and one `fields[]` entry per offending param. State the rule once for all such pairs rather than per-parameter.
 
 To filter for the union of two values, repeat **one** form: `?location_id=42&location_id=43`. To filter for the union across both forms, resolve to one form first (typically `id`, since the natural-key lookup gives you the `id` for free).
+
+`/reports/asset-locations` carries two such pairs (asset-side and location-side). The pairs are independent and intersect when combined — `?asset_external_key=AST-01&location_external_key=DOCK-1` returns rows where the asset matches the asset filter **and** the current location matches the location filter. The mutual-exclusion rule applies within each pair, not across them.
 
 The same `ambiguous_fields` rule applies to `POST /api/v1/locations` request bodies (`parent_id` XOR `parent_external_key` — pick one). `POST /api/v1/assets` is **not** a paired-key surface on location at all — both `location_id` and `location_external_key` are absent from `CreateAssetWithTagsRequest` and either field rejects with `read_only` (asset location is scan-data, not master-data — see [Data model](./data-model)). `PATCH` behavior differs by resource: `PATCH /api/v1/locations/{location_id}` emits `ambiguous_fields` when both `parent_id` and `parent_external_key` are supplied with **differing** values (matching values are silently accepted as a single re-parent), while `PATCH /api/v1/assets/{asset_id}` never emits the code on the location FK pair — `location_id` and `location_external_key` aren't part of `UpdateAssetRequest`, so they follow the uniform [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule independently per field, and a differing value generates a per-field `read_only` entry. See [Resource identifiers → Paired-key behavior per verb](./resource-identifiers#paired-key-behavior-per-verb) for the full matrix and the `fk_not_found` envelope returned when either form references a non-existent row.
 
@@ -262,6 +264,18 @@ Where each asset was last seen — one row per asset. Filter by the location(s) 
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/reports/asset-locations?location_external_key=DOCK-1&sort=-asset_last_seen"
 ```
+
+Or resolve a batch of asset external_keys from a master system to their current locations in one round-trip:
+
+```bash
+curl -G -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/reports/asset-locations" \
+     --data-urlencode "asset_external_key=AST-0001" \
+     --data-urlencode "asset_external_key=AST-0002" \
+     --data-urlencode "asset_external_key=AST-0003"
+```
+
+This is the canonical [master-data / scan-data](./data-model) consumption flow: an ERP-derived list of asset external_keys resolves to current scan-derived locations in a single request rather than N round-trips. Use `asset_id` instead when you already hold surrogate ids.
 
 ### History
 
