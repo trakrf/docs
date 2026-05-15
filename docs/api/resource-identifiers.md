@@ -368,7 +368,7 @@ curl -X POST \
 
 `descendant_count_affected` is the live count of descendant rows reachable through the `parent_id` chain — the renamed row itself is **not** included. The TrakRF response carries `parent_id` (surrogate) and `parent_external_key` (the renamed value will propagate through `parent_external_key` on descendants automatically because that field is recomputed on read). A non-zero value is your cue to refresh any subtree state your own side caches under the old natural key. Zero means there are no descendants — for example, a leaf-location rename — and no client-side refresh is needed.
 
-A same-value rename (new `external_key` equals the current one) is idempotent: returns `200` with `descendant_count_affected: 0` and no audit-log noise to special-case. Safe to retry on partial-failure without branching for "already at the target value."
+A same-value rename (new `external_key` equals the current one) is fully idempotent: returns `200` with `descendant_count_affected: 0`, no audit-log noise to special-case, and **`updated_at` does not advance** — the row is observably unchanged. Safe to retry on partial-failure without branching for "already at the target value," and a cached-body `PATCH` after a same-value rename retry remains safe because the cached `updated_at` still matches the live value. A real rename (new value differs from current) advances `updated_at` like any other write, so any cached body needs a re-`GET` before the next `PATCH` — see [Round-trip: `GET` → mutate → `PATCH`](./quickstart#round-trip-patch) for the optimistic-concurrency framing.
 
 ### Uniqueness collisions return `409`
 

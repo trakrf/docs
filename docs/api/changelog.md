@@ -11,6 +11,12 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
+### BB39 fix wave — same-value rename no longer advances `updated_at`
+
+Single behavioral fix from BB39. No spec surface — wire shape is unchanged.
+
+- **`POST /api/v1/assets/{asset_id}/rename` and `POST /api/v1/locations/{location_id}/rename` are now fully idempotent on a same-value rename.** When the new `external_key` value equals the current one, the handler short-circuits before the row UPDATE — no audit-log row, no `updated_at` bump, no observable mutation. Locations already had this short-circuit; assets did not, and the asset path advanced `updated_at` by ~370ms on every value-match retry. The asymmetry surfaced as an [optimistic-concurrency](./quickstart#round-trip-patch) trap: an integrator who cached an asset's response body and issued a defensive same-value rename followed by a cached-body `PATCH` would fail the accept-if-matches check on `updated_at`. Both rename endpoints now mirror — same-value rename is safe to retry, and the cached body remains valid through that retry. A real rename (new value differs from current) advances `updated_at` like any other write; re-`GET` before a cached-body `PATCH` in that path. Non-breaking against any `v1.0.0`-or-later wire baseline (pre-launch behavioral alignment; the prior asset-side `updated_at` advance was a missing short-circuit, not a stable contract). See [Resource identifiers → Renaming an `external_key`](./resource-identifiers#renaming-an-external_key) and [Errors → Idempotency](./errors#idempotency).
+
 ### BB37 fix wave — path/query id `maximum` declared in the spec, `nullable: true` codegen interpretation noted
 
 Two pre-launch polish items from BB37. Wire format is unchanged.
