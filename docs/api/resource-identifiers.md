@@ -555,7 +555,7 @@ A row is **currently effective** when:
 
 > (`valid_from` IS NULL OR `valid_from` ≤ now) AND (`valid_to` IS NULL OR `valid_to` > now)
 
-The default scope on list endpoints applies this predicate — temporally inactive rows are filtered out regardless of `is_active`. The endpoints that filter:
+The default scope on list endpoints applies this predicate — temporally inactive rows are filtered out regardless of `is_active`. The surfaces that apply the currently-effective predicate by default:
 
 - `GET /api/v1/assets`
 - `GET /api/v1/locations`
@@ -565,7 +565,14 @@ The default scope on list endpoints applies this predicate — temporally inacti
 
 Direct lookups by canonical `id` (`GET /api/v1/assets/{asset_id}`, `GET /api/v1/locations/{location_id}`) **do not** apply the predicate — a path-param read returns any non-deleted row. Clients holding a stale `id` can still inspect the record they remember, even after `valid_to` has passed.
 
-`is_active` is an independent filter dimension. The default list scope returns currently-effective rows of either `is_active` value; pass `?is_active=true` (or `false`) to narrow further. The substring search (`?q=`) restricts tag-value matching to active and currently-effective tags — retired tags stay out of the search corpus by design.
+`is_active` is an independent filter dimension. The default list scope returns currently-effective rows of either `is_active` value. The endpoints that accept `?is_active=` as a caller filter are a narrower set than the list above:
+
+- `GET /api/v1/assets` — pass `?is_active=true` or `?is_active=false` to narrow further.
+- `GET /api/v1/locations` — same.
+
+`GET /api/v1/reports/asset-locations` and `GET /api/v1/assets/{asset_id}/history` apply the currently-effective predicate but do **not** declare `is_active` as a query parameter — passing `?is_active=` to either returns `400 validation_error` / `code: unknown_field`. The two embedded-`tags[]`-array surfaces don't accept query parameters at all; they ride on the parent resource response.
+
+The substring search (`?q=`) restricts tag-value matching to active and currently-effective tags — retired tags stay out of the search corpus by design.
 
 If your business logic needs to surface an expired record (e.g., to render a "decommissioned on …" row in your UI), use the path-param read path or your own client-side filter — the list endpoints will not surface temporally inactive rows.
 

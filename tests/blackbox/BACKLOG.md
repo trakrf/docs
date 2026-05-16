@@ -14,6 +14,18 @@ Items not surfaced to integrators because they describe how the harness operates
 
 If future cycles surface other internal-only deliberate states, add them here. Anything integrator-visible goes to `/docs/api/design-notes`.
 
+## Deliberate fixture states
+
+Test-org artifact states that BB cycles will observe but should not flag as service or contract findings. Each entry records the state, why it's expected, and the post-launch path to resolve it.
+
+### Soft-deleted fixture accumulation in the test org
+
+**State:** Soft-deletes accumulate in the test org across BB cycles by design — [BB.md](./BB.md) instructs each cycle not to clean prior cycles' artifacts. As of BB44: `GET /assets?include_deleted=true` returns `total_count: 270` against `total_count: 8` for the default live view (~33× expansion); smaller-scale accumulation on locations.
+
+**Disposition:** Not a service finding and not a contract finding. BB cycles should surface this only as fixture-maintenance for the orchestrator — do not file as a finding against `/assets`, `/locations`, or the soft-delete model.
+
+**Eventual fix (post-launch):** Build a deliberately scoped test fixture — target ~hundreds of assets and 20–30 locations with at least a 2-deep hierarchy — and reset the test org as part of fixture provisioning so every BB cycle starts from a known-good baseline. Held back from launch scope as a "good in theory, not needed to ship" item.
+
 ## Deferred work
 
 Items with real fixes that cost-benefit deliberately deferred. Each entry has an explicit trigger condition; the registry is groomed at post-launch milestones and whenever a trigger fires.
