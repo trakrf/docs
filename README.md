@@ -33,10 +33,12 @@ Generates static content into the `build/` directory.
 
 The site builds in one of two modes, controlled by `DEPLOY_ENV`:
 
-- `DEPLOY_ENV=production` — emits `https://docs.trakrf.id` / `https://app.trakrf.id` URLs in SSR HTML, sitemap, canonical tags, OpenAPI spec download links, and the `<EnvBaseURL/>` family of components.
-- `DEPLOY_ENV=preview` (default for local dev) — emits the `*.preview.trakrf.id` equivalents.
+- `DEPLOY_ENV=production` — emits `https://docs.trakrf.id` / `https://app.trakrf.id` URLs in SSR HTML, sitemap, canonical tags, and the `<EnvBaseURL/>` family of components. The Redoc-rendered `/api` page fetches the spec from `https://app.trakrf.id/api/v1/openapi.yaml` at build time.
+- `DEPLOY_ENV=preview` (default for local dev) — emits the `*.preview.trakrf.id` equivalents and fetches the spec from `https://app.preview.trakrf.id/api/v1/openapi.yaml`.
 
 On Cloudflare Pages, set `DEPLOY_ENV=production` on the production environment and `DEPLOY_ENV=preview` on the preview environment. If unset, the build auto-detects from `CF_PAGES_BRANCH` (`main` → production, anything else → preview).
+
+The OpenAPI spec is single-source on the platform; this site never stores a mirrored copy. `/api/openapi.{json,yaml}` 302s to `https://app.{env}.trakrf.id/api/v1/openapi.{json,yaml}` via `functions/_middleware.js`.
 
 ### Serve
 
@@ -63,14 +65,11 @@ Requires `.env` with `TRAKRF_PREVIEW_URL` and docs-tour credentials (copy from `
 ## `/health.json`
 
 The deployed docs site serves `/health.json` (e.g. `https://docs.preview.trakrf.id/health.json`) so
-anyone can spot-check which build is live.
+anyone can spot-check which docs build is live. Emitted by `scripts/write-health-json.mjs` at build
+time; `static/health.json` is **gitignored** — it's a build artifact.
 
-- `docs.{commit, build_time}` — emitted by `scripts/write-health-json.mjs` at build time. The file
-  `static/health.json` is **gitignored** — it's a build artifact.
-- `platform.{commit, source_url, spec_refreshed_at}` — committed snapshot at
-  `static/api/platform-meta.json`, written by `scripts/refresh-openapi.sh` when the OpenAPI spec is
-  pulled from `trakrf/platform`. Pins the bundled spec to a specific platform commit; `source_url`
-  links to the commit on GitHub.
+Platform identity and `spec_refreshed_at` live on the platform's own
+`https://app.{env}.trakrf.id/health.json` — there's no longer a mirrored `platform` block here.
 
 ## Contributing
 

@@ -13,7 +13,7 @@ test:
     @bash scripts/test_bb_cycle.sh
 
 # Picks the next cycle number (or accepts an explicit one), runs the
-# spec-sync preflight against the live preview deploys, then copies
+# deploy-lag preflight against the preview docs site, then copies
 # tests/blackbox/ out to /tmp/bb-NN for isolated execution. Prints a
 # copy-paste command to start the session.
 #
@@ -66,11 +66,12 @@ bb_cycle num="":
       exit 1
     fi
 
-    # 3. Preflight against the preview environment.
-    #    Runs from the working tree (not the isolation dir) so it can fail
-    #    fast before any filesystem state is created.
+    # 3. Preflight: confirm the preview docs deploy has caught up to
+    #    origin/main. Cloudflare Pages builds typically take a couple of
+    #    minutes; if we run BB before the new deploy lands the cycle will
+    #    test the previous commit.
     if [ "${BB_SKIP_PREFLIGHT:-}" != "1" ]; then
-      echo "==> BB cycle $n — running spec-sync preflight"
+      echo "==> BB cycle $n — running deploy-lag preflight"
       echo
 
       # Load API_TEST_* from tests/blackbox/.env.local. Required by the
@@ -86,13 +87,13 @@ bb_cycle num="":
       deadline=$(( $(date +%s) + 300 ))   # ~5 min
       interval=20
       while :; do
-        if bash tests/blackbox/check-spec-sync.sh; then
+        if bash tests/blackbox/check-deploy-lag.sh; then
           break
         fi
         rc=$?
         # Only retry on exit 4 (preview deploy lag — Cloudflare Pages
-        # still catching up to the preview branch tip). Other failures
-        # (env, mirror divergence, real spec drift) are not transient.
+        # still catching up to the published tip). Other failures (env,
+        # unreachable origin) are not transient.
         if [ "$rc" -ne 4 ]; then
           echo "ERROR: preflight failed with exit code $rc (non-transient). Resolve and retry." >&2
           exit "$rc"
