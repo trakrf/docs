@@ -59,7 +59,7 @@ GET /api/v1/assets/2147483648
 }
 ```
 
-The same envelope applies to request-body ids (`location_id` on `POST /api/v1/assets`, `parent_id` on `POST /api/v1/locations`) and to list-filter query parameters that take an id (`?location_id=`, `?parent_id=`). Branch on `code: too_large` and `params.max` rather than parsing the `message` string — see [Errors → Validation errors](./errors#validation-errors) for the catalog.
+The same envelope applies to request-body ids (`parent_id` on `POST /api/v1/locations`) and to list-filter query parameters that take an id (`?location_id=`, `?parent_id=`). `location_id` is not a writable field on the asset surface — it's scan-data, not master-data; see [Data model](./data-model) — so the request-body too-large path doesn't apply to it on asset POST or PATCH (the field rejects on presence with `read_only`, not on range with `too_large`). Branch on `code: too_large` and `params.max` rather than parsing the `message` string — see [Errors → Validation errors](./errors#validation-errors) for the catalog.
 
 Out-of-range path-param ids (zero, negative, the `2³¹` overflow case shown above) take the `validation_error` path with `params.max`, **not** `404 not_found`. The `404` path is reserved for in-range ids that don't resolve to an existing row. See [Errors → Path- and query-parameter validation errors](./errors#path-and-query-parameter-validation-errors) for the broader path-param bounds rule.
 

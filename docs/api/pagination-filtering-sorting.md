@@ -100,22 +100,24 @@ These dimensions are orthogonal — a row may sit at any one of the eight `(soft
 
 The fullest treatment of the temporal-validity axis lives in [Resource identifiers → Effective dating and `is_active`](./resource-identifiers#effective-dating-and-is-active); the soft-delete axis lives in [Soft-delete visibility on lists](./resource-identifiers#soft-delete-visibility). This section is the single-page index of how the three combine on filter surfaces.
 
-| Endpoint                                | Filter params                                                                                                                                        |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q` |
-| `GET /api/v1/locations`                 | `external_key` (repeatable), `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`     |
-| `GET /api/v1/reports/asset-locations`   | `location_id` (repeatable), `location_external_key` (repeatable), `include_deleted` (default `false`), `q`                                           |
-| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps); also accepts the standard `limit` / `offset` / `sort` from the [Pagination](#pagination) section                 |
+| Endpoint                                | Filter params                                                                                                                                                          |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/assets`                    | `external_key` (repeatable), `location_id` (repeatable), `location_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`                   |
+| `GET /api/v1/locations`                 | `external_key` (repeatable), `parent_id` (repeatable), `parent_external_key` (repeatable), `is_active`, `include_deleted` (default `false`), `q`                       |
+| `GET /api/v1/reports/asset-locations`   | `location_id` (repeatable), `location_external_key` (repeatable), `asset_id` (repeatable), `asset_external_key` (repeatable), `include_deleted` (default `false`), `q` |
+| `GET /api/v1/assets/{asset_id}/history` | `from`, `to` (RFC 3339 timestamps); also accepts the standard `limit` / `offset` / `sort` from the [Pagination](#pagination) section                                   |
 
 The `external_key` filter on `/assets` and `/locations` is the [`?external_key=` natural-key lookup](./resource-identifiers#natural-key-lookup-uses-external_key) — repeatable as `?external_key=A&external_key=B` for batch resolution.
 
 ### Paired-by-id-and-by-natural-key filters are mutually exclusive
 
-When a list endpoint accepts both an id form and a natural-key form for the same logical relationship — `location_id` / `location_external_key` on `/assets`, `parent_id` / `parent_external_key` on `/locations` — the two forms are **mutually exclusive in a single request**. Sending both returns `400 validation_error` with `code: ambiguous_fields` and one `fields[]` entry per offending param. State the rule once for all such pairs rather than per-parameter.
+When a list endpoint accepts both an id form and a natural-key form for the same logical relationship — `location_id` / `location_external_key` on `/assets` and on `/reports/asset-locations`, `parent_id` / `parent_external_key` on `/locations`, `asset_id` / `asset_external_key` on `/reports/asset-locations` — the two forms are **mutually exclusive in a single request**. Sending both returns `400 validation_error` with `code: ambiguous_fields` and one `fields[]` entry per offending param. State the rule once for all such pairs rather than per-parameter.
 
 To filter for the union of two values, repeat **one** form: `?location_id=42&location_id=43`. To filter for the union across both forms, resolve to one form first (typically `id`, since the natural-key lookup gives you the `id` for free).
 
-The same `ambiguous_fields` rule applies to `POST` request bodies on `/assets` and `/locations` (surrogate XOR natural-key — pick one). `PATCH` does **not** emit `ambiguous_fields` — natural-key reference fields follow the uniform [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule independently per field, so both forms supplied with matching values are silently accepted, and a differing value generates a per-field `read_only` entry. See [Resource identifiers → Paired-key behavior per verb](./resource-identifiers#paired-key-behavior-per-verb) for the full matrix and the `fk_not_found` envelope returned when either form references a non-existent row.
+`/reports/asset-locations` carries two such pairs (asset-side and location-side). The pairs are independent and intersect when combined — `?asset_external_key=AST-01&location_external_key=DOCK-1` returns rows where the asset matches the asset filter **and** the current location matches the location filter. The mutual-exclusion rule applies within each pair, not across them.
+
+The same `ambiguous_fields` rule applies to `POST /api/v1/locations` request bodies (`parent_id` XOR `parent_external_key` — pick one). `POST /api/v1/assets` is **not** a paired-key surface on location at all — both `location_id` and `location_external_key` are absent from `CreateAssetWithTagsRequest` and either field rejects with `read_only` (asset location is scan-data, not master-data — see [Data model](./data-model)). `PATCH` behavior differs by resource: `PATCH /api/v1/locations/{location_id}` emits `ambiguous_fields` when both `parent_id` and `parent_external_key` are supplied with **differing** values (matching values are silently accepted as a single re-parent), while `PATCH /api/v1/assets/{asset_id}` never emits the code on the location FK pair — `location_id` and `location_external_key` aren't part of `UpdateAssetRequest`, so they follow the uniform [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule independently per field, and a differing value generates a per-field `read_only` entry. See [Resource identifiers → Paired-key behavior per verb](./resource-identifiers#paired-key-behavior-per-verb) for the full matrix and the `fk_not_found` envelope returned when either form references a non-existent row.
 
 ### Repeatable filters
 
@@ -226,7 +228,9 @@ The `id` tiebreaker makes the order deterministic across pages. Sending `?sort=.
 
 Three rules govern how the validator handles `POST` and `PATCH` request bodies. They're separate from list-endpoint filters but they're the next thing partners ask about once they've done a `GET` and want to write back, so they live here:
 
-**Read-only fields on `PATCH` follow a uniform accept-if-matches, reject-if-differs rule.** Server-managed metadata (`id`, `created_at`, `updated_at`, `deleted_at`), the `tags` collection, and every natural-key reference field (`external_key` on both resources, `parent_external_key` on locations, `location_id` and `location_external_key` on assets) obey the same contract: a body value matching the current resource state is silently normalized out (the request returns `200` and other fields apply normally), and a differing value returns `400 validation_error` / `code: read_only` with a `message` naming the proper write path (`POST /{resource}/{id}/rename` for `*_external_key`, the `/tags` subresource for `tags`, "record a scan event" for asset `location_*`, "server-managed" wording for `id` / timestamps). A naive `GET` → `PATCH` of the entire response object **works without scrubbing** — every read-only field echoes silently because its value matches the current state. For the datetime read-only fields (`created_at`, `updated_at`, `deleted_at`), matching is by instant rather than wire bytes, so any RFC 3339 representation of the same point in time is accepted; generated clients that deserialize the GET response into a typed `datetime` and re-serialize via the language default (Go `time.Time.MarshalJSON` emits `+00:00`; Pydantic v2 emits `.NNNNNN+00:00`) round-trip cleanly even though the bytes differ from the server's canonical `Z` shape. The per-resource set and per-field hints live in [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape).
+**Read-only fields on `PATCH` follow a uniform accept-if-matches, reject-if-differs rule.** Server-managed metadata (`id`, `created_at`, `updated_at`, `deleted_at`), the `tags` collection, and every natural-key reference field (`external_key` on both resources, `parent_external_key` on locations, `location_id` and `location_external_key` on assets) obey the same contract: a body value matching the current resource state is silently normalized out (the request returns `200` and other fields apply normally), and a differing value returns `400 validation_error` / `code: read_only` with a `message` naming the proper write path (`POST /{resource}/{id}/rename` for `*_external_key`, the `/tags` subresource for `tags`, a scan-event-ingestion description for asset `location_*` — see [Data model](./data-model) — and "server-managed" wording for `id` / timestamps). A naive `GET` → `PATCH` of the entire response object **works without scrubbing** — every read-only field echoes silently because its value matches the current state. For the datetime read-only fields (`created_at`, `updated_at`, `deleted_at`), matching is by instant rather than wire bytes, so any RFC 3339 representation of the same point in time is accepted; generated clients that deserialize the GET response into a typed `datetime` and re-serialize via the language default (Go `time.Time.MarshalJSON` emits `+00:00`; Pydantic v2 emits `.NNNNNN+00:00`) round-trip cleanly even though the bytes differ from the server's canonical `Z` shape. The per-resource set and per-field hints live in [Resource identifiers → Read shape vs. write shape](./resource-identifiers#read-shape-vs-write-shape).
+
+On `POST`, the asset `location_*` fields are absent from `CreateAssetWithTagsRequest` entirely — sending either one returns `400 validation_error` / `code: read_only` with the same scan-event-ingestion error detail. `POST /assets` has no symmetric "accept-if-matches" behavior on these fields; they reject on presence. See [Data model](./data-model) for the master / scan bifurcation.
 
 **Truly unknown fields are rejected.** A field name that doesn't appear on either the read or the write schema (a typo, an off-resource field, a `metadata`-on-locations attempt) returns `400 validation_error` with `fields[].code: unknown_field`. Distinct from `read_only` (the field is declared on the read shape and has a different mutation surface) and from `invalid_value` (the field name was recognized but the value was wrong) so a validation UI can branch on the cause.
 
@@ -260,6 +264,18 @@ Where each asset was last seen — one row per asset. Filter by the location(s) 
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/reports/asset-locations?location_external_key=DOCK-1&sort=-asset_last_seen"
 ```
+
+Or resolve a batch of asset external_keys from a master system to their current locations in one round-trip:
+
+```bash
+curl -G -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     "$BASE_URL/api/v1/reports/asset-locations" \
+     --data-urlencode "asset_external_key=AST-0001" \
+     --data-urlencode "asset_external_key=AST-0002" \
+     --data-urlencode "asset_external_key=AST-0003"
+```
+
+This is the canonical [master-data / scan-data](./data-model) consumption flow: an ERP-derived list of asset external_keys resolves to current scan-derived locations in a single request rather than N round-trips. Use `asset_id` instead when you already hold surrogate ids.
 
 ### History
 

@@ -188,12 +188,10 @@
             "type": "string"
           },
           "asset_external_key": {
-            "nullable": true,
             "type": "string"
           },
           "asset_id": {
             "format": "int64",
-            "nullable": true,
             "type": "integer"
           },
           "asset_last_seen": {
@@ -461,12 +459,6 @@
       },
       "CreateAssetWithTagsRequest": {
         "additionalProperties": false,
-        "not": {
-          "required": [
-            "location_id",
-            "location_external_key"
-          ]
-        },
         "properties": {
           "description": {
             "maxLength": 1024,
@@ -484,21 +476,6 @@
           "is_active": {
             "example": true,
             "type": "boolean"
-          },
-          "location_external_key": {
-            "example": "WHS-01",
-            "maxLength": 255,
-            "minLength": 1,
-            "nullable": true,
-            "pattern": "^[A-Za-z0-9-]+$",
-            "type": "string"
-          },
-          "location_id": {
-            "example": 42,
-            "format": "int64",
-            "minimum": 1,
-            "nullable": true,
-            "type": "integer"
           },
           "metadata": {
             "additionalProperties": {},
@@ -2390,7 +2367,7 @@
         ]
       },
       "patch": {
-        "description": "**Required scope:** `assets:write`\n\nApply a JSON Merge Patch (RFC 7396) to an asset. Only fields included in the request body are changed; fields set to `null` clear the corresponding nullable column. Omitted fields are left unchanged. An empty body (`{}`) is a no-op and returns the current resource unchanged. Read-only fields are uniformly governed by the accept-if-matches, reject-if-differs rule: a value matching the current resource state is silently normalized out (so a verbatim GET → PATCH round-trip succeeds without manual scrubbing), and a differing value returns 400 with `code: read_only`. This applies to the server-managed surrogate id + timestamps (`id`, `created_at`, `updated_at`, `deleted_at`), the `tags` collection, and the natural-key reference fields (`external_key`, `location_id`, `location_external_key`). Mutate `external_key` via POST /assets/{asset_id}/rename; asset location is derived from scan events (record a scan event to change it); mutate `tags` via POST /assets/{asset_id}/tags and DELETE /assets/{asset_id}/tags/{tag_id}.",
+        "description": "**Required scope:** `assets:write`\n\nApply a JSON Merge Patch (RFC 7396) to an asset. Only fields included in the request body are changed; fields set to `null` clear the corresponding nullable column. Omitted fields are left unchanged. An empty body (`{}`) is a no-op and returns the current resource unchanged. Read-only fields are uniformly governed by the accept-if-matches, reject-if-differs rule: a value matching the current resource state is silently normalized out (so a verbatim GET → PATCH round-trip succeeds without manual scrubbing), and a differing value returns 400 with `code: read_only`. This applies to the server-managed surrogate id + timestamps (`id`, `created_at`, `updated_at`, `deleted_at`), the `tags` collection, and the natural-key reference fields (`external_key`, `location_id`, `location_external_key`). Mutate `external_key` via POST /assets/{asset_id}/rename; asset location is collected through scan event ingestion (fixed-reader MQTT pipeline or handheld UI submission) and is not directly settable through the public API; mutate `tags` via POST /assets/{asset_id}/tags and DELETE /assets/{asset_id}/tags/{tag_id}.",
         "operationId": "updateAsset",
         "parameters": [
           {
@@ -7005,7 +6982,7 @@
     },
     "/api/v1/reports/asset-locations": {
       "get": {
-        "description": "**Required scope:** `tracking:read`\n\nSnapshot of each asset's most recent location, filterable by canonical id or external_key. Because this view is derived from immutable scan history, it can resolve references for assets that have since been deleted. By default those rows are excluded; pass `include_deleted=true` to include them, and check `asset_deleted_at` to distinguish deleted from live.\n\nTemporal validity is applied to both joined entities. Assets whose effective window is past or future are excluded entirely. Locations whose effective window is past or future surface with null `location_id` / `location_external_key` while the parent asset row remains visible. Soft-deleted locations are projected the same way here — null on the report row — even though the identifier still lives on the location row; reports endpoints intentionally hide tombstoned anchor points from scan-derived summaries. Use the locations endpoint with `include_deleted=true` to retrieve the underlying identifier.",
+        "description": "**Required scope:** `tracking:read`\n\nSnapshot of each asset's most recent location, filterable by either side of the join. Filter by location (`location_id` / `location_external_key`) to retrieve everything currently at a place; filter by asset (`asset_id` / `asset_external_key`, repeatable) to resolve a batch of assets from a master system to their current locations in one round-trip. Within each pair the surrogate and natural-key forms are mutually exclusive (400 `ambiguous_fields` if both are supplied); the asset and location filter pairs are independent and intersect when combined. Because this view is derived from immutable scan history, it can resolve references for assets that have since been deleted. By default those rows are excluded; pass `include_deleted=true` to include them, and check `asset_deleted_at` to distinguish deleted from live.\n\nTemporal validity is applied to both joined entities. Assets whose effective window is past or future are excluded entirely. Locations whose effective window is past or future surface with null `location_id` / `location_external_key` while the parent asset row remains visible. Soft-deleted locations are projected the same way here — null on the report row — even though the identifier still lives on the location row; reports endpoints intentionally hide tombstoned anchor points from scan-derived summaries. Use the locations endpoint with `include_deleted=true` to retrieve the underlying identifier.",
         "operationId": "getAssetLocations",
         "parameters": [
           {
@@ -7031,7 +7008,7 @@
             }
           },
           {
-            "description": "filter by location id (canonical, may repeat)",
+            "description": "filter by location id (canonical, may repeat); mutually exclusive with location_external_key (400 ambiguous_fields if both supplied)",
             "explode": true,
             "in": "query",
             "name": "location_id",
@@ -7048,10 +7025,42 @@
             "style": "form"
           },
           {
-            "description": "filter by location external_key (may repeat)",
+            "description": "filter by location external_key (may repeat); mutually exclusive with location_id (400 ambiguous_fields if both supplied)",
             "explode": true,
             "in": "query",
             "name": "location_external_key",
+            "schema": {
+              "default": [],
+              "items": {
+                "pattern": "^[A-Za-z0-9-]+$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "filter by asset id (canonical, may repeat); mutually exclusive with asset_external_key (400 ambiguous_fields if both supplied)",
+            "explode": true,
+            "in": "query",
+            "name": "asset_id",
+            "schema": {
+              "default": [],
+              "items": {
+                "format": "int64",
+                "maximum": 2147483647,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "filter by asset external_key (may repeat); mutually exclusive with asset_id (400 ambiguous_fields if both supplied)",
+            "explode": true,
+            "in": "query",
+            "name": "asset_external_key",
             "schema": {
               "default": [],
               "items": {

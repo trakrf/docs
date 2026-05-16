@@ -52,12 +52,14 @@ A successful response looks like:
 {
   "data": {
     "id": 42,
-    "name": "Acme Logistics"
+    "name": "Acme Logistics",
+    "scopes": ["assets:read", "assets:write", "tracking:read"],
+    "api_key_id": "550e8400-e29b-41d4-a716-446655440000"
   }
 }
 ```
 
-If the `name` matches the organization you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface.
+If the `name` matches the organization you minted the key under, you're authenticated end-to-end and ready to call anything else on the surface. The `scopes` array echoes the scope strings on the bearer (useful for diagnosing a later `403 forbidden` without decoding the JWT), and `api_key_id` is the UUID of the API key — worth quoting in any support ticket. Per-field detail: [Private endpoints → Response shape: `/orgs/me`](../api/private-endpoints#orgs-me).
 
 ## Continue at the API Quickstart
 

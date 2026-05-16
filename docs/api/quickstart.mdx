@@ -124,13 +124,17 @@ curl -X DELETE "$BASE_URL/api/v1/assets/$ASSET_ID" \
   -H "Authorization: Bearer $TRAKRF_API_KEY"
 ```
 
+:::tip TypeScript with `openapi-fetch`?
+`openapi-fetch` is schema-agnostic at runtime — it won't read `application/merge-patch+json` from the spec, and every `PATCH` returns `415 unsupported_media_type` unless you override `Content-Type` per call or register a middleware. See [§5 — TypeScript with `openapi-fetch`](#openapi-fetch) below for the drop-in middleware that handles every `PATCH` site automatically.
+:::
+
 Each request echoes back the resource (or `204 No Content` on delete) wrapped in the standard `{ "data": ... }` envelope. The path-param routes take the canonical integer `id`; if you only have the natural key, filter the list endpoint first with `GET /api/v1/assets?external_key=ASSET-QUICKSTART` and read `id` off `.data[0]` (empty array on a miss). Full convention: [Resource identifiers](./resource-identifiers).
 
 ### Round-trip: `GET` → mutate → `PATCH` {#round-trip-patch}
 
 The minimal-form `PATCH` above sent only the field being changed. When your integration's data model mirrors the read shape one-to-one — you have an in-memory asset object you've been mutating — you'll want to send the whole thing back instead. Every read-only field on the read shape (server-managed `id` / `created_at` / `updated_at` / `deleted_at`, the `tags` collection, and the natural-key reference fields `external_key`, `location_id`, `location_external_key`, plus `parent_external_key` on locations) follows an [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule on `PATCH`, so echoing them straight back from a `GET` response is safe. No client-side scrubbing required.
 
-When you cache a GET response and `PATCH` later, `updated_at` is the field that may drift — it's advanced by every successful write to that resource, so a stale cached value will fail the accept-if-matches check. Either re-`GET` immediately before `PATCH`, or strip `updated_at` from the cached body before sending. This is optimistic concurrency working as designed: the accept-if-matches rule on `updated_at` is how the API prevents lost updates from concurrent edits — a feature, not a quirk you need to fight.
+When you cache a GET response and `PATCH` later, `updated_at` is the field that may drift — it advances every time `PATCH` actually changes a settable column. A verbatim no-op body (every settable field at its current value) doesn't drift it; the storage `IS DISTINCT FROM` short-circuit makes the no-op case fully wire-idempotent. A real intervening write by another caller is the case to plan for: re-`GET` immediately before `PATCH` to refresh `updated_at`, or strip it from the cached body. This is optimistic concurrency working as designed — the accept-if-matches rule on `updated_at` is how the API prevents lost updates from concurrent edits.
 
 ```bash
 # GET → mutate → PATCH on an asset (full-body round-trip; no fields stripped)
@@ -166,8 +170,14 @@ Full detail: [Postman collection](./postman).
 
 If you'd rather generate a typed client, the OpenAPI spec is available in both formats:
 
-- [`/api/openapi.json`](/api/openapi.json) (JSON)
-- [`/api/openapi.yaml`](/api/openapi.yaml) (YAML)
+- <a href="/api/openapi.json">
+    <code>/api/openapi.json</code>
+  </a>
+  (JSON)
+- <a href="/api/openapi.yaml">
+    <code>/api/openapi.yaml</code>
+  </a>
+  (YAML)
 
 Feed either into `openapi-generator-cli`, NSwag, `oapi-codegen`, etc. to scaffold client code in your language. The spec is regenerated from the Go handlers on every platform release, so the generated client stays in sync with the running service.
 
