@@ -264,7 +264,7 @@ List endpoints validate their query string the same way, and every endpoint vali
     "title": "Validation failed",
     "status": 400,
     "detail": "Invalid 'from' timestamp; expected RFC 3339, e.g. 2026-04-21T00:00:00.000Z",
-    "instance": "/api/v1/assets/ASSET-0001/history",
+    "instance": "/api/v1/assets/1995114869/history",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
       {
