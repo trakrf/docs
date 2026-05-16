@@ -603,7 +603,7 @@ Tags follow the same principle as assets and locations, with a composite shape: 
 
 Don't conflate `external_key` with `tags[].value`: assets and locations have a single string natural key (`external_key`); tags have a composite one. The `value` field _inside_ a tag is the tag's own partner-supplied handle (an EPC, a beacon ID, a barcode), scoped by `tag_type`. The `external_key` _on_ an asset or location is the resource's partner-supplied handle, scoped by resource type. They sit at different levels and are not interchangeable — an asset's `external_key` and one of its tags' `value` answer different questions.
 
-`tag_type` defaults to `rfid` on the wire when omitted **or sent as `null`** on a write. The server treats both shapes the same on `POST /api/v1/assets/{asset_id}/tags` (and the location counterpart): a body of `{"value": "E2-..."}`, `{"tag_type": null, "value": "E2-..."}`, and `{"tag_type": "rfid", "value": "E2-..."}` are all equivalent — the row is stored with `tag_type: rfid`. The default lives in the server, not the spec: each `*TagRequest` subtype declares `tag_type` as `required` for OpenAPI discriminator semantics, so generated SDKs ask for `tag_type` explicitly on every attach call. Hand-written raw-HTTP callers may still rely on the server-side default; codegen consumers should expect to pass `tag_type` for all three kinds.
+`tag_type` is **required on every write** — `POST /api/v1/assets/{asset_id}/tags` and `POST /api/v1/locations/{location_id}/tags` both reject a body that omits the field or sends it as `null` with `400 validation_error / code=required / field=tag_type`. The spec already declared `tag_type` required on each `*TagRequest` subtype for OpenAPI discriminator semantics, and the service now matches: hand-written raw-HTTP callers, codegen consumers, and `curl` all need to pass `tag_type` explicitly for every attach — there is no server-side default to RFID.
 
 Tag responses still carry a canonical integer `id` for path-param access (e.g., `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`):
 
@@ -662,7 +662,7 @@ curl -X POST \
 
 `value` is matched **as an exact string** within `(org_id, tag_type)` for uniqueness, attach, and the embedded `tags[]` array on parent reads. There is no normalization (no case-folding, no whitespace stripping). Substring search across tag values is available only through the parent resource's [`?q=`](./pagination-filtering-sorting#substring-search) filter, which restricts to active and currently-effective tags.
 
-`tag_type` defaults to `rfid` on the wire (covered above), so a raw-HTTP body of `{"value": "E2-..."}` on an asset POST is equivalent to `{"tag_type": "rfid", "value": "E2-..."}`. Generated SDKs require `tag_type` on every attach because the discriminated subtypes declare it `required`; only hand-written HTTP clients see the omission default.
+`tag_type` is required on every attach (covered above) — a raw-HTTP body of `{"value": "E2-..."}` on an asset POST returns `400 validation_error / code=required / field=tag_type`. Generated SDKs already require it because the discriminated subtypes declare `tag_type` `required`; hand-written HTTP clients must send it explicitly.
 
 ## "Scan event" is a domain concept, not an API resource {#scan-event-vocabulary}
 
