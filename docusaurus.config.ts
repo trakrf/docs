@@ -21,7 +21,7 @@ const appHost =
   deployEnv === "production"
     ? "https://app.trakrf.id"
     : "https://app.preview.trakrf.id";
-const specUrl = `${appHost}/api/v1/openapi.yaml`;
+const specUrl = `${appHost}/api/openapi.yaml`;
 
 const config: Config = {
   title: "TrakRF Docs",

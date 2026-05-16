@@ -74,7 +74,7 @@ After your exploratory evaluation, run a mechanical pass against the published O
 
 The OpenAPI spec is published at `$API_TEST_DOCS_URL/api/openapi.yaml` (JSON variant: `$API_TEST_DOCS_URL/api/openapi.json`). If that path 404s, that is itself a finding worth reporting. If the docs don't link to it from a discoverable location, that's also a finding.
 
-The docs origin 302-redirects these paths to the platform's canonical spec on `app.{env}.trakrf.id/api/v1/openapi.{yaml,json}` — single source of truth, no mirror. Standard tooling follows the redirect transparently (curl with `-L`, every OpenAPI codegen client, every API-explorer import-by-URL flow). The spec at this URL is the contract you're testing against.
+The docs origin 302-redirects these paths to the platform's canonical spec on `app.{env}.trakrf.id/api/openapi.{yaml,json}` — single source of truth, no mirror. Standard tooling follows the redirect transparently (curl with `-L`, every OpenAPI codegen client, every API-explorer import-by-URL flow). The spec at this URL is the contract you're testing against.
 
 ### 2. Walk every path
 
@@ -173,11 +173,10 @@ For each generator, run a CRUD lifecycle through the generated client against th
 - Authentication setup friction — does the generated client know how to attach the API key from the spec alone, or did you have to wire it manually?
 - Generated identifier names — are model class names, method names, and field names clean and conventional in the target language? Flag double-prefixed names (e.g., `AssetPublicAssetView` where the spec schema is `asset.PublicAssetView`), unusual casing (`assets_create` where `createAsset` is conventional), or names that leak the backend's package/namespace structure into the client.
 
-### 11. Multi-format spec consistency
+### 11. Multi-format spec sanity
 
-The spec may be served in multiple formats (YAML, JSON, Redoc-served copy). Fetch each variant and compare:
+`/api/openapi.yaml` and `/api/openapi.json` resolve to the same platform binary via redirect — divergence between formats would mean the platform is encoding the spec twice and the two encoders disagree, which is a platform bug, not a docs-mirror drift class. So this check is light:
 
-- Are the artifacts byte-equivalent after canonical sort?
 - Do numeric literals match across formats? YAML scientific notation (`2.147483647e+09`) parses as float in standard YAML loaders, even when paired with `type: integer` — flag any divergence between YAML and JSON variants for the same field.
 - Do any artifacts contain hardcoded URLs that differ from the environment the spec is served from (preview spec hardcoding production docs URL, etc.)?
 - Are all variants linked from at least one discoverable docs page? An undiscoverable artifact is a finding.

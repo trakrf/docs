@@ -157,7 +157,7 @@ Strict-typed codegen (Pydantic, Java with generated POJOs, Go with generated str
 
 Prefer a GUI? Postman (and Insomnia, Bruno, Hoppscotch) imports the OpenAPI spec from a URL and generates a request collection automatically:
 
-1. In Postman, **File → Import → Link**, paste <EnvBaseURL />/api/v1/openapi.yaml.
+1. In Postman, **File → Import → Link**, paste <EnvBaseURL />/api/openapi.yaml.
 2. Set the collection variables:
    - `baseUrl` → `https://app.trakrf.id` (or `https://app.preview.trakrf.id` for preview accounts) — bare host, no `/api/v1` suffix; paths in the collection already include the version prefix
    - `bearerToken` → the JWT from step 2
@@ -170,9 +170,9 @@ Full detail: [API clients](./postman).
 If you'd rather generate a typed client, the OpenAPI spec is served from the platform in both formats:
 
 - <EnvBaseURL />
-  /api/v1/openapi.json (JSON)
+  /api/openapi.json (JSON)
 - <EnvBaseURL />
-  /api/v1/openapi.yaml (YAML)
+  /api/openapi.yaml (YAML)
 
 Feed either into `openapi-generator-cli`, NSwag, `oapi-codegen`, etc. to scaffold client code in your language. The spec is regenerated from the Go handlers on every platform release, so the generated client stays in sync with the running service.
 
