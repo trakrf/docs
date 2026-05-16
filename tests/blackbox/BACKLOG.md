@@ -6,11 +6,19 @@ Customer-visible deliberate states do **not** live here — they go to [`/docs/a
 
 ## Internal-only deliberate states
 
-Items not surfaced to integrators because they describe how the harness operates rather than how the API is designed.
+Items not surfaced to integrators — either harness operating concerns, or API design choices whose affected audience is too narrow to warrant a customer-facing design note.
 
 | State                                     | Origin       | Rationale                                                                                                                                                                                                                                   |
 | ----------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | BSL licensing wrinkle on evaluator probes | BB.md design | Code is publicly available under BSL but most evaluators won't pull and inspect the repo before forming first impressions. The persona constraint replicates this. Internal methodology consideration; not a customer-facing design choice. |
+
+### UpdateRequest schemas intentionally omit `additionalProperties: false`
+
+**State:** `UpdateAssetRequest` and `UpdateLocationRequest` do not declare `additionalProperties: false` in the OpenAPI spec, despite their Create counterparts (`CreateAssetRequest`, `CreateLocationRequest`) doing so. The asymmetry is visible to anyone diffing the schemas.
+
+**Disposition:** Not drift. Deliberate per TRA-719 B1 (2026-05-14), citing TRA-710 (BB33 F2). The service performs unknown-field rejection at the runtime validator (`validation_error` / `unknown_field`); the spec leaves the property bag open so strict generators (Pydantic `extra='forbid'`, Java/Kotlin strict mode, `openapi-generator` with `disallowAdditionalPropertiesIfNotPresent=true`) do not reject `GET → PATCH` round-trip clients at construction time when read-only echo fields are present on the GET response. The rationale also lives in a `postprocess.go` comment in the platform repo.
+
+**For BB cycles:** Confirm runtime unknown-field rejection still fires by probing `PATCH /api/v1/assets/{id}` (and the location equivalent) with `{"wat": 1}` and asserting a `validation_error` envelope with `fields[0].code: "unknown_field"`. Do not flag the spec asymmetry between Create and Update schemas as drift.
 
 If future cycles surface other internal-only deliberate states, add them here. Anything integrator-visible goes to `/docs/api/design-notes`.
 
