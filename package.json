@@ -3,13 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/generate-postman.mjs",
     "dev": "docusaurus start --host 0.0.0.0",
-    "prebuild": "node scripts/generate-postman.mjs && node scripts/write-health-json.mjs",
-    "generate-postman": "node scripts/generate-postman.mjs",
+    "prebuild": "node scripts/write-health-json.mjs",
     "build": "docusaurus build",
-    "postbuild": "node scripts/swap-openapi-env.mjs",
-    "refresh-openapi": "bash scripts/refresh-openapi.sh",
     "serve": "docusaurus serve --host 0.0.0.0",
     "typecheck": "tsc",
     "lint": "prettier --check .",
@@ -34,7 +30,6 @@
     "@docusaurus/module-type-aliases": "3.9.2",
     "@docusaurus/tsconfig": "3.9.2",
     "@docusaurus/types": "3.9.2",
-    "openapi-to-postmanv2": "^6.0.1",
     "prettier": "^3.0.0",
     "typescript": "~5.6.2"
   },

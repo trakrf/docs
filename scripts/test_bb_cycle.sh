@@ -103,7 +103,7 @@ rm -rf "$prefix"
 # 8. Copy includes hidden files (.envrc)
 prefix=$(make_prefix)
 BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle >/dev/null 2>&1
-[ -f "$prefix/bb-1/.envrc" ] && [ -f "$prefix/bb-1/BB.md" ] && [ -x "$prefix/bb-1/check-spec-sync.sh" ]
+[ -f "$prefix/bb-1/.envrc" ] && [ -f "$prefix/bb-1/BB.md" ] && [ -x "$prefix/bb-1/check-deploy-lag.sh" ]
 rc=$?
 assert_true "copy: hidden files and executable bit preserved" "$rc"
 rm -rf "$prefix"

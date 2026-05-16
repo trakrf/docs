@@ -3,7 +3,7 @@ sidebar_position: 0
 title: API docs
 ---
 
-import SpecMirrorBadge from "@site/src/components/SpecMirrorBadge";
+import { useDeployEnv } from "@site/src/hooks/useDeployEnv";
 
 # TrakRF API
 
@@ -11,24 +11,21 @@ The TrakRF public REST API lets integrators read and write the same assets, loca
 
 This page is the map. The pages linked below are the territory.
 
-:::note Spec mirror provenance
-
-<SpecMirrorBadge /> If you suspect the published spec disagrees with the
-deployed service, include this commit and timestamp when reporting — it's the
-fastest way to attribute drift to either a docs-mirror lag or a real bug. The
-same data is available as JSON at
-<a href="/api/platform-meta.json">
-  <code>/api/platform-meta.json</code>
-</a>
-for programmatic use.
-
-:::
+export const SpecLinks = () => {
+  const { appHost } = useDeployEnv();
+  return (
+    <>
+      <code>{appHost}/api/v1/openapi.json</code> /{" "}
+      <code>{appHost}/api/v1/openapi.yaml</code>
+    </>
+  );
+};
 
 ## Where to start
 
 - New to the API? **[Quickstart](./quickstart)** — mint a key, make your first call, round-trip a resource. ~10 minutes.
 - Already know the shape? **[Interactive reference](/api)** — every endpoint, rendered from the OpenAPI spec that ships with each release.
-- Generating a client? The raw spec is at <a href="/api/openapi.json"><code>/api/openapi.json</code></a> / <a href="/api/openapi.yaml"><code>.yaml</code></a>, and a [Postman collection](./postman) is available too.
+- Generating a client? Point your generator at <SpecLinks />. The same URLs feed the [API client guide](./postman) (Postman, Insomnia, Bruno, Hoppscotch).
 
 ## Concept guides
 
@@ -40,7 +37,7 @@ for programmatic use.
 - **[Versioning](./versioning)** — v1 stability commitment, deprecation policy, open vs closed enums
 - **[Changelog](./changelog)** — release-by-release record of added / deprecated / removed
 - **[Webhooks](./webhooks)** — status of outbound delivery and the interim polling pattern
-- **[Postman collection](./postman)** — ready-to-import collection
+- **[API clients](./postman)** — import the spec into Postman, Insomnia, Bruno, or Hoppscotch
 - **[Private endpoints](./private-endpoints)** — session-cookie-only endpoints used by the first-party web app (not part of the public API surface)
 
 ## License

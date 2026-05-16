@@ -1,41 +1,77 @@
 ---
-title: Postman collection
+title: API clients (Postman, Insomnia, Bruno, Hoppscotch)
 sidebar_position: 10
 ---
 
-# Postman collection
+import { useDeployEnv } from "@site/src/hooks/useDeployEnv";
 
-A Postman collection for the TrakRF API is available for download. It's
-regenerated from the OpenAPI spec on every docs build, so it always reflects
-the current v1 contract.
+# API clients
 
-## Download
+Postman, Insomnia, Bruno, and Hoppscotch all import an OpenAPI spec from a
+URL and generate a request collection automatically. There's no curated
+download to keep in sync — point your client at the canonical spec URL and
+the generated collection always reflects the current v1 contract.
 
-- <a href="/api/trakrf-api.postman_collection.json" download>
-    Postman collection (JSON)
-  </a>
+## Spec URLs
 
-## Raw OpenAPI spec
+export const SpecUrls = () => {
+  const { appHost } = useDeployEnv();
+  return (
+    <ul>
+      <li>
+        <code>{appHost}/api/v1/openapi.yaml</code>
+      </li>
+      <li>
+        <code>{appHost}/api/v1/openapi.json</code>
+      </li>
+    </ul>
+  );
+};
 
-If you'd rather use a codegen tool, the raw spec is available at:
+<SpecUrls />
 
-- <a href="/api/openapi.json">
-    <code>/api/openapi.json</code>
-  </a>
-  (JSON)
-- <a href="/api/openapi.yaml">
-    <code>/api/openapi.yaml</code>
-  </a>
-  (YAML)
+Either format works; pick whichever your client prefers.
 
-The rendered interactive reference lives at [`/api`](/api).
+## Importing
 
-## Importing into Postman
+### Postman
 
-1. Open Postman.
-2. Click **Import** → **File**.
-3. Select the downloaded `trakrf-api.postman_collection.json`.
-4. In the collection variables, set:
-   - `baseUrl` to `https://app.trakrf.id` for production, or `https://app.preview.trakrf.id` for preview accounts. The bare host with no `/api/v1` suffix — paths in the collection already include the version prefix. The API is served from the `app.` subdomain, not the marketing site.
-   - `bearerToken` to your API key (the JWT shown once at creation). See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for how to create one.
-5. The collection's **Authorization** is preconfigured as a Bearer token referencing `{{bearerToken}}`.
+1. **File → Import → Link**.
+2. Paste the YAML or JSON URL above.
+3. Postman creates a collection named **TrakRF API** with one request per
+   operation, organized by tag.
+4. Open the collection's **Variables** tab and set:
+   - `baseUrl` to your environment host (`https://app.trakrf.id` for
+     production, `https://app.preview.trakrf.id` for preview accounts).
+     The bare host with no `/api/v1` suffix — operation paths already
+     include the version prefix. The API is served from the `app.`
+     subdomain, not the marketing site.
+   - `bearerToken` to your API key (the JWT shown once at creation). See
+     [Authentication → Mint your first API key](./authentication#mint-your-first-api-key)
+     for how to create one.
+5. The collection's **Authorization** is preconfigured as a Bearer token
+   referencing `{{bearerToken}}`.
+
+### Insomnia
+
+**Create → Import From → URL**, then paste a spec URL. Insomnia generates
+a request collection. Configure environment variables for the host and
+bearer token the same way as Postman.
+
+### Bruno
+
+**Collection → Import Collection → From OpenAPI Spec**, then paste a spec
+URL. Bruno stores collections as files on disk; you can commit them
+alongside your own code if useful.
+
+### Hoppscotch
+
+**Collections → Import/Export → Import from OpenAPI URL**, then paste a
+spec URL. Hoppscotch runs in the browser; the imported collection persists
+in local storage.
+
+## Refreshing
+
+The spec moves with each platform deploy. Re-import (or use your client's
+"sync from spec URL" option when available) to pick up the latest
+operations.

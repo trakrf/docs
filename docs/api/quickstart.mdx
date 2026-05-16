@@ -155,29 +155,24 @@ Strict-typed codegen (Pydantic, Java with generated POJOs, Go with generated str
 
 ## 4. Alternative: Postman
 
-Prefer a GUI? The same API surface is available as a ready-to-import Postman collection:
+Prefer a GUI? Postman (and Insomnia, Bruno, Hoppscotch) imports the OpenAPI spec from a URL and generates a request collection automatically:
 
-1. Download <a href="/api/trakrf-api.postman_collection.json" download>`trakrf-api.postman_collection.json`</a>.
-2. In Postman, **Import → File** and select it.
-3. Set the collection variables:
+1. In Postman, **File → Import → Link**, paste <EnvBaseURL />/api/v1/openapi.yaml.
+2. Set the collection variables:
    - `baseUrl` → `https://app.trakrf.id` (or `https://app.preview.trakrf.id` for preview accounts) — bare host, no `/api/v1` suffix; paths in the collection already include the version prefix
    - `bearerToken` → the JWT from step 2
-4. Collection auth is preconfigured as a Bearer token referencing `{{bearerToken}}`.
+3. Collection auth is preconfigured as a Bearer token referencing `{{bearerToken}}`.
 
-Full detail: [Postman collection](./postman).
+Full detail: [API clients](./postman).
 
 ## 5. Raw spec for codegen
 
-If you'd rather generate a typed client, the OpenAPI spec is available in both formats:
+If you'd rather generate a typed client, the OpenAPI spec is served from the platform in both formats:
 
-- <a href="/api/openapi.json">
-    <code>/api/openapi.json</code>
-  </a>
-  (JSON)
-- <a href="/api/openapi.yaml">
-    <code>/api/openapi.yaml</code>
-  </a>
-  (YAML)
+- <EnvBaseURL />
+  /api/v1/openapi.json (JSON)
+- <EnvBaseURL />
+  /api/v1/openapi.yaml (YAML)
 
 Feed either into `openapi-generator-cli`, NSwag, `oapi-codegen`, etc. to scaffold client code in your language. The spec is regenerated from the Go handlers on every platform release, so the generated client stays in sync with the running service.
 

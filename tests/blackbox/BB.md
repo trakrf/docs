@@ -74,7 +74,7 @@ After your exploratory evaluation, run a mechanical pass against the published O
 
 The OpenAPI spec is published at `$API_TEST_DOCS_URL/api/openapi.yaml` (JSON variant: `$API_TEST_DOCS_URL/api/openapi.json`). If that path 404s, that is itself a finding worth reporting. If the docs don't link to it from a discoverable location, that's also a finding.
 
-This URL serves byte-for-byte the same content as the platform's source-of-truth spec — that invariant is verified at cycle init by `just bb_cycle` (which gates session start on a spec-sync check across docs mirror, deployed service, and the declared platform commit), so the spec at this URL is the contract you're testing against.
+The docs origin 302-redirects these paths to the platform's canonical spec on `app.{env}.trakrf.id/api/v1/openapi.{yaml,json}` — single source of truth, no mirror. Standard tooling follows the redirect transparently (curl with `-L`, every OpenAPI codegen client, every API-explorer import-by-URL flow). The spec at this URL is the contract you're testing against.
 
 ### 2. Walk every path
 
@@ -265,10 +265,10 @@ Use this framing instead of abstract High/Medium/Low priority. Integration partn
 
 #### Interaction matrix
 
-|                       | Fix now             | Defer with intent                                                | Won't fix                                                                              |
-| --------------------- | ------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| **Contract breakage** | Pre-ship (default)  | Pre-ship anyway (unusual; means the fix is itself breaking)      | (rare — would mean breakage is bounded and the fix is disruptive)                      |
-| **Hygiene**           | Pre-ship (cheap)    | Post-ship backlog ([`BACKLOG.md`](./BACKLOG.md))                 | [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes) (customer-facing) or [`BACKLOG.md`](./BACKLOG.md) (internal) |
+|                       | Fix now            | Defer with intent                                           | Won't fix                                                                                                                         |
+| --------------------- | ------------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Contract breakage** | Pre-ship (default) | Pre-ship anyway (unusual; means the fix is itself breaking) | (rare — would mean breakage is bounded and the fix is disruptive)                                                                 |
+| **Hygiene**           | Pre-ship (cheap)   | Post-ship backlog ([`BACKLOG.md`](./BACKLOG.md))            | [`/docs/api/design-notes`]($API_TEST_DOCS_URL/docs/api/design-notes) (customer-facing) or [`BACKLOG.md`](./BACKLOG.md) (internal) |
 
 Integrator-visible deliberate states live in `/docs/api/design-notes`. Harness-only deliberate states and deferred work with trigger conditions live in `BACKLOG.md`. BB.md does not duplicate either.
 
