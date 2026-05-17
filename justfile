@@ -94,13 +94,13 @@ bb_cycle arg1="" arg2="":
     target="$prefix/bb-$n"
     [ -n "$selector" ] && target="$target-$selector"
 
-    # 2. Refuse if target exists — prevents clobbering an in-flight cycle
+    # 4. Refuse if target exists — prevents clobbering an in-flight cycle
     if [ -e "$target" ]; then
       echo "ERROR: $target already exists. Pick another cycle number or remove it." >&2
       exit 1
     fi
 
-    # 3. Preflight: confirm the preview docs deploy has caught up to
+    # 5. Preflight: confirm the preview docs deploy has caught up to
     #    origin/main. Cloudflare Pages builds typically take a couple of
     #    minutes; if we run BB before the new deploy lands the cycle will
     #    test the previous commit.
@@ -144,13 +144,13 @@ bb_cycle arg1="" arg2="":
       echo
     fi
 
-    # 4. Isolate: copy tests/blackbox/ (including hidden .envrc + .env.local)
+    # 6. Isolate: copy tests/blackbox/ (including hidden .envrc + .env.local)
     #    into the target dir. trailing /. makes cp include dotfiles.
     echo "==> Isolating to $target"
     mkdir -p "$target"
     cp -r tests/blackbox/. "$target/"
 
-    # 5. Session-start command for copy-paste
+    # 7. Session-start command for copy-paste
     echo
     echo "==> Ready. Start the session with:"
     echo
