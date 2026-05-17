@@ -193,9 +193,16 @@ bb_cycle arg1="" arg2="":
       fi
     } > "$target/.env.local"
 
-    # 8. Session-start command for copy-paste
+    # 8. Session-start command for copy-paste. The wrapper file matches the
+    #    chosen track; the wrapper itself points back at BB.md for the
+    #    shared methodology.
+    if [ -n "$selector" ]; then
+      wrapper="BB_PRE_KEY.md"
+    else
+      wrapper="BB_MINT_KEY.md"
+    fi
     echo
     echo "==> Ready. Start the session with:"
     echo
-    echo "    cd $target && direnv allow && csp 'run blackbox tests per BB.md'"
+    echo "    cd $target && direnv allow && csp 'run blackbox tests per $wrapper'"
     echo

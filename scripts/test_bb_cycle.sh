@@ -300,6 +300,24 @@ echo "$err" | grep -q "API_TEST_LOGIN" && rc=0 || rc=$?
 assert_true "validate (mint): error message names API_TEST_LOGIN" "$rc"
 rm -rf "$prefix"
 
+# T23. Session-start command names BB_MINT_KEY.md on mint track
+prefix=$(make_prefix); env_file=$(make_env "$prefix")
+out=$(BB_SOURCE_ENV="$env_file" BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle 2>&1)
+echo "$out" | grep -q "BB_MINT_KEY.md" && rc=0 || rc=$?
+assert_true "session-start (mint): names BB_MINT_KEY.md" "$rc"
+echo "$out" | grep -qv "BB_PRE_KEY.md" && rc=0 || rc=$?
+assert_true "session-start (mint): does not name BB_PRE_KEY.md" "$rc"
+rm -rf "$prefix"
+
+# T24. Session-start command names BB_PRE_KEY.md on pre-key track
+prefix=$(make_prefix); env_file=$(make_env "$prefix")
+out=$(BB_SOURCE_ENV="$env_file" BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle BB1 2>&1)
+echo "$out" | grep -q "BB_PRE_KEY.md" && rc=0 || rc=$?
+assert_true "session-start (pre-key): names BB_PRE_KEY.md" "$rc"
+echo "$out" | grep -qv "BB_MINT_KEY.md" && rc=0 || rc=$?
+assert_true "session-start (pre-key): does not name BB_MINT_KEY.md" "$rc"
+rm -rf "$prefix"
+
 echo
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]
