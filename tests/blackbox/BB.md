@@ -1,21 +1,32 @@
-# trakrf API — black-box evaluation
+# trakrf API — black-box evaluation methodology
 
-You have a TrakRF login at `$API_TEST_APP_URL` (`$API_TEST_LOGIN` / `$API_TEST_PASS`). See if this tool can connect to your systems.
+This file is the shared methodology for trakrf API black-box cycles. Two entry-point wrappers configure how a session starts:
 
-You know nothing about TrakRF. Everything you report comes from what you can
-verify — not prior knowledge.
+- **[BB_MINT_KEY.md](./BB_MINT_KEY.md)** — onboarding track. Start without an API key, log in to the SPA, mint a key, then run this methodology. Single-instance; exercises the human-developer quickstart end-to-end.
+- **[BB_PRE_KEY.md](./BB_PRE_KEY.md)** — contract track. Start with a pre-minted API key pinned to a parallelism-fixture org (BB1/BB2/BB3) and skip the mint flow. Parallelizable across orgs.
 
-**Allowed tools — work only from what a customer developer has:**
+Start from a wrapper. Follow its setup, then return here and run the shared methodology top to bottom. Where the sections below refer to "your API key," the wrapper has already specified its origin.
 
-- The SPA at `$API_TEST_APP_URL` (log in with the credentials in `$API_TEST_LOGIN` / `$API_TEST_PASS`)
+## Methodology stance
+
+You know nothing about TrakRF. Everything you report comes from what you can verify — not prior knowledge.
+
+Use whichever HTTP client / language you'd naturally reach for. The variation between test runs is intentional.
+
+**Focus on documentation and workflow gaps, not just API bugs.** At each step ask: could a new developer get from the wrapper's starting point (a login on the mint track, a key on the contract track) to "I am calling the API correctly" using only what the docs say? Where do they have to guess, get stuck, or contact support?
+
+Verify every claim in the docs against the live service. When the docs and the service disagree, that is a primary finding. Check both the OpenAPI spec AND the prose quickstart / tutorial pages — the two can drift independently. Generated-client users hit the spec; humans following the prose pages hit the prose.
+
+## Allowed tools
+
+Work only from what a customer developer has:
+
+- The SPA at `$API_TEST_APP_URL` (access details — login or key — come from your wrapper)
 - The public docs site at `$API_TEST_DOCS_URL`
 - The API itself (same base URL as the SPA)
-- HTTP clients you'd reach for naturally — curl, Postman, or any language's
-  HTTP library
-- Standard OpenAPI codegen tools (openapi-generator-cli, openapi-typescript,
-  swagger-codegen) operating on the public spec
-- File operations in your current working directory (for notes, scratch files,
-  and the final FINDINGS.md)
+- HTTP clients you'd reach for naturally — curl, Postman, or any language's HTTP library
+- Standard OpenAPI codegen tools (openapi-generator-cli, openapi-typescript, swagger-codegen) operating on the public spec
+- File operations in your current working directory (for notes, scratch files, and the final FINDINGS.md)
 
 **Everything else is out of scope.** If you're about to use a tool that isn't on the list above, stop.
 
@@ -30,41 +41,6 @@ The following are acknowledged design state, not workflow gaps. Do not flag as f
 - **No session-only key list/revoke endpoints in the API.** Listing and revocation are SPA-side affordances only. Documented as session-only, not exposed to the API surface.
 
 Document the existence of these constraints in your environment summary if relevant for context, but they should not appear in the findings sections.
-
-## Environment
-
-`.envrc` + `.env.local` expose four vars via direnv:
-
-- `API_TEST_APP_URL` — app + API base
-- `API_TEST_DOCS_URL` — public docs site
-- `API_TEST_LOGIN` — admin account email
-- `API_TEST_PASS` — admin account password
-
-**Do not echo `API_TEST_PASS` or pass it as a literal in tool-call arguments.** Reference it through env var expansion or your language's env-reading APIs.
-
-## Tooling notes
-
-When this evaluation runs through a Playwright MCP-driven browser harness, the literal-password rule above and the supported SPA mint flow are jointly unsatisfiable: the `browser_type` tool has no env-variable substitution, so the password has to appear in the call as a literal. A real customer developer typing into a real browser doesn't hit this — it's a tooling artifact, not a TrakRF design issue. A loopback HTTP shim that reads the password server-side and injects it into the page via `<script src=...>` or `fetch(...)` is blocked by Chrome's Private Network Access policy when initiated from the public docs origin; don't re-attempt that path.
-
-Within the Playwright MCP environment, the literal-password constraint may be relaxed for **a single `browser_type` call to the SPA mint/login form's password field**, under these conditions:
-
-- The literal appears in exactly one tool call — the password field of the SPA login/mint form.
-- The password is not echoed back into chat output.
-- The password is not written to disk — no scratch files, notes, `FINDINGS.md`, or screenshots that capture the field.
-
-The exception does not extend to any other tool call. `curl`, `fetch`, file writes, log statements, and any other surface where the literal could land remain forbidden. This is one named hole in the harness boundary, not a license to spread the literal through the run.
-
-## Mission
-
-Read the docs. Set up an API key. Call the API. Evaluate the experience.
-
-Use whichever HTTP client / language you'd naturally reach for. The variation between test runs is intentional.
-
-**Focus on documentation and workflow gaps, not just API bugs.** At each step ask: could a new developer get from "I have a login" to "I am calling the API" using only what the docs say? Where do they have to guess, get stuck, or contact support?
-
-Verify every claim in the docs against the live service. When the docs and the service disagree, that is a primary finding. Check both the OpenAPI spec AND the prose quickstart / tutorial pages — the two can drift independently. Generated-client users hit the spec; humans following the prose pages hit the prose.
-
-**If onboarding fails before you can authenticate against the API, that is the report.** Document the failure point with verbatim error output and stop. Do not infer findings about endpoints you couldn't reach. A short report that says "I could not get past step 3 of the quickstart, here is exactly what I saw" is more useful than a long report padded with speculation.
 
 ## OpenAPI spec contract check
 
@@ -205,7 +181,7 @@ Before classifying a finding as novel, consult both project registries:
 
 Documented decisions shouldn't be re-litigated unless the underlying rationale has changed. See [Triage taxonomy](#triage-taxonomy) below for the exact FINDINGS.md format for each class.
 
-BB.md itself is pure methodology — project-specific content (design choices, deferred work, internal deliberate states) lives in the two registries above, not in this file. The next API project forks BB.md unchanged and starts fresh `design-notes` and `BACKLOG.md` artifacts.
+This methodology file is pure process — project-specific content (design choices, deferred work, internal deliberate states) lives in the two registries above, not here. The next API project forks `BB.md` together with the wrapper that fits, both unchanged, and starts fresh `design-notes` and `BACKLOG.md` artifacts.
 
 ### Before flagging a docs gap
 
@@ -219,6 +195,7 @@ Begin FINDINGS.md with a context block recording:
 
 - Environment URL (`API_TEST_APP_URL` value)
 - Docs URL (`API_TEST_DOCS_URL` value)
+- Track (mint-key or pre-key) and — for pre-key — the value of `$BB_ORG` and the corresponding `${BB_ORG}_ORG_ID`
 - Spec/build version — fetch `$API_TEST_DOCS_URL/health.json` and record what it returns. If `/health.json` 404s, that's a finding; record what you did get.
 - HTTP client(s) used in the exploratory pass (curl, Python `requests`, Node `fetch`, generated TypeScript client, etc.)
 - Codegen tool(s) and version(s) used in step 10 — list each separately
@@ -301,6 +278,6 @@ This makes the cycle's finding count honest: a probe that surfaces 5 things wher
 
 ## Cleanup
 
-Delete any API keys or artifacts you create before ending the session. Leave pre-existing artifacts alone.
+Delete any API keys or artifacts you create during the session before ending it. Leave pre-existing artifacts alone — including platform-managed fixture keys (e.g., the persistent `bb-parallel-permanent` keys on the BB1/BB2/BB3 orgs), which are reused across cycles and not yours to revoke. Fixture data (the seeded locations and assets on those orgs) is also out of scope for cleanup; the orchestrator handles fixture maintenance.
 
 If the test fixture has accumulated soft-deleted rows from prior cycles that interfere with your probes (e.g., `?include_deleted=true` returns dramatically more rows than the default), note it in the report but don't try to clean up prior cycles' artifacts — the orchestrator handles fixture maintenance.
