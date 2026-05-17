@@ -38,3 +38,8 @@ build/
 
 # CSW local symlink
 spec/csw
+
+# Black-box fixture-maintenance SQL — persistent across reboots, not committed.
+# README.md inside the directory is exempted so the directory's purpose is documented in-repo.
+tests/blackbox/.fixtures/*
+!tests/blackbox/.fixtures/README.md

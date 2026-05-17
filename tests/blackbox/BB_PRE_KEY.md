@@ -30,12 +30,12 @@ BB1, BB2, and BB3 carry identical, deterministic data. You can assert against li
 - CD subtree (6 nodes): `CD-WHS-01` "Warehouse" → `BAY-07` "Bay 7" → `SHELF-0001` "Bay 7 Shelf 1"; `LOC-0001` "The Universe" → `LOC-003` "milky way galaxy"; standalone `LOC-002` "Other universe"
 - Every `parent_id` resolves within the same org. Tree integrity is verified on seed. For ancestor chains and breadcrumbs, walk `parent_id` client-side or call `GET /api/v1/locations/{location_id}/ancestors`. There is no `tree_path` field — display paths are derived, not stored. See [resource-identifiers](../../docs/api/resource-identifiers.md).
 
-**Assets — 31 per org:**
+**Assets — 27 per org:**
 
-- 11 OC-origin, 20 CD-origin. CD-origin assets that would have collided with OC use a `CD-` prefix: `CD-ASSET-0001` through `CD-ASSET-0007`.
+- 11 OC-origin (`ASSET-0001` … `ASSET-0011`), 9 CD-origin under the `ASSET-NNNN` namespace above the OC ceiling (`ASSET-0012` … `ASSET-0020`), and 7 CD-origin under the `CD-ASSET-NNNN` namespace (`CD-ASSET-0001` … `CD-ASSET-0007` — the rows that would have collided with OC). 11 + 9 + 7 = 27.
 - Every asset has `location_id` resolved from scan history — no asset on this fixture reads as `location_id: null`.
 
-**Scans:** populated. Each org carries ~25 `asset_scans` per asset over a 90-day window (~775 per org), and the materialized `location_id` on every asset reflects the most-recent scan. `tracking:read` coverage is in-scope — exercise both `/api/v1/assets/{asset_id}/history` and `/api/v1/reports/asset-locations` with literal-value assertions.
+**Scans:** populated. Each org carries ~25 `asset_scans` per asset over a 90-day window (~675 per org), and the materialized `location_id` on every asset reflects the most-recent scan. `tracking:read` coverage is in-scope — exercise both `/api/v1/assets/{asset_id}/history` and `/api/v1/reports/asset-locations` with literal-value assertions.
 
 **Tags:** not copied. Tags are not in v1 public-API scope.
 
@@ -49,13 +49,13 @@ assets:read, assets:write, locations:read, locations:write, tracking:read
 
 These five scopes cover **every scope the public API surface checks** — including DELETE on assets and locations, which is gated on `assets:write` / `locations:write`, not on a `*:delete` class. There is no `*:delete` scope and no `tags:*` scope on the public surface. Tag operations on assets and locations are gated on the parent resource's `:write` scope; the canonical mapping is the scope table in [`/docs/api/authentication`](../../docs/api/authentication.md):
 
-| Operation surface | Required scope |
-| -- | -- |
-| `GET /api/v1/assets`, `GET /api/v1/assets/{id}` | `assets:read` |
-| `POST /api/v1/assets`, `PATCH`, `DELETE`, `POST .../rename`, `POST .../tags`, `DELETE .../tags/{tag_id}` | `assets:write` |
-| `GET /api/v1/locations`, `GET /api/v1/locations/{id}` | `locations:read` |
+| Operation surface                                                                                           | Required scope    |
+| ----------------------------------------------------------------------------------------------------------- | ----------------- |
+| `GET /api/v1/assets`, `GET /api/v1/assets/{id}`                                                             | `assets:read`     |
+| `POST /api/v1/assets`, `PATCH`, `DELETE`, `POST .../rename`, `POST .../tags`, `DELETE .../tags/{tag_id}`    | `assets:write`    |
+| `GET /api/v1/locations`, `GET /api/v1/locations/{id}`                                                       | `locations:read`  |
 | `POST /api/v1/locations`, `PATCH`, `DELETE`, `POST .../rename`, `POST .../tags`, `DELETE .../tags/{tag_id}` | `locations:write` |
-| `GET /api/v1/reports/asset-locations`, `GET /api/v1/assets/{id}/history` | `tracking:read` |
+| `GET /api/v1/reports/asset-locations`, `GET /api/v1/assets/{id}/history`                                    | `tracking:read`   |
 
 Two consequences for the contract probes on this track:
 

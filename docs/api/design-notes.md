@@ -46,3 +46,9 @@ The rename verb shares response shape across `POST /assets/{asset_id}/rename` an
 The shared envelope is preserved for ergonomic symmetry: a client that consumes both rename endpoints can read `descendant_count_affected` off either response without branching on resource type, then act on it only when non-zero. On the asset side it is structural padding.
 
 See [Resource identifiers → Location rename](./resource-identifiers#location-rename) for the location semantics.
+
+## Locations omit free-form `metadata` by design
+
+The asset surface (Create / Update / View) carries a `metadata` object for arbitrary integration-defined attributes. The location surface does not — `metadata` is intentionally absent from `CreateLocationWithTagsRequest`, `UpdateLocationRequest`, and `LocationView`. A `POST /api/v1/locations` body that includes `metadata: {...}` returns `400 validation_error` / `code: unknown_field`.
+
+Locations are hierarchical anchors and are expected to stay austere. Application-specific labels on a location should be attached via the location's tags subresource (`POST /api/v1/locations/{location_id}/tags`), and application-specific data about what's _at_ a location should live on the asset rows scanned there. If you find yourself wanting `location.metadata`, the data probably belongs on tags or on the assets instead.
