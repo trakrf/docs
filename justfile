@@ -23,42 +23,76 @@ test:
 # environment.
 #
 # Usage:
-#   just bb_cycle        # auto-increment from existing /tmp/bb-NN dirs
-#   just bb_cycle 32     # explicit cycle number
+#   just bb_cycle              # mint track, auto-num
+#   just bb_cycle 32           # mint track, explicit cycle number
+#   just bb_cycle BB1          # pre-key track for BB1 org, auto-num
+#   just bb_cycle BB1 32       # pre-key track for BB1, cycle 32
+#   just bb_cycle 32 BB1       # same as above (order-agnostic)
 #
 # Environment overrides (mostly for tests):
 #   BB_TMP_PREFIX        directory holding bb-NN dirs (default: /tmp)
 #   BB_SKIP_PREFLIGHT=1  skip the preflight loop (manual testing only)
 #
 # Start a fresh blackbox test cycle: preflight, isolate to /tmp/bb-NN, then print the session-start command
-bb_cycle num="":
+bb_cycle arg1="" arg2="":
     #!/usr/bin/env bash
     set -euo pipefail
 
     prefix="${BB_TMP_PREFIX:-/tmp}"
 
-    # 1. Determine cycle number
-    if [ -n "{{num}}" ]; then
-      n="{{num}}"
-      if ! [[ "$n" =~ ^[0-9]+$ ]]; then
-        echo "ERROR: cycle number must be a positive integer, got: $n" >&2
+    # 1. Sniff args into (selector, n). Each arg may be a selector (BB1/BB2/BB3),
+    #    a positive integer (cycle number), or empty. Order-agnostic.
+    selector=""
+    n=""
+    for a in "{{arg1}}" "{{arg2}}"; do
+      [ -z "$a" ] && continue
+      if [[ "$a" =~ ^BB[1-3]$ ]]; then
+        if [ -n "$selector" ]; then
+          echo "ERROR: two selectors provided ($selector, $a)" >&2
+          exit 1
+        fi
+        selector="$a"
+      elif [[ "$a" =~ ^[0-9]+$ ]]; then
+        if [ -n "$n" ]; then
+          echo "ERROR: two cycle numbers provided ($n, $a)" >&2
+          exit 1
+        fi
+        n="$a"
+      else
+        echo "ERROR: unrecognized arg: '$a' (expected BB[1-3] or a positive integer)" >&2
         exit 1
       fi
-    else
+    done
+
+    # 2. Determine cycle number. If not explicit, scan existing bb-NN[-BBn] dirs
+    #    and pick the smallest NN where our specific target doesn't yet exist.
+    if [ -z "$n" ]; then
       max=0
       shopt -s nullglob
       for d in "$prefix"/bb-[0-9]*; do
         [ -d "$d" ] || continue
         suffix="${d##*/bb-}"
-        if [[ "$suffix" =~ ^[0-9]+$ ]] && (( suffix > max )); then
-          max=$suffix
+        if [[ "$suffix" =~ ^([0-9]+)(-BB[1-3])?$ ]]; then
+          num="${BASH_REMATCH[1]}"
+          if (( num > max )); then
+            max=$num
+          fi
         fi
       done
       shopt -u nullglob
-      n=$(( max + 1 ))
+      candidate=$(( max == 0 ? 1 : max ))
+      while :; do
+        target_check="$prefix/bb-$candidate"
+        [ -n "$selector" ] && target_check="$target_check-$selector"
+        [ ! -e "$target_check" ] && break
+        candidate=$(( candidate + 1 ))
+      done
+      n=$candidate
     fi
 
+    # 3. Build target path. Pre-key dirs carry the selector as a suffix.
     target="$prefix/bb-$n"
+    [ -n "$selector" ] && target="$target-$selector"
 
     # 2. Refuse if target exists — prevents clobbering an in-flight cycle
     if [ -e "$target" ]; then

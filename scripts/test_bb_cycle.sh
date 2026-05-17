@@ -108,6 +108,86 @@ rc=$?
 assert_true "copy: hidden files and executable bit preserved" "$rc"
 rm -rf "$prefix"
 
+# --- TRA-762: selector arg, suffixed target, auto-num across suffixes ---
+
+# T9. Selector-only: bb_cycle BB2 (no num) → bb-1-BB2/
+prefix=$(make_prefix)
+out=$(BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle BB2 2>&1)
+[ -d "$prefix/bb-1-BB2" ]
+assert_true "selector: BB2 alone yields bb-1-BB2" "$?"
+rm -rf "$prefix"
+
+# T10. Selector + num (num first): bb_cycle 33 BB1 → bb-33-BB1/
+prefix=$(make_prefix)
+out=$(BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle 33 BB1 2>&1)
+[ -d "$prefix/bb-33-BB1" ]
+assert_true "selector+num: '33 BB1' yields bb-33-BB1" "$?"
+rm -rf "$prefix"
+
+# T11. Selector + num (selector first): bb_cycle BB1 33 → bb-33-BB1/ (order-agnostic)
+prefix=$(make_prefix)
+out=$(BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle BB1 33 2>&1)
+[ -d "$prefix/bb-33-BB1" ]
+assert_true "selector+num: 'BB1 33' yields bb-33-BB1 (order-agnostic)" "$?"
+rm -rf "$prefix"
+
+# T12. Auto-num same-cycle reuse: bb-3-BB1 exists → bb_cycle BB2 picks 3
+prefix=$(make_prefix); mkdir -p "$prefix/bb-3-BB1"
+out=$(BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle BB2 2>&1)
+[ -d "$prefix/bb-3-BB2" ]
+assert_true "auto: bb-3-BB1 present, BB2 picks 3 (not 4)" "$?"
+rm -rf "$prefix"
+
+# T13. Auto-num across-track: bb-3 (mint) + bb-3-BB1 exist → bb_cycle BB2 picks 3
+prefix=$(make_prefix); mkdir -p "$prefix/bb-3" "$prefix/bb-3-BB1"
+out=$(BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle BB2 2>&1)
+[ -d "$prefix/bb-3-BB2" ]
+assert_true "auto: bb-3 + bb-3-BB1 present, BB2 picks 3" "$?"
+rm -rf "$prefix"
+
+# T14. Auto-num increment when target exists: full cycle 3 → bb_cycle BB1 picks 4
+prefix=$(make_prefix); mkdir -p "$prefix/bb-3" "$prefix/bb-3-BB1" "$prefix/bb-3-BB2" "$prefix/bb-3-BB3"
+out=$(BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle BB1 2>&1)
+[ -d "$prefix/bb-4-BB1" ]
+assert_true "auto: cycle 3 full, BB1 increments to 4" "$?"
+rm -rf "$prefix"
+
+# T15. Mint auto-num still works when only pre-key dirs exist
+prefix=$(make_prefix); mkdir -p "$prefix/bb-3-BB1"
+out=$(BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle 2>&1)
+[ -d "$prefix/bb-3" ]
+assert_true "auto (mint): only bb-3-BB1 present, mint picks bb-3" "$?"
+rm -rf "$prefix"
+
+# T16. Invalid selectors rejected
+for bad in BB4 BB bb1 foo; do
+  prefix=$(make_prefix)
+  set +e
+  BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle "$bad" >/dev/null 2>&1
+  rc=$?
+  set -e
+  assert_false "validate: '$bad' rejected" "$rc"
+  rm -rf "$prefix"
+done
+
+# T17. Two selectors rejected
+prefix=$(make_prefix)
+set +e
+BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle BB1 BB2 >/dev/null 2>&1
+rc=$?
+set -e
+assert_false "validate: two selectors rejected" "$rc"
+rm -rf "$prefix"
+
+# T18. Two numbers rejected
+prefix=$(make_prefix)
+set +e
+BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle 33 34 >/dev/null 2>&1
+rc=$?
+set -e
+assert_false "validate: two numbers rejected" "$rc"
+rm -rf "$prefix"
+
 echo
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]
