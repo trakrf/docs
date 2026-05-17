@@ -40,6 +40,16 @@ bb_cycle arg1="" arg2="":
 
     prefix="${BB_TMP_PREFIX:-/tmp}"
 
+    # Source the host .env.local (or BB_SOURCE_ENV override for tests).
+    # Required for both preflight and the filtered .env.local write step.
+    source_env="${BB_SOURCE_ENV:-tests/blackbox/.env.local}"
+    if [ -f "$source_env" ]; then
+      set -a
+      # shellcheck disable=SC1091
+      . "$source_env"
+      set +a
+    fi
+
     # 1. Sniff args into (selector, n). Each arg may be a selector (BB1/BB2/BB3),
     #    a positive integer (cycle number), or empty. Order-agnostic.
     selector=""
@@ -108,16 +118,6 @@ bb_cycle arg1="" arg2="":
       echo "==> BB cycle $n — running deploy-lag preflight"
       echo
 
-      # Load API_TEST_* from tests/blackbox/.env.local. Required by the
-      # preflight script. .env.local is gitignored and holds the preview
-      # URLs and test credentials.
-      if [ -f tests/blackbox/.env.local ]; then
-        set -a
-        # shellcheck disable=SC1091
-        . tests/blackbox/.env.local
-        set +a
-      fi
-
       deadline=$(( $(date +%s) + 300 ))   # ~5 min
       interval=20
       while :; do
@@ -144,11 +144,46 @@ bb_cycle arg1="" arg2="":
       echo
     fi
 
-    # 6. Isolate: copy tests/blackbox/ (including hidden .envrc + .env.local)
-    #    into the target dir. trailing /. makes cp include dotfiles.
+    # 6. Isolate: copy tests/blackbox/ into the target, then replace the
+    #    copied .env.local with a track-specific filtered file. Each session
+    #    sees exactly the env an external integrator would.
     echo "==> Isolating to $target"
     mkdir -p "$target"
     cp -r tests/blackbox/. "$target/"
+    rm -f "$target/.env.local"
+
+    {
+      echo "API_TEST_APP_URL=${API_TEST_APP_URL:-}"
+      echo "API_TEST_DOCS_URL=${API_TEST_DOCS_URL:-}"
+      if [ -n "$selector" ]; then
+        src_key_var="${selector}_API_KEY"
+        src_id_var="${selector}_ORG_ID"
+        src_key="${!src_key_var:-}"
+        src_id="${!src_id_var:-}"
+        if [ -z "$src_key" ]; then
+          echo "ERROR: $src_key_var is empty or unset in $source_env" >&2
+          exit 1
+        fi
+        if [ -z "$src_id" ]; then
+          echo "ERROR: $src_id_var is empty or unset in $source_env" >&2
+          exit 1
+        fi
+        echo "BB_ORG=$selector"
+        echo "BB_API_KEY=$src_key"
+        echo "BB_ORG_ID=$src_id"
+      else
+        if [ -z "${API_TEST_LOGIN:-}" ]; then
+          echo "ERROR: API_TEST_LOGIN is empty or unset in $source_env" >&2
+          exit 1
+        fi
+        if [ -z "${API_TEST_PASS:-}" ]; then
+          echo "ERROR: API_TEST_PASS is empty or unset in $source_env" >&2
+          exit 1
+        fi
+        echo "API_TEST_LOGIN=$API_TEST_LOGIN"
+        echo "API_TEST_PASS=$API_TEST_PASS"
+      fi
+    } > "$target/.env.local"
 
     # 7. Session-start command for copy-paste
     echo
