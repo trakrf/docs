@@ -176,6 +176,8 @@ If you'd rather generate a typed client, the OpenAPI spec is served from the pla
 
 Feed either into `openapi-generator-cli`, NSwag, `oapi-codegen`, etc. to scaffold client code in your language. The spec is regenerated from the Go handlers on every platform release, so the generated client stays in sync with the running service.
 
+The bare-form `/openapi.yaml` and `/openapi.json` at the app origin also resolve to the canonical spec (via `301 Moved Permanently` to the `/api/`-prefixed paths above), matching the convention used by many SaaS APIs (Stripe, GitHub, and others). Either form is acceptable — pick whichever your codegen tooling prefers.
+
 The spec declares its security scheme as `BearerAuth` (HTTP Bearer, JWT format), so class-emitting generators surface the credential as a Bearer access token — `openapi-generator-cli`'s `typescript-fetch` target produces a `Configuration` with an `accessToken` field, and the Java/Python targets follow the same shape. The wire format remains `Authorization: Bearer <jwt>`; pass the API key minted in step 2 wherever the generated client expects an access token.
 
 :::tip Verified-working codegen targets
