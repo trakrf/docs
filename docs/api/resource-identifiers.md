@@ -13,7 +13,7 @@ Two string-handle concepts appear across these resources, and they're close enou
 - **`external_key`** — the resource's own natural key (this page, top-to-bottom).
 - **`*_external_key` foreign-key fields** — flat-scalar references _to_ another resource's `external_key` from a record that holds the relationship. Examples: `location_external_key` on assets, `parent_external_key` on locations. Covered under [Foreign-key fields in responses](#foreign-key-fields-in-responses-come-as-flat-scalar-pairs).
 
-Both are write-routable: caller-supplied on create, or server-minted from a per-organization sequence when `external_key` is omitted — see [auto-mint behavior](#external_key-is-optional-on-create). For ancestor chains and breadcrumbs on locations, walk the `parent_id` chain via the [tree endpoints](#location-tree-endpoints); there is no derived display-path field on the response.
+Both are write-routable: caller-supplied on create, or server-minted from a per-organization `ASSET-NNNN` / `LOC-NNNN` namespace when `external_key` is omitted — see [auto-mint behavior](#external_key-is-optional-on-create). For ancestor chains and breadcrumbs on locations, walk the `parent_id` chain via the [tree endpoints](#location-tree-endpoints); there is no derived display-path field on the response.
 
 ### Natural keys per resource
 
@@ -480,12 +480,14 @@ Reassign or remove the dependents (move placed assets out via a scan event recor
 
 ## `external_key` is optional on create — both resources auto-mint {#external_key-is-optional-on-create}
 
-`external_key` is **optional on `POST` for assets and locations alike**. Supply your own value to anchor the row to a partner-side handle (a SKU, an ERP code, an operator-typed location label, a row from a planned-layout export), or omit the field on the request body and the server assigns one from a per-organization sequence. Each resource type has its own format and its own sequence:
+`external_key` is **optional on `POST` for assets and locations alike**. Supply your own value to anchor the row to a partner-side handle (a SKU, an ERP code, an operator-typed location label, a row from a planned-layout export), or omit the field on the request body and the server assigns the lowest unused slot in the per-organization `ASSET-NNNN` / `LOC-NNNN` namespace. Each resource type has its own format and its own namespace:
 
-| Resource | Auto-minted format | Sequence scope   |
+| Resource | Auto-minted format | Namespace scope  |
 | -------- | ------------------ | ---------------- |
 | Asset    | `ASSET-NNNN`       | per-organization |
 | Location | `LOC-NNNN`         | per-organization |
+
+The pick is "lowest unused slot among live rows," not a monotonic counter: the namespace is governed by the same partial unique index that backs `external_key` uniqueness (`(org_id, external_key) WHERE deleted_at IS NULL`), so a slot freed by soft-deleting every live row that holds it becomes immediately eligible to be minted again. Don't model the namespace as Postgres-`nextval`-style append-only — auto-mint may pick a key whose namespace slot was previously occupied by one or more soft-deleted rows. The system-of-record guidance below (supply the partner-side handle on create) is the load-bearing rule for any caller that needs a stable, never-recycled identifier.
 
 ```bash
 # Caller-supplied external_key
@@ -514,7 +516,7 @@ A caller-supplied `external_key` that collides with an existing live row of the 
 
 **Optional means omit, not empty string.** The auto-mint path fires only when the request body has no `external_key` key at all. Sending `"external_key": ""` (or any whitespace-only value) returns `400 validation_error` with `code: too_short` — the same rejection `PATCH /api/v1/assets/{asset_id}` and `PATCH /api/v1/locations/{location_id}` produce, on the same envelope. CSV importers and form handlers that emit empty strings on blank inputs need to omit the key entirely, or they'll 400 on every blank row instead of receiving a server-minted value.
 
-**When integrating with a system of record (an ERP, a WMS, a partner database, a layout / floor-plan tool), supply the partner-side handle on create** — don't rely on the auto-mint. Auto-minted `ASSET-NNNN` / `LOC-NNNN` values are deterministic per organization but they won't join cleanly to a SKU, a facility code, an ERP location, or any other handle a downstream system already uses. The auto-mint is the right call for ad-hoc creates (a one-off entry from the SPA, a quick smoke test, a row pasted in from a CSV with no upstream key). In practice the supply-your-own pattern dominates on locations, which are more often planned-layout than ad-hoc, while assets see more auto-mint use when no upstream SKU yet exists.
+**When integrating with a system of record (an ERP, a WMS, a partner database, a layout / floor-plan tool), supply the partner-side handle on create** — don't rely on the auto-mint. Auto-minted `ASSET-NNNN` / `LOC-NNNN` values are per-organization-unique among live rows but they won't join cleanly to a SKU, a facility code, an ERP location, or any other handle a downstream system already uses, and they may recycle a slot vacated by a soft-deleted row (see the namespace note above) — neither property is what a partner-side audit log expects from an `id`-shaped identifier. The auto-mint is the right call for ad-hoc creates (a one-off entry from the SPA, a quick smoke test, a row pasted in from a CSV with no upstream key). In practice the supply-your-own pattern dominates on locations, which are more often planned-layout than ad-hoc, while assets see more auto-mint use when no upstream SKU yet exists.
 
 ## `external_key` value rules {#external_key-value-rules}
 

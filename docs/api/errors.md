@@ -93,7 +93,11 @@ The split between the two 400-class types is **parse-time vs. validate-time**. `
 
 Branch on `error.type` first (`bad_request` → log `detail`, fix the request shape; `validation_error` → iterate `fields[]`, branch on each `code`). The pattern keeps your error handler tolerant of new field-level codes appearing in `validation_error` without changing how you handle decoder-level failures.
 
-Type mismatches on body fields take this `bad_request` path because they fail at decode time, before the schema validator runs that would otherwise produce `fields[]`. The offending field name is surfaced in `detail` when the decoder can identify it:
+:::warning Typed clients: don't iterate `fields[]` unconditionally
+A handler that runs `for f of body.error.fields { surface(f.field, f.message) }` against every 400 will silently swallow `bad_request` — there is no `fields[]` to iterate, so the loop is a no-op and the user sees an empty error toast for what's actually a decoder-level failure. Gate the iteration on `error.type === "validation_error"` and fall through to `detail` for `bad_request` (and for any future extensible-enum 400 type that doesn't carry `fields[]`).
+:::
+
+Type mismatches on body fields take this `bad_request` path because they fail at decode time, before the schema validator runs that would otherwise produce `fields[]`. The same path covers any JSON value that can't be coerced to the declared body-field type — a string where a bool is expected, a float where an int is expected, or a JSON integer outside the declared numeric range (an unsigned bigint beyond `int32`/`int64` bounds parses as JSON but fails decode, so it surfaces as `bad_request`, not as `validation_error` with `code: too_large`). The `too_large` code is reserved for type-correct numeric values that violate a declared minimum or maximum — e.g. `parent_id: 2147483649` parses as a JSON integer and fails the path/body bound at validation time, returning `validation_error` with `fields[]` and `params.max: 2147483647`. The offending field name is surfaced in `detail` when the decoder can identify it:
 
 ```json
 {
