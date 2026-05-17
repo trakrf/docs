@@ -30,8 +30,9 @@ test:
 #   just bb_cycle 32 BB1       # same as above (order-agnostic)
 #
 # Environment overrides (mostly for tests):
-#   BB_TMP_PREFIX        directory holding bb-NN dirs (default: /tmp)
+#   BB_SOURCE_ENV        host .env.local to source (default: tests/blackbox/.env.local)
 #   BB_SKIP_PREFLIGHT=1  skip the preflight loop (manual testing only)
+#   BB_TMP_PREFIX        directory holding bb-NN dirs (default: /tmp)
 #
 # Start a fresh blackbox test cycle: preflight, isolate to /tmp/bb-NN, then print the session-start command
 bb_cycle arg1="" arg2="":
@@ -104,13 +105,40 @@ bb_cycle arg1="" arg2="":
     target="$prefix/bb-$n"
     [ -n "$selector" ] && target="$target-$selector"
 
-    # 4. Refuse if target exists — prevents clobbering an in-flight cycle
+    # 4. Validate source env vars for the chosen track. Doing this before
+    #    mkdir means a missing var aborts cleanly without leaving an
+    #    orphan target dir that would block a retry.
+    if [ -n "$selector" ]; then
+      src_key_var="${selector}_API_KEY"
+      src_id_var="${selector}_ORG_ID"
+      src_key="${!src_key_var:-}"
+      src_id="${!src_id_var:-}"
+      if [ -z "$src_key" ]; then
+        echo "ERROR: $src_key_var is empty or unset in $source_env" >&2
+        exit 1
+      fi
+      if [ -z "$src_id" ]; then
+        echo "ERROR: $src_id_var is empty or unset in $source_env" >&2
+        exit 1
+      fi
+    else
+      if [ -z "${API_TEST_LOGIN:-}" ]; then
+        echo "ERROR: API_TEST_LOGIN is empty or unset in $source_env" >&2
+        exit 1
+      fi
+      if [ -z "${API_TEST_PASS:-}" ]; then
+        echo "ERROR: API_TEST_PASS is empty or unset in $source_env" >&2
+        exit 1
+      fi
+    fi
+
+    # 5. Refuse if target exists — prevents clobbering an in-flight cycle
     if [ -e "$target" ]; then
       echo "ERROR: $target already exists. Pick another cycle number or remove it." >&2
       exit 1
     fi
 
-    # 5. Preflight: confirm the preview docs deploy has caught up to
+    # 6. Preflight: confirm the preview docs deploy has caught up to
     #    origin/main. Cloudflare Pages builds typically take a couple of
     #    minutes; if we run BB before the new deploy lands the cycle will
     #    test the previous commit.
@@ -144,7 +172,7 @@ bb_cycle arg1="" arg2="":
       echo
     fi
 
-    # 6. Isolate: copy tests/blackbox/ into the target, then replace the
+    # 7. Isolate: copy tests/blackbox/ into the target, then replace the
     #    copied .env.local with a track-specific filtered file. Each session
     #    sees exactly the env an external integrator would.
     echo "==> Isolating to $target"
@@ -156,36 +184,16 @@ bb_cycle arg1="" arg2="":
       echo "API_TEST_APP_URL=${API_TEST_APP_URL:-}"
       echo "API_TEST_DOCS_URL=${API_TEST_DOCS_URL:-}"
       if [ -n "$selector" ]; then
-        src_key_var="${selector}_API_KEY"
-        src_id_var="${selector}_ORG_ID"
-        src_key="${!src_key_var:-}"
-        src_id="${!src_id_var:-}"
-        if [ -z "$src_key" ]; then
-          echo "ERROR: $src_key_var is empty or unset in $source_env" >&2
-          exit 1
-        fi
-        if [ -z "$src_id" ]; then
-          echo "ERROR: $src_id_var is empty or unset in $source_env" >&2
-          exit 1
-        fi
         echo "BB_ORG=$selector"
         echo "BB_API_KEY=$src_key"
         echo "BB_ORG_ID=$src_id"
       else
-        if [ -z "${API_TEST_LOGIN:-}" ]; then
-          echo "ERROR: API_TEST_LOGIN is empty or unset in $source_env" >&2
-          exit 1
-        fi
-        if [ -z "${API_TEST_PASS:-}" ]; then
-          echo "ERROR: API_TEST_PASS is empty or unset in $source_env" >&2
-          exit 1
-        fi
         echo "API_TEST_LOGIN=$API_TEST_LOGIN"
         echo "API_TEST_PASS=$API_TEST_PASS"
       fi
     } > "$target/.env.local"
 
-    # 7. Session-start command for copy-paste
+    # 8. Session-start command for copy-paste
     echo
     echo "==> Ready. Start the session with:"
     echo
