@@ -10,15 +10,15 @@ The onboarding experience (login → mint → first call) is evaluated by [BB_MI
 
 - `API_TEST_APP_URL` — app + API base
 - `API_TEST_DOCS_URL` — public docs site
-- `BB_ORG` — selector: `BB1`, `BB2`, or `BB3`. Set by the orchestrator launching the session; each parallel session is assigned exactly one.
-- `BB1_API_KEY` / `BB2_API_KEY` / `BB3_API_KEY` — persistent JWTs for each fixture org. Use the one matching `$BB_ORG`.
-- `BB1_ORG_ID` / `BB2_ORG_ID` / `BB3_ORG_ID` — numeric `org_id` for each fixture, useful for traceability and cross-checks.
+- `BB_ORG` — `BB1`, `BB2`, or `BB3`. The label for the fixture org this session is pinned to. Used for traceability in FINDINGS.md.
+- `BB_API_KEY` — the persistent JWT for the assigned fixture org. Pass it as `Authorization: Bearer $BB_API_KEY` on every API call.
+- `BB_ORG_ID` — numeric `org_id` for the assigned fixture (for cross-checks).
 
-Resolve `$BB_ORG` once at session start. Read the value of `${BB_ORG}_API_KEY` (e.g., if `BB_ORG=BB2`, use `$BB2_API_KEY`) and pass it as the `Authorization: Bearer …` token on every call. Record `$BB_ORG` and the corresponding `${BB_ORG}_ORG_ID` in the FINDINGS.md context block so triage can correlate runs.
+Record `$BB_ORG` and `$BB_ORG_ID` in the FINDINGS.md context block so triage can correlate runs across parallel sessions.
 
-If `$BB_ORG` is unset, stop and report — the orchestrator did not assign this session a fixture, and guessing is wrong.
+If `$BB_API_KEY` or `$BB_ORG` is unset, stop and report — the harness did not assign this session a fixture, and guessing is wrong.
 
-There is no SPA login on this track. The fixture key is everything you need; do not attempt to use `API_TEST_LOGIN` / `API_TEST_PASS`.
+There is no SPA login on this track. The fixture key is everything you need; `API_TEST_LOGIN` / `API_TEST_PASS` are not in the env on this track.
 
 ## Fixtures
 
@@ -56,7 +56,7 @@ The fixture key is **platform-managed and persistent**. Do not revoke it. Do not
 
 ## Mission
 
-Resolve `$BB_ORG`, load `${BB_ORG}_API_KEY`, confirm you can reach `/health.json` and `/api/openapi.yaml`, then **read [BB.md](./BB.md) top to bottom and execute the shared methodology** against the fixture.
+Load `$BB_API_KEY`, confirm you can reach `/health.json` and `/api/openapi.yaml`, then **read [BB.md](./BB.md) top to bottom and execute the shared methodology** against the fixture.
 
 **If authentication fails before you can hit endpoints (key invalid, scope mismatch, `org_id` mismatch with the key, etc.), that is the report.** Document the failure point with verbatim error output and stop. A short report saying "the `$BB_ORG` key returns 401/403 against `/api/v1/assets`, here is exactly what I saw" is more useful than a speculative report against endpoints you couldn't reach.
 
