@@ -232,6 +232,10 @@ BB_SOURCE_ENV="$env_file" BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cy
 target_env="$prefix/bb-1-BB2/.env.local"
 [ -f "$target_env" ] && rc=0 || rc=$?
 assert_true "filter (pre-key): target .env.local exists" "$rc"
+grep -q "^API_TEST_APP_URL=https://app.test.example$" "$target_env" && rc=0 || rc=$?
+assert_true "filter (pre-key): API_TEST_APP_URL present" "$rc"
+grep -q "^API_TEST_DOCS_URL=https://docs.test.example$" "$target_env" && rc=0 || rc=$?
+assert_true "filter (pre-key): API_TEST_DOCS_URL present" "$rc"
 grep -q "^BB_ORG=BB2$" "$target_env" && rc=0 || rc=$?
 assert_true "filter (pre-key): BB_ORG=BB2" "$rc"
 grep -q "^BB_API_KEY=jwt-bb2-fake$" "$target_env" && rc=0 || rc=$?
@@ -254,6 +258,10 @@ BB_SOURCE_ENV="$env_file" BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cy
 target_env="$prefix/bb-1/.env.local"
 [ -f "$target_env" ] && rc=0 || rc=$?
 assert_true "filter (mint): target .env.local exists" "$rc"
+grep -q "^API_TEST_APP_URL=https://app.test.example$" "$target_env" && rc=0 || rc=$?
+assert_true "filter (mint): API_TEST_APP_URL present" "$rc"
+grep -q "^API_TEST_DOCS_URL=https://docs.test.example$" "$target_env" && rc=0 || rc=$?
+assert_true "filter (mint): API_TEST_DOCS_URL present" "$rc"
 grep -q "^API_TEST_LOGIN=test-admin@example.com$" "$target_env" && rc=0 || rc=$?
 assert_true "filter (mint): API_TEST_LOGIN present" "$rc"
 grep -q "^API_TEST_PASS=test-password$" "$target_env" && rc=0 || rc=$?

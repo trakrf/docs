@@ -17,8 +17,6 @@ For the parallel **contract track** (skip the mint, use a pre-minted fixture key
 
 **Do not echo `API_TEST_PASS` or pass it as a literal in tool-call arguments.** Reference it through env var expansion or your language's env-reading APIs.
 
-(The `BB{N}_API_KEY` / `BB{N}_ORG_ID` vars in the same file belong to the contract track. Ignore them on this track — minting your own key end-to-end is the point.)
-
 ## Tooling notes
 
 When this evaluation runs through a Playwright MCP-driven browser harness, the literal-password rule above and the supported SPA mint flow are jointly unsatisfiable: the `browser_type` tool has no env-variable substitution, so the password has to appear in the call as a literal. A real customer developer typing into a real browser doesn't hit this — it's a tooling artifact, not a TrakRF design issue. A loopback HTTP shim that reads the password server-side and injects it into the page via `<script src=...>` or `fetch(...)` is blocked by Chrome's Private Network Access policy when initiated from the public docs origin; don't re-attempt that path.
