@@ -23,7 +23,7 @@ Non-2xx responses return `Content-Type: application/json` with the error object 
 }
 ```
 
-On `validation_error`, `detail` echoes the first offending field's `message` verbatim (and appends `(and N more validation errors)` when more than one field is invalid). The per-field structure lives in `fields[]` — see [Validation errors](#validation-errors) below.
+On `validation_error`, `detail` echoes the first offending field's `message` verbatim. Most per-field validators short-circuit at the first miss, so a body invalid on several independent fields typically returns `fields[]` with a single entry — branching on `fields[]` array length is the right way to detect the multi-field case. Cross-field validators (notably [`ambiguous_fields`](#error-type-catalog) on a paired natural-key conflict) emit multiple `fields[]` entries and append `(and N more validation errors)` to `detail`. The per-field structure lives in `fields[]` — see [Validation errors](#validation-errors) below.
 
 The field names are modeled on [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) (Problem Details for HTTP APIs), but the envelope is **not** 7807-compliant: TrakRF serves `application/json` (not `application/problem+json`) and nests the fields under `error` rather than placing them at the top level. Clients wiring directly to a 7807 library should parse this shape themselves.
 
@@ -143,7 +143,7 @@ The OpenAPI spec marks `error.type` with `x-extensible-enum: true`, but mainstre
 For `validation_error` responses, the stable contract for programmatic handling is `fields[].code` per offending field — that's the extensible-enum value codegen and validation UIs should switch on. `title` is fixed per `error.type` ([canonical titles](#canonical-titles)) and carries no per-field information; `detail` summarizes the first problem in human prose and is safe to log or surface, but its wording is not a contract. When the offending field matters (which it usually does for `validation_error`), iterate `fields[]` and branch on `code`.
 :::
 
-When `type` is `validation_error`, the envelope carries an additional `fields` array with one entry per invalid field. `detail` bubbles the first field's `message` so single-field cases read naturally without descending into `fields[]`; multi-field cases append `(and N more validation errors)` so a logged `detail` still flags that more issues are present:
+When `type` is `validation_error`, the envelope carries an additional `fields` array with one entry per invalid field surfaced by the validator that fired. `detail` bubbles the first field's `message` so single-field cases read naturally without descending into `fields[]`; the example below shows a cross-field case (`ambiguous_fields` on a paired natural-key conflict) where the validator emits two `fields[]` entries and `detail` appends `(and N more validation errors)` so a logged `detail` still flags that more issues are present. Most per-field validators short-circuit at the first miss, so a body invalid on several independent fields will more typically return a single-entry `fields[]` — branch on the array length, not on the `(and N more...)` suffix, to detect the multi-field case:
 
 ```json
 {
@@ -151,21 +151,19 @@ When `type` is `validation_error`, the envelope carries an additional `fields` a
     "type": "validation_error",
     "title": "Validation failed",
     "status": 400,
-    "detail": "external_key must be at most 255 characters (and 1 more validation error)",
-    "instance": "/api/v1/assets",
+    "detail": "parent_id and parent_external_key were both supplied and disagree; supply exactly one or supply consistent values (and 1 more validation error)",
+    "instance": "/api/v1/locations",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
       {
-        "field": "external_key",
-        "code": "too_long",
-        "message": "external_key must be at most 255 characters",
-        "params": { "max_length": 255 }
+        "field": "parent_id",
+        "code": "ambiguous_fields",
+        "message": "parent_id and parent_external_key were both supplied and disagree; supply exactly one or supply consistent values"
       },
       {
-        "field": "tag_type",
-        "code": "invalid_value",
-        "message": "tag_type is not a valid value",
-        "params": { "allowed_values": ["rfid", "ble", "barcode"] }
+        "field": "parent_external_key",
+        "code": "ambiguous_fields",
+        "message": "parent_id and parent_external_key were both supplied and disagree; supply exactly one or supply consistent values"
       }
     ]
   }
