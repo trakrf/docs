@@ -11,6 +11,12 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
+### BB50-52 recurring — `POST /api/v1/locations` accepts matching `parent_id` + `parent_external_key` pair
+
+Service relaxation that closes a recurring contract-class finding surfaced three times across BB50, BB51, and BB52. Pre-launch, additive, non-breaking against any `v1.0.0`-or-later wire baseline. Also folds in BB51 F2 (error-message alignment) since shared validation logic resolves both items in one change.
+
+- **`POST /api/v1/locations` now accepts a matching `parent_id` + `parent_external_key` pair.** A payload that names the same parent through both forms is silently normalized to a single re-parent operation, symmetric with the long-standing PATCH behavior. A disagreement still returns `400 validation_error` / `code: ambiguous_fields` using the PATCH-shaped "both supplied and disagree; supply exactly one or supply consistent values" wording (so POST and PATCH now emit identical error strings — that was the BB51 F2 side finding). The pre-fix POST rejected both-supplied outright regardless of value agreement; the asymmetry with PATCH was accidental spec evolution and surfaced three cycles in a row across BB50/51/52. The "POST-the-GET-response after editing one field" workflow now works on locations Create. `CreateLocationWithTagsRequest` drops the `not: required: [parent_id, parent_external_key]` constraint. The [paired-key matrix](./resource-identifiers#paired-key-behavior-per-verb) and the [filter-vs-write framing in pagination/filtering/sorting](./pagination-filtering-sorting#paired-by-id-and-by-natural-key-filters-are-mutually-exclusive) are updated to reflect the now-symmetric POST / PATCH body rule (and the still-strict `GET` filter rule that does not normalize matching pairs).
+
 ### BB52 docs — `validation_error` vs `bad_request` envelope split, non-monotonic auto-mint wording
 
 Two docs-discoverability items from the BB52 multipass triage. No spec or wire change.
