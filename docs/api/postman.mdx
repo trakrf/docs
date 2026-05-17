@@ -70,6 +70,25 @@ alongside your own code if useful.
 spec URL. Hoppscotch runs in the browser; the imported collection persists
 in local storage.
 
+## TypeScript with `openapi-fetch`
+
+If your integration generates a TypeScript client from the same spec URL
+above instead of using a GUI client, the `openapi-fetch` runtime needs one
+extra step: it does not auto-send `Content-Type: application/merge-patch+json`
+on `PATCH` calls, despite the spec declaring this content type on every
+`PATCH` operation. A literal translation of the spec into `client.PATCH(...)`
+returns `415 unsupported_media_type` on the first call.
+
+The fix is a `mergePatchMiddleware` registered once on the client so every
+`PATCH` site is handled automatically. The full snippet (≈30 lines, plus an
+optional `createTrakrfClient` wrapper) lives in
+[Quickstart §5 — TypeScript with `openapi-fetch`](./quickstart#openapi-fetch) —
+copy it into your project rather than overriding `Content-Type` per call.
+
+The `openapi-generator-cli` `typescript-fetch` target and the Python
+`openapi-generator` handle merge-patch correctly out of the box; this
+workaround is specific to the `openapi-fetch` runtime path.
+
 ## Refreshing
 
 The spec moves with each platform deploy. Re-import (or use your client's
