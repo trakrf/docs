@@ -408,6 +408,8 @@ Locations follow the same flat-scalar pattern for their parent reference. A loca
 
 Set either `parent_id` or `parent_external_key` on create or update to nest under an existing parent. Root locations (no parent) carry both fields as `null`. They're never absent from the response — null-check, don't key-check.
 
+`PATCH /api/v1/locations/{location_id}` must reference a non-descendant location on `parent_id` (or `parent_external_key`). An assignment that would create a cycle in the parent chain — `parent_id` set to the location's own `id` (1-hop self-parent), or to any location reachable through the existing subtree rooted at the location being reparented (N-hop transitive) — returns `409 conflict` with a specific `detail` naming both endpoints of the cycle. Valid non-descendant reparenting and root promotion (`parent_id: null`) succeed unchanged. See [Errors → `conflict`](./errors#error-type-catalog).
+
 `parent_id` and `parent_external_key` are one-hop only — they describe the immediate parent, not the chain to the root. For multi-hop traversal use the dedicated endpoint:
 
 ```bash
