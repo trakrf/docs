@@ -45,6 +45,34 @@ Every outbound RFC 3339 timestamp the public API emits — `valid_from`, `valid_
 
 Full rules — inbound parsing, sentinel rejection, the storage-vs-wire boundary, and the audit-timestamp echo-or-omit contract — live on the dedicated page: see [Date fields](./date-fields).
 
+## `updated_at` is an optimistic-concurrency token on `PATCH`
+
+`updated_at` carries `readOnly: true` in the spec, which correctly tells codegen to omit it from request shapes — generated SDKs decode it from responses but won't include it in PATCH bodies they construct. The annotation alone, though, doesn't convey the runtime contract when a hand-rolled caller (or any caller round-tripping the full read shape) does include the field: the server applies the same [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule it applies to every other read-only field, and the rejection path is precisely the lost-update detection signal a write-heavy integration needs.
+
+A PATCH whose body includes `updated_at` matching the resource's current value silently normalizes the field out — the PATCH proceeds as if `updated_at` were absent. A PATCH whose body includes a **stale** `updated_at` (a value an interim writer has since superseded) returns `400 validation_error` / `code: read_only` with `fields[0].message` naming the mismatch.
+
+```http
+GET /api/v1/assets/123
+# response body excerpt:
+# { "id": 123, "name": "Pallet jack 7", "updated_at": "2026-05-18T15:00:00.000Z", ... }
+
+# ... your client makes local edits to the pallet-jack record ...
+
+PATCH /api/v1/assets/123
+Content-Type: application/merge-patch+json
+
+{
+  "description": "Awaiting servicing",
+  "updated_at": "2026-05-18T15:00:00.000Z"
+}
+```
+
+If no concurrent writer has touched the row in the interim, the PATCH succeeds and the response carries a new `updated_at`. If another writer has landed first, the same request returns `400 validation_error` with `fields[0]` describing the `updated_at` mismatch — the client refetches, reconciles its local edits against the new state, and retries.
+
+Opting out is the default for clients that don't need lost-update detection. Omit `updated_at` from the PATCH body (or strip it from the cached GET response before echoing); the server will advance it on every successful write regardless. Single-writer integrations and last-writer-wins workflows can ignore the field entirely without surprises.
+
+The pattern is one instance of the uniform [accept-if-matches, reject-if-differs](./resource-identifiers#read-shape-vs-write-shape) rule covering every read-only field, but `updated_at` is the only one that **advances on every successful PATCH** and therefore carries useful concurrency-token signal. The other read-only fields (`id`, `created_at`, `deleted_at`, `location_id`, `location_external_key`, `tags`, `external_key`) don't change on PATCH, so a reject-if-differs on those signals an integrator-side bug rather than a concurrent-writer conflict.
+
 ## `descendant_count_affected` on `RenameAssetResponse` is always `0`
 
 The rename verb shares response shape across `POST /assets/{asset_id}/rename` and `POST /locations/{location_id}/rename`. Locations legitimately use `descendant_count_affected` to surface the live count of descendant rows reachable through the `parent_id` chain — a non-zero value is the client's cue to refresh any subtree state cached under the old natural key. Assets have no hierarchy, so the field always returns `0`.
