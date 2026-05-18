@@ -22,7 +22,7 @@ Master data is the set of resources the API both serves on read and accepts on w
 | Tag-asset associations    | Tag printer firmware, ERP-managed tag inventory (print-and-apply workflows)                    | `POST /api/v1/assets/{asset_id}/tags`, `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`                                                                    |
 | Tag-location associations | Facilities tag printer, fixed-installation BLE/RFID layout                                     | `POST /api/v1/locations/{location_id}/tags`, `DELETE /api/v1/locations/{location_id}/tags/{tag_id}`                                                        |
 
-The rename endpoints are master-data operations. `external_key` is immutable through `PATCH` (sending a different value returns `400 read_only`); the `/rename` endpoint is the canonical mutation path. See [Resource identifiers → Renaming an `external_key`](./resource-identifiers#renaming-an-external_key) for the rationale.
+The rename endpoints are master-data operations. `external_key` is immutable through `PATCH` (sending a different value returns `400 validation_error` / `code: invalid_context` — the field is settable, just not via this verb); the `/rename` endpoint is the canonical mutation path. See [Resource identifiers → Renaming an `external_key`](./resource-identifiers#renaming-an-external_key) for the rationale.
 
 Tag-asset associations stay on the public API because the integration use case is real — partners running print-and-apply lines or ERP-synced tag inventories drive these writes from their side. The tag CRUD surface is part of the master-data category and behaves like the others (POST to attach, DELETE to detach; the parent resource's read shape includes the current tag set).
 
