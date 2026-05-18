@@ -425,11 +425,11 @@ If you need ancestor `external_key`s (for breadcrumbs, parent lookups, or anythi
 
 Three endpoints traverse the location hierarchy from a starting node. All three return the standard list envelope (`data`, `limit`, `offset`, `total_count`) and are gated by `locations:read`:
 
-| Endpoint                                          | Returns                                                                              |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `GET /api/v1/locations/{location_id}/ancestors`   | Parent chain to the root, ordered nearest-first (immediate parent → … → root).       |
-| `GET /api/v1/locations/{location_id}/children`    | Immediate children only. Single-level lookup.                                        |
-| `GET /api/v1/locations/{location_id}/descendants` | The full subtree rooted at this location. Multi-level, includes children's children. |
+| Endpoint                                          | Returns                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/locations/{location_id}/ancestors`   | Parent chain returned root-first (walking up the `parent_id` chain to the tree root), with `id` ascending as a deterministic tiebreaker. To render a breadcrumb left-to-right (root → current), iterate the response array in natural order and append the current location at the end. |
+| `GET /api/v1/locations/{location_id}/children`    | Immediate children only. Single-level lookup.                                                                                                                                                                                                                                           |
+| `GET /api/v1/locations/{location_id}/descendants` | The full subtree rooted at this location. Multi-level, includes children's children.                                                                                                                                                                                                    |
 
 ```bash
 # Walk the parent chain for breadcrumbs
