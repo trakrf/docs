@@ -45,7 +45,7 @@ Save the key to an environment variable for the rest of this page:
 export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-`GET /api/v1/orgs/me` returns the organization the API key is scoped to. It's the canonical "tell me about myself" endpoint, requires no specific scope, and confirms end-to-end that your key authenticates against the right environment. **Use an API key here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](./private-endpoints#orgs-me) for the precise rule.
+`GET /api/v1/orgs/me` (`getCurrentOrg` in generated clients) returns the organization the API key is scoped to. It's the canonical "tell me about myself" endpoint, requires no specific scope, and confirms end-to-end that your key authenticates against the right environment. **Use an API key here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](./private-endpoints#orgs-me) for the precise rule.
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
@@ -59,7 +59,13 @@ A successful response:
   "data": {
     "id": 42,
     "name": "Acme Logistics",
-    "scopes": ["assets:read", "assets:write", "tracking:read"],
+    "scopes": [
+      "assets:read",
+      "assets:write",
+      "locations:read",
+      "locations:write",
+      "tracking:read"
+    ],
     "api_key_id": "550e8400-e29b-41d4-a716-446655440000"
   }
 }

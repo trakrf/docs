@@ -72,7 +72,7 @@ The hosting edge layer adds a separate **`x-railway-request-id`** response heade
 | `type`                   | HTTP status | When you'll see it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Retry?                                                                            |
 | ------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `validation_error`       | 400         | A specific field in the request was invalid — a body field, a query parameter, or an unknown JSON / query key. Carries `fields[]`; see [validation errors](#validation-errors).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | No — fix the request                                                              |
-| `bad_request`            | 400         | Request was malformed at decode time — invalid JSON syntax, or a JSON value that didn't match the expected type for a body field. No `fields[]`; the offending field name (when known) is in `detail`. See [validation_error vs bad_request](#validation_error-vs-bad_request).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | No — fix the request                                                              |
+| `bad_request`            | 400         | Request body couldn't be parsed or attributed to a field — invalid JSON syntax, a top-level type mismatch (e.g. an array where an object is expected), or a `PATCH` body that is the literal JSON token `null`. No `fields[]`; `detail` describes the failure. Field-attributable type mismatches (`is_active: "true"` where boolean is expected) return `validation_error` with `fields[]` instead — see [validation_error vs bad_request](#validation_error-vs-bad_request).                                                                                                                                                                                                                                                                                                              | No — fix the request                                                              |
 | `unauthorized`           | 401         | Missing, malformed, revoked, or expired API key. The specific cause (missing header, wrong scheme, expired token, revoked key) is in `detail`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | No — re-auth                                                                      |
 | `forbidden`              | 403         | Valid key but insufficient scope for this endpoint                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | No — needs a key with the right scope                                             |
 | `not_found`              | 404         | Resource lookup failed — an in-range path-param `id` that doesn't resolve (`GET /api/v1/assets/99999`) or a sub-resource path doesn't exist (`GET /api/v1/assets/99999/history`). An out-of-range or non-numeric path-param `id` (e.g. `0`, `-5`, `2147483648`, `abc`) returns `400 validation_error` against the spec's path-param bounds, not 404 — see [path-parameter validation errors](#path-and-query-parameter-validation-errors). A list filter that resolves to zero rows returns 200 with empty `data[]`, not 404.                                                                                                                                                                                                                                                               | No — check the identifier                                                         |
@@ -89,15 +89,13 @@ The catalog above covers `405 method_not_allowed`. `HEAD` and `OPTIONS` are not 
 
 ### `validation_error` vs `bad_request`
 
-The split between the two 400-class types is **parse-time vs. validate-time**. `bad_request` is returned when the request couldn't be parsed at all — invalid JSON syntax, or a body field whose value couldn't be decoded as the expected type — so the API can't enumerate which fields failed. `fields[]` is not populated; `detail` describes the parse error (and names the offending field when the decoder can identify it). `validation_error` is returned when the request parsed cleanly but one or more field values failed validation against the schema — body-field violations, query-parameter violations, path-parameter violations against the declared bounds, plus unknown JSON keys and unknown query parameters. `fields[]` is populated with one entry per offending field.
+`validation_error` is the field-attributable envelope: any body or query failure that pins to a specific field returns this type with `fields[]` enumerating one entry per offending field. This covers both decode-stage type mismatches (`is_active: "true"` where boolean is expected — `code: invalid_value` with `params.expected_type` and `params.received_type`) and validate-stage constraint violations (`name: ""` where a minimum length applies — `code: too_short`). Unknown JSON keys, unknown query parameters, and path-parameter violations against declared bounds also land in this envelope. `detail` mirrors the first field's `message`.
 
-Branch on `error.type` first (`bad_request` → log `detail`, fix the request shape; `validation_error` → iterate `fields[]`, branch on each `code`). The pattern keeps your error handler tolerant of new field-level codes appearing in `validation_error` without changing how you handle decoder-level failures.
+`bad_request` is reserved for failures the API can't attribute to a field: invalid JSON syntax, a top-level type mismatch (the request body itself is the wrong JSON shape), or a `PATCH` body that is the literal JSON token `null`. `fields[]` is not populated; `detail` describes the failure.
 
-:::warning Typed clients: don't iterate `fields[]` unconditionally
-A handler that runs `for f of body.error.fields { surface(f.field, f.message) }` against every 400 will silently swallow `bad_request` — there is no `fields[]` to iterate, so the loop is a no-op and the user sees an empty error toast for what's actually a decoder-level failure. Gate the iteration on `error.type === "validation_error"` and fall through to `detail` for `bad_request` (and for any future extensible-enum 400 type that doesn't carry `fields[]`).
-:::
+Branch on `error.type` first (`validation_error` → iterate `fields[]`, branch on each `code`; `bad_request` → log `detail`, fix the request shape). Clients that iterate `fields[]` unconditionally should still gate on `error.type === "validation_error"` so the loop doesn't no-op on a `bad_request` and surface an empty error toast — uncommon in practice now that field-attributable failures all land in `validation_error`, but still worth handling.
 
-**Worked example: the same endpoint, two envelope shapes.** Two requests against `POST /api/v1/assets` that both return 400 but route to different `error.type` values:
+**Worked example.** `POST /api/v1/assets` with `is_active: "true"` (string where boolean is expected) returns a single `fields[]` entry naming the type mismatch:
 
 ```http
 POST /api/v1/assets
@@ -109,64 +107,30 @@ Content-Type: application/json
 ```json
 {
   "error": {
-    "type": "bad_request",
-    "title": "Bad request",
-    "status": 400,
-    "detail": "Body field \"is_active\" could not be decoded as the expected type (boolean)",
-    "instance": "/api/v1/assets",
-    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
-  }
-}
-```
-
-The JSON decoder rejected the string-as-bool at parse time, before validation could run — no `fields[]` array, and `detail` names the offending field and the expected JSON type. The body is otherwise well-formed; it's the per-field type coercion that failed.
-
-```http
-POST /api/v1/assets
-Content-Type: application/json
-
-{"name": ""}
-```
-
-```json
-{
-  "error": {
     "type": "validation_error",
     "title": "Validation failed",
     "status": 400,
-    "detail": "name is too short",
+    "detail": "is_active must be a boolean; received string",
     "instance": "/api/v1/assets",
     "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
     "fields": [
       {
-        "field": "name",
-        "code": "too_short",
-        "message": "name is too short",
-        "params": { "min_length": 1 }
+        "field": "is_active",
+        "code": "invalid_value",
+        "message": "must be a boolean; received string",
+        "params": {
+          "expected_type": "boolean",
+          "received_type": "string"
+        }
       }
     ]
   }
 }
 ```
 
-Same endpoint, same status code, different envelope. `name` was typed correctly (string), parse succeeded, and the schema validator emitted a single `fields[]` entry naming the constraint that failed. `detail` mirrors that entry's `message`. A handler that gates on `error.type === "validation_error"` before iterating `fields[]` (per the [warning above](#validation_error-vs-bad_request)) reaches both shapes correctly; one that iterates unconditionally swallows the `bad_request` and surfaces an empty error UI.
+A constraint violation on a type-correct value — say `{"name": ""}` against the declared minimum length — lands on the same envelope shape: `code: too_short`, `params: {"min_length": 1}`, with `detail` mirroring the first field's `message`. Same handler path on the client; the integrator iterating `fields[]` for diagnostic detail gets useful data on both decode-layer and validator-layer failures without branching on the underlying failure mode. Numeric overflow on a declared `int32` / `int64` body field surfaces as `validation_error` with `code: invalid_value` (and `expected_type`/`received_type` set, mirroring the boolean case above) — the `too_large` code remains reserved for type-correct numeric values that violate a declared minimum or maximum (`parent_id: 2147483649` → `code: too_large` with `params.max: 2147483647`).
 
-Type mismatches on body fields take this `bad_request` path because they fail at decode time, before the schema validator runs that would otherwise produce `fields[]`. The same path covers any JSON value that can't be coerced to the declared body-field type — a string where a bool is expected, a float where an int is expected, or a JSON integer outside the declared numeric range (an unsigned bigint beyond `int32`/`int64` bounds parses as JSON but fails decode, so it surfaces as `bad_request`, not as `validation_error` with `code: too_large`). The `too_large` code is reserved for type-correct numeric values that violate a declared minimum or maximum — e.g. `parent_id: 2147483649` parses as a JSON integer and fails the path/body bound at validation time, returning `validation_error` with `fields[]` and `params.max: 2147483647`. The offending field name is surfaced in `detail` when the decoder can identify it:
-
-```json
-{
-  "error": {
-    "type": "bad_request",
-    "title": "Bad request",
-    "status": 400,
-    "detail": "Body field \"external_key\" could not be decoded as the expected type",
-    "instance": "/api/v1/assets",
-    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
-  }
-}
-```
-
-When the mismatch is at the top level (the request body itself is the wrong JSON type — for example an array where an object is expected), `detail` falls back to a generic message:
+The `bad_request` envelope covers the residual cases where no field can be attributed. When the request body itself is the wrong JSON type (for example an array where an object is expected), `detail` falls back to a generic message:
 
 ```json
 {
@@ -237,7 +201,8 @@ Current `code` values (extensible):
 
 - `required` — the JSON key was absent from the request body. Distinct from explicit-`null` on a non-nullable field, which surfaces as `invalid_value` (see next entry). Empty strings on length-bearing fields are a third distinct case — see `too_short` below.
 - `invalid_value` — a value-validation failure: the value was sent as explicit `null` on a non-nullable field, isn't one of the allowed values, fails a format check (email, URL, UUID), fails an enum check, or fails a validation TrakRF has not mapped to a more specific code. Use this code's path when the field _name_ was recognized but the value was wrong; see `unknown_field` for the unrecognized-name case. Integrators branching on `code` per the [tip above](#validation-errors) should treat the null-on-non-nullable case as a value error, not a missing-field error.
-- `unknown_field` — the request body contains a top-level key the schema does not declare. Distinct from `invalid_value` so integrators can branch on "typo'd field name" vs. "wrong value." Emitted by the strict-decoder pass that drives [`additionalProperties: false`](./pagination-filtering-sorting#validator-behavior-on-writes) on write request bodies; `fields[].field` names the offending key.
+- `unknown_field` — the request body contains a top-level key the schema does not declare. Distinct from `invalid_value` so integrators can branch on "typo'd field name" vs. "wrong value." Emitted by the strict-decoder pass that drives [`additionalProperties: false`](./pagination-filtering-sorting#validator-behavior-on-writes) on write request bodies; `fields[].field` names the offending key. Distinct from `invalid_context` (next entry) — `unknown_field` is "the API does not declare this field anywhere," while `invalid_context` is "the field exists elsewhere on the surface but is not allowed in this position."
+- `invalid_context` — a known parameter was sent on a surface where it is not allowed. Currently emitted on `include_deleted` against detail endpoints (e.g. `GET /api/v1/locations/{location_id}?include_deleted=true`) where the parameter exists on the corresponding list endpoint but cannot apply by id — soft-deleted records are not retrievable by id, so the list-only filter has no analog on the detail surface. Strict-typed clients switching over `code` should add an arm for this value to distinguish "known parameter, wrong context here" from `unknown_field` ("parameter the API doesn't declare at all"). The accompanying `message` names the specific reason the parameter is not honored on this surface.
 - `too_short` — the field was present in the request body with a length below the documented minimum (e.g. `"name": ""` on a `min_length: 1` string field). Distinct from `required` (absent-key case) and from `invalid_value` (explicit-`null`-on-non-nullable case). `params.min_length` carries the constraint value.
 - `too_long` — string or collection length above the maximum
 - `too_small` — numeric value below the minimum
