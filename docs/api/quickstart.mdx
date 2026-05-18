@@ -215,6 +215,15 @@ await client.PATCH("/api/v1/assets/{asset_id}", {
 
 `openapi-generator-cli`'s `typescript-fetch` target and Python's `openapi-generator` already handle merge-patch correctly out of the box — this helper exists only for the `openapi-fetch` integration path.
 
+## 6. Beyond CRUD: the read-only tracking surface
+
+The walkthrough above covers the master-data surface — `assets:write` and `locations:write` give you CRUD over what's in your fleet. The TrakRF API also exposes a read-only **tracking surface** derived from scan events ingested through reader integrations. Two endpoints, both gated on `tracking:read`:
+
+- **`GET /api/v1/assets/{asset_id}/history`** — Recent scan events for a single asset, in event order, each row carrying its observed location and the dwell duration at the previous location. ~90-day rolling window. Useful for per-asset timelines and dwell-time analysis. See [Resource identifiers → "Scan event" is a domain concept, not an API resource](./resource-identifiers#scan-event-vocabulary) for what's queryable and [Date fields → Scan-event date fields](./date-fields#scan-event-date-fields) for the response timestamps.
+- **`GET /api/v1/reports/asset-locations`** — Current location of every asset in your organization, resolved from the most recent scan per asset. Useful for cross-fleet snapshots, nightly reconciliation, and "where is everything right now?" dashboards. See [Resource identifiers → `/reports/asset-locations` scopes to currently-effective assets](./resource-identifiers#asset-locations-effective-scope) for the default predicate and `asset_last_seen` semantics.
+
+If your key was minted without `tracking:read`, the calls return `403 forbidden`; scopes can't be edited after creation, so [mint a new key](./authentication#mint-your-first-api-key) to add the surface. The `scopes` array on `GET /api/v1/orgs/me` (covered in §2 above) confirms what your key carries.
+
 ## Next steps
 
 - [Interactive reference](/api) — every endpoint, request/response shape, try-it-now widget
