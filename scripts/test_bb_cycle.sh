@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # Exercises the `just bb_cycle` recipe: cycle-number selection, refuse-if-exists
 # guard, and hidden-file copy. Uses BB_TMP_PREFIX to redirect /tmp/bb-NN into an
-# isolated tempdir and BB_SKIP_PREFLIGHT=1 to bypass the external HTTP checks.
+# isolated tempdir, BB_SKIP_PREFLIGHT=1 to bypass the external HTTP checks, and
+# BB_NO_LAUNCH=1 to skip the final `exec claude ...` so the recipe returns
+# normally for assertions.
 
 set -euo pipefail
+
+export BB_NO_LAUNCH=1
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

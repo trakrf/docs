@@ -97,6 +97,60 @@ Branch on `error.type` first (`bad_request` → log `detail`, fix the request sh
 A handler that runs `for f of body.error.fields { surface(f.field, f.message) }` against every 400 will silently swallow `bad_request` — there is no `fields[]` to iterate, so the loop is a no-op and the user sees an empty error toast for what's actually a decoder-level failure. Gate the iteration on `error.type === "validation_error"` and fall through to `detail` for `bad_request` (and for any future extensible-enum 400 type that doesn't carry `fields[]`).
 :::
 
+**Worked example: the same endpoint, two envelope shapes.** Two requests against `POST /api/v1/assets` that both return 400 but route to different `error.type` values:
+
+```http
+POST /api/v1/assets
+Content-Type: application/json
+
+{"name": "x", "is_active": "true"}
+```
+
+```json
+{
+  "error": {
+    "type": "bad_request",
+    "title": "Bad request",
+    "status": 400,
+    "detail": "Body field \"is_active\" could not be decoded as the expected type (boolean)",
+    "instance": "/api/v1/assets",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
+  }
+}
+```
+
+The JSON decoder rejected the string-as-bool at parse time, before validation could run — no `fields[]` array, and `detail` names the offending field and the expected JSON type. The body is otherwise well-formed; it's the per-field type coercion that failed.
+
+```http
+POST /api/v1/assets
+Content-Type: application/json
+
+{"name": ""}
+```
+
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "title": "Validation failed",
+    "status": 400,
+    "detail": "name is too short",
+    "instance": "/api/v1/assets",
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
+    "fields": [
+      {
+        "field": "name",
+        "code": "too_short",
+        "message": "name is too short",
+        "params": { "min_length": 1 }
+      }
+    ]
+  }
+}
+```
+
+Same endpoint, same status code, different envelope. `name` was typed correctly (string), parse succeeded, and the schema validator emitted a single `fields[]` entry naming the constraint that failed. `detail` mirrors that entry's `message`. A handler that gates on `error.type === "validation_error"` before iterating `fields[]` (per the [warning above](#validation_error-vs-bad_request)) reaches both shapes correctly; one that iterates unconditionally swallows the `bad_request` and surfaces an empty error UI.
+
 Type mismatches on body fields take this `bad_request` path because they fail at decode time, before the schema validator runs that would otherwise produce `fields[]`. The same path covers any JSON value that can't be coerced to the declared body-field type — a string where a bool is expected, a float where an int is expected, or a JSON integer outside the declared numeric range (an unsigned bigint beyond `int32`/`int64` bounds parses as JSON but fails decode, so it surfaces as `bad_request`, not as `validation_error` with `code: too_large`). The `too_large` code is reserved for type-correct numeric values that violate a declared minimum or maximum — e.g. `parent_id: 2147483649` parses as a JSON integer and fails the path/body bound at validation time, returning `validation_error` with `fields[]` and `params.max: 2147483647`. The offending field name is surfaced in `detail` when the decoder can identify it:
 
 ```json
