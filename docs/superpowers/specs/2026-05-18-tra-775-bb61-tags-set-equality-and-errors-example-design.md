@@ -33,6 +33,7 @@ Insertion point: immediately after the `:::warning Typed clients: don't iterate 
 The existing section already shows JSON envelopes for `bad_request` (lines 102-113 field-level, 115-128 top-level). What's missing is a side-by-side worked example that lets a reader probing boolean coercion or value validation see their specific shape immediately. The BB61-3 author hit this with `is_active: "true"`, reproduced the exact example the BB52 paragraph already covered abstractly, and didn't bridge it — the docs need the bridge stated, not implied.
 
 Block shape: a fenced "Example: comparing the two 400 envelopes" pair showing
+
 - `POST /api/v1/assets` with `{"name": "x", "is_active": "true"}` → `400 bad_request` (decode failure, no `fields[]`)
 - `POST /api/v1/assets` with `{"name": "", "valid_from": ""}` → `400 validation_error` (constraint failures with populated `fields[]`)
 
