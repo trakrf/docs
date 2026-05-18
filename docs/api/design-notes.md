@@ -39,6 +39,12 @@ For integrators using `datamodel-codegen`, switch to one of the verified-working
 
 We'll migrate to OpenAPI 3.1 type-union syntax when the generator ecosystem stabilizes 3.1 support across all targets we care about.
 
+## Timestamps on the wire carry fixed millisecond precision
+
+Every outbound RFC 3339 timestamp the public API emits — `valid_from`, `valid_to`, `created_at`, `updated_at`, `deleted_at`, `event_observed_at`, `asset_last_seen` — uses fixed three-digit millisecond fractional precision (`.NNNZ`), never microsecond or nanosecond. Sub-millisecond input is accepted but truncated toward zero before emission; sub-microsecond input is further truncated at microsecond storage. The wire is intentionally narrower than storage: scan-event timestamps carry millisecond-scale network jitter from the reader path, so the bottom digits would be false precision relative to what reader clients can act on.
+
+Full rules — inbound parsing, sentinel rejection, the storage-vs-wire boundary, and the audit-timestamp echo-or-omit contract — live on the dedicated page: see [Date fields](./date-fields).
+
 ## `descendant_count_affected` on `RenameAssetResponse` is always `0`
 
 The rename verb shares response shape across `POST /assets/{asset_id}/rename` and `POST /locations/{location_id}/rename`. Locations legitimately use `descendant_count_affected` to surface the live count of descendant rows reachable through the `parent_id` chain — a non-zero value is the client's cue to refresh any subtree state cached under the old natural key. Assets have no hierarchy, so the field always returns `0`.
