@@ -168,6 +168,10 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?q=forklift"
 ```
 
+**Asymmetry on `/reports/asset-locations`.** The reports endpoint searches the underlying asset's identifying fields, not the location's — a `q` value matching a location's `name` or `external_key` won't return rows from the report even when the asset is currently at that location. It also does not match `description` (assets and locations both do). Filter the report by location with `?location_external_key=` (repeatable) when you need to scope by location, and use `q` for the asset-side substring.
+
+**Single value only.** `q` is declared as a single string in the OpenAPI spec, not an array. Supplying multiple `?q=` parameters is not an error, but only the first value is honored; the rest are silently ignored. To search for multiple substrings, fire separate requests and union the result sets client-side.
+
 ### Time range (history)
 
 `GET /api/v1/assets/{asset_id}/history` accepts `from` and `to` as [RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339) timestamps (a subset of ISO 8601). The server validates the RFC 3339 profile — e.g. `2026-04-01T00:00:00Z` or `2026-04-01T09:00:00-04:00`. Either bound may be omitted:
