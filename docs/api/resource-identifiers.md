@@ -68,7 +68,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
      "$BASE_URL/api/v1/assets?external_key=SKU-7421-A"
 ```
 
-The list envelope returns 0 or 1 matches in `data` (the partial unique index `(org_id, external_key) WHERE deleted_at IS NULL` caps live rows at one per key). An empty array is the miss signal — there is no `404` for a natural-key miss on this filter. Soft-deleted rows are not addressable through it; if you need to inspect a deleted record, look it up by `id`.
+The list envelope returns 0 or 1 matches in `data` (the partial unique index `(org_id, external_key) WHERE deleted_at IS NULL` caps live rows at one per key). An empty array is the miss signal — there is no `404` for a natural-key miss on this filter. Soft-deleted rows are not addressable through it; if you need to inspect a deleted record, look it up by `id`. The filter also composes with the default temporal scope — a row whose `valid_from` is in the future, or whose `valid_to` has elapsed, is invisible to this lookup even when the natural key matches. See [Pagination, filtering, sorting → Filtering](./pagination-filtering-sorting#filtering) for the rule and the surrogate-id recovery path.
 
 ```bash
 ASSET_ID=$(curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
