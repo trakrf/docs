@@ -215,6 +215,32 @@ await client.PATCH("/api/v1/assets/{asset_id}", {
 
 `openapi-generator-cli`'s `typescript-fetch` target and Python's `openapi-generator` already handle merge-patch correctly out of the box — this helper exists only for the `openapi-fetch` integration path.
 
+If you'd rather not copy the middleware file into your project, the same fix works inline per call by overriding `headers` (and optionally `bodySerializer`) on each `PATCH` request. Wrap it in a small helper so the override lives in one place:
+
+```ts
+import createClient from "openapi-fetch";
+import type { paths } from "./schema";
+
+const client = createClient<paths>({ baseUrl: "https://app.trakrf.id" });
+
+// Per-call PATCH helper — sets Content-Type once, keeps body strongly-typed:
+async function patchAsset(
+  id: number,
+  body: paths["/api/v1/assets/{asset_id}"]["patch"]["requestBody"]["content"]["application/merge-patch+json"],
+) {
+  return client.PATCH("/api/v1/assets/{asset_id}", {
+    params: { path: { asset_id: id } },
+    headers: { "Content-Type": "application/merge-patch+json" },
+    body,
+  });
+}
+
+await patchAsset(42, { name: "renamed" });
+// → Content-Type: application/merge-patch+json on the wire
+```
+
+`openapi-fetch` already calls `JSON.stringify` on the body by default — `bodySerializer` only needs an override if you want a different serializer; the `Content-Type` header is the only required change. Generalize the helper across `/locations`, tags, etc. by lifting the path into a parameter; the spec's `PATCH` operations all expect the same media type.
+
 ## 6. Beyond CRUD: the read-only tracking surface
 
 The walkthrough above covers the master-data surface — `assets:write` and `locations:write` give you CRUD over what's in your fleet. The TrakRF API also exposes a read-only **tracking surface** derived from scan events ingested through reader integrations. Two endpoints, both gated on `tracking:read`:
