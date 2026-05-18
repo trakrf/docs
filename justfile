@@ -33,6 +33,7 @@ test:
 #   BB_SOURCE_ENV        host .env.local to source (default: tests/blackbox/.env.local)
 #   BB_SKIP_PREFLIGHT=1  skip the preflight loop (manual testing only)
 #   BB_TMP_PREFIX        directory holding bb-NN dirs (default: /tmp)
+#   BB_NO_LAUNCH=1       skip the final exec claude (recipe tests only)
 #
 # Start a fresh blackbox test cycle: preflight, isolate to /tmp/bb-NN, then print the session-start command
 bb_cycle arg1="" arg2="":
@@ -193,16 +194,20 @@ bb_cycle arg1="" arg2="":
       fi
     } > "$target/.env.local"
 
-    # 8. Session-start command for copy-paste. The wrapper file matches the
-    #    chosen track; the wrapper itself points back at BB.md for the
-    #    shared methodology.
+    # 8. Launch the session directly. The wrapper file matches the chosen
+    #    track; the wrapper itself points back at BB.md for the shared
+    #    methodology. Claude's own "trust this directory?" prompt is the
+    #    backstop if you want to bail before the session starts.
     if [ -n "$selector" ]; then
       wrapper="BB_PRE_KEY.md"
     else
       wrapper="BB_MINT_KEY.md"
     fi
     echo
-    echo "==> Ready. Start the session with:"
-    echo
-    echo "    cd $target && direnv allow && csp 'run blackbox tests per $wrapper'"
-    echo
+    echo "==> Launching BB cycle $n in $target (wrapper: $wrapper)"
+    direnv allow "$target"
+    cd "$target"
+    if [ "${BB_NO_LAUNCH:-}" = "1" ]; then
+      exit 0
+    fi
+    exec claude --dangerously-skip-permissions "run blackbox tests per $wrapper"
