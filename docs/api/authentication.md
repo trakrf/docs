@@ -43,6 +43,18 @@ The header name is `Authorization`; the scheme is `Bearer`. A JWT directly follo
 Despite the credential being called an "API key," the server only honors the `Authorization: Bearer` form. Sending the JWT as `X-API-Key: <jwt>` (or any other header) returns `401 unauthorized` with title `"Unauthorized"` and detail `"Use Authorization: Bearer <token>"`. If you see that detail, check the header name and scheme before rotating the key.
 :::
 
+### 401 response detail strings {#unauthorized-detail-strings}
+
+The 401 envelope carries one of three `error.detail` strings depending on the failure mode. All three return the same `error.type: "unauthorized"` and the standard `WWW-Authenticate: Bearer realm="trakrf-api"` header per [RFC 7235](https://datatracker.ietf.org/doc/html/rfc7235):
+
+| Failure mode                              | `error.detail`                        |
+| ----------------------------------------- | ------------------------------------- |
+| Missing `Authorization` header            | `"Missing authorization header"`      |
+| Malformed bearer or invalid / expired JWT | `"Invalid or expired token"`          |
+| Wrong scheme (e.g. `X-API-Key: <jwt>`)    | `"Use Authorization: Bearer <token>"` |
+
+Branch on `error.type` for the canonical signal — that's the field that locks to a stable contract. The `detail` strings are accurate diagnostic prose suitable for logging or surfacing to operators, but they are not part of the response contract and may evolve in wording. If your integration classifies 401s for routing or retry, key on `type` and treat `detail` as human-readable context.
+
 ## Scopes
 
 Each key is issued with one or more scopes. The API rejects requests whose key lacks the scope required by the endpoint (`403 forbidden` with `"Missing required scope: <scope>"`). Current scopes and the endpoints they gate:
@@ -61,18 +73,21 @@ The **New key** form in the web app lets you pick a resource (Assets / Locations
 
 Selecting **None** for a resource grants no scope for that resource. Selecting **Read + Write** always grants both the read and the write scope — there is no write-only level today.
 
-| Scope             | Access | Endpoints (representative)                                                                                                     |
-| ----------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| `assets:read`     | Read   | `GET /assets`, `GET /assets/{asset_id}`                                                                                        |
-| `assets:write`    | Write  | `POST /assets`, `PATCH /assets/{asset_id}`, `POST /assets/{asset_id}/rename`, `DELETE /assets/{asset_id}`                      |
-| `locations:read`  | Read   | `GET /locations`, `GET /locations/{location_id}`                                                                               |
-| `locations:write` | Write  | `POST /locations`, `PATCH /locations/{location_id}`, `POST /locations/{location_id}/rename`, `DELETE /locations/{location_id}` |
-| `tracking:read`   | Read   | `GET /reports/asset-locations`, `GET /assets/{asset_id}/history`                                                               |
+The table below is the human-readable summary; the machine-readable canonical source is the [`x-required-scopes` extension](#x-required-scopes-on-operations) on each operation in the OpenAPI spec. The runtime enforces what the spec declares, and codegen ingestors should read the extension directly. If the table ever drifts from the extension, the spec wins.
+
+| Scope             | Access | Endpoints (representative)                                                                                                                                                                                            |
+| ----------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assets:read`     | Read   | `GET /assets`, `GET /assets/{asset_id}`                                                                                                                                                                               |
+| `assets:write`    | Write  | `POST /assets`, `PATCH /assets/{asset_id}`, `POST /assets/{asset_id}/rename`, `DELETE /assets/{asset_id}`, `POST /assets/{asset_id}/tags`, `DELETE /assets/{asset_id}/tags/{tag_id}`                                  |
+| `locations:read`  | Read   | `GET /locations`, `GET /locations/{location_id}`                                                                                                                                                                      |
+| `locations:write` | Write  | `POST /locations`, `PATCH /locations/{location_id}`, `POST /locations/{location_id}/rename`, `DELETE /locations/{location_id}`, `POST /locations/{location_id}/tags`, `DELETE /locations/{location_id}/tags/{tag_id}` |
+| `tracking:read`   | Read   | `GET /reports/asset-locations`, `GET /assets/{asset_id}/history`                                                                                                                                                      |
 
 `tracking:read` gates the two endpoints that answer "where are things — now and over time." It covers both the time-series history feed (`/assets/{asset_id}/history`) and the current-state snapshot report (`/reports/asset-locations`), because both views are derived from the same underlying scan-event stream. The name reflects that data lineage: it's permission to read tracking data, not just historical data.
 
 A few non-obvious pairings worth calling out:
 
+- **Tag subresource operations** inherit their parent resource's `:write` scope. Attaching or detaching a tag on an asset (`POST /api/v1/assets/{asset_id}/tags`, `DELETE /api/v1/assets/{asset_id}/tags/{tag_id}`) requires `assets:write`; the location-side equivalents require `locations:write`. There is no separate `tags:write` scope — granting it would split the write authority for a single resource across two scope strings, which the platform deliberately avoids.
 - **`/reports/asset-locations`** is gated by **`tracking:read`**, not `locations:read` (and not `assets:read`). The endpoint's URL says "reports," the response rows are asset-at-location pairs, but the scope follows the **data lineage**: every field on every row is derived from the scan-event stream — `asset_last_seen` is the timestamp of the most recent scan event for that asset, and the `location_id` / `location_external_key` on the row is the location of that scan. Granting `assets:read` or `locations:read` on a key does **not** unlock this endpoint; you need `tracking:read`. If you're building an integration that surfaces "where is each asset right now," mint a key with `tracking:read` even if you don't otherwise need history data.
 - **`/assets/{asset_id}/history`** is gated by **`tracking:read`** for the same reason — it's a projection of scan events, not a property of the asset.
 
