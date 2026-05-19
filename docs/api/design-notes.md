@@ -39,6 +39,8 @@ For integrators using `datamodel-codegen`, switch to one of the verified-working
 
 We'll migrate to OpenAPI 3.1 type-union syntax when the generator ecosystem stabilizes 3.1 support across all targets we care about.
 
+**Pairing with `openapi-fetch`?** The other stack-specific gotcha worth knowing about lives in the quickstart, not here: `openapi-fetch` is schema-agnostic at runtime and won't read `application/merge-patch+json` from the spec, so every `PATCH` returns `415` unless you override the request `Content-Type`. The [`mergePatchMiddleware` recipe](./quickstart#openapi-fetch) is a drop-in fix that handles every `PATCH` call site with a single `client.use(...)` registration.
+
 ## Timestamps on the wire carry fixed millisecond precision
 
 Every outbound RFC 3339 timestamp the public API emits — `valid_from`, `valid_to`, `created_at`, `updated_at`, `deleted_at`, `event_observed_at`, `asset_last_seen` — uses fixed three-digit millisecond fractional precision (`.NNNZ`), never microsecond or nanosecond. Sub-millisecond input is accepted but truncated toward zero before emission; sub-microsecond input is further truncated at microsecond storage. The wire is intentionally narrower than storage: scan-event timestamps carry millisecond-scale network jitter from the reader path, so the bottom digits would be false precision relative to what reader clients can act on.
