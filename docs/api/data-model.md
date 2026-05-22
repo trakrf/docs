@@ -37,10 +37,10 @@ The separation is intentional. Scan data carries provenance — which reader obs
 
 Consumption endpoints for scan data:
 
-| Endpoint                                | Shape                                                    | Scope           |
-| --------------------------------------- | -------------------------------------------------------- | --------------- |
-| `GET /api/v1/assets/{asset_id}/history` | Per-asset scan history; time-series rows                 | `tracking:read` |
-| `GET /api/v1/reports/asset-locations`   | Bulk current-location lookup across assets               | `tracking:read` |
+| Endpoint                                | Shape                                      | Scope           |
+| --------------------------------------- | ------------------------------------------ | --------------- |
+| `GET /api/v1/assets/{asset_id}/history` | Per-asset scan history; time-series rows   | `tracking:read` |
+| `GET /api/v1/reports/asset-locations`   | Bulk current-location lookup across assets | `tracking:read` |
 
 Both endpoints are projections of the scan-event stream — that's why the scope name reflects data lineage rather than the URL shape. See [Authentication → Scopes](./authentication#scopes) for the full mapping.
 
