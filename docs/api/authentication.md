@@ -191,7 +191,7 @@ export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 
 ## Testing connectivity
 
-Once you have a key, verify it with the interactive reference at [`/api`](/api) — click any endpoint's **Try it** button and paste your key. Or curl:
+Once you have a key, verify it with curl:
 
 ```bash
 curl -i -H "Authorization: Bearer $TRAKRF_API_KEY" \

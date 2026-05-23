@@ -33,7 +33,7 @@ We're on OpenAPI 3.0.3. Nullable response fields use `nullable: true` rather tha
 Generator behavior varies:
 
 - **Verified-working:** `openapi-typescript@7.x` (emits `string | null`) and `openapi-generator-cli` python target (emits `Optional[StrictStr]`). Both round-trip CRUD against null-bearing responses unmodified.
-- **Known-broken:** `datamodel-codegen@0.57.0` emits nullable fields as non-Optional required types. Pydantic validation fails on every nullable field that's actually `null`.
+- **Known-broken:** `datamodel-codegen` 0.57.0 emits nullable fields as non-Optional required types. Pydantic validation fails on every nullable field that's actually `null`.
 
 For integrators using `datamodel-codegen`, switch to one of the verified-working targets, or apply `--use-annotated --use-union-operator` flags with custom post-processing.
 
