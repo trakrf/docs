@@ -187,7 +187,7 @@ The bare-form `/openapi.yaml` and `/openapi.json` at the app origin also resolve
 The spec declares its security scheme as `BearerAuth` (HTTP Bearer, JWT format), so class-emitting generators surface the credential as a Bearer access token — `openapi-generator-cli`'s `typescript-fetch` target produces a `Configuration` with an `accessToken` field, and the Java/Python targets follow the same shape. The wire format remains `Authorization: Bearer <jwt>`; pass the API key minted in step 2 wherever the generated client expects an access token.
 
 :::tip Verified-working codegen targets
-TrakRF spec round-trips end-to-end against `openapi-typescript@7.x` (TypeScript types feeding `openapi-fetch`), `openapi-generator-cli` python (`Optional[...]` for every nullable read field), and the typescript / Java targets from the same generator. If you reach for `datamodel-codegen` (Pydantic from OpenAPI), be aware that `datamodel-codegen@0.57.0` emits `nullable: true` read-shape fields as **non-Optional** required types, so Pydantic raises `ValidationError` on every nullable field that actually comes back `null` (`deleted_at` on every resource, `valid_to`, and the location `parent_id` / `parent_external_key` pair). Either switch to the `openapi-generator-cli` python target or run `datamodel-codegen` with `--use-annotated --use-union-operator` plus a post-processing pass that wraps nullable fields in `Optional[…]`. The same note lives on the [interactive reference's intro](/api).
+TrakRF spec round-trips end-to-end against `openapi-typescript@7.x` (TypeScript types feeding `openapi-fetch`), `openapi-generator-cli` python (`Optional[...]` for every nullable read field), and the typescript / Java targets from the same generator. If you reach for `datamodel-codegen` (Pydantic from OpenAPI), be aware that `datamodel-codegen` 0.57.0 emits `nullable: true` read-shape fields as **non-Optional** required types, so Pydantic raises `ValidationError` on every nullable field that actually comes back `null` (`deleted_at` on every resource, `valid_to`, and the location `parent_id` / `parent_external_key` pair). Either switch to the `openapi-generator-cli` python target or run `datamodel-codegen` with `--use-annotated --use-union-operator` plus a post-processing pass that wraps nullable fields in `Optional[…]`. The same note lives on the [interactive reference's intro](/api).
 :::
 
 :::note Repeatable query parameters in typed clients
@@ -252,7 +252,7 @@ If your key was minted without `tracking:read`, the calls return `403 forbidden`
 
 ## Next steps
 
-- [Interactive reference](/api) — every endpoint, request/response shape, try-it-now widget
+- [Interactive reference](/api) — every endpoint, request/response shape
 - [Authentication](./authentication) — scopes, key lifecycle, rotation
 - [Pagination, filtering, sorting](./pagination-filtering-sorting) — conventions for list endpoints
 - [Resource identifiers](./resource-identifiers) — canonical `id`, natural-key `external_key`, and the `?external_key=` list filter
