@@ -11,6 +11,14 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
+### Tag rows cascade-soft-delete with their parent asset or location
+
+Soft-deleting an asset or location now cascades to the attached tag rows in the same transaction with the same `deleted_at`, releasing the `(org_id, tag_type, value)` partial-unique slot the tag was holding. Brings runtime behavior in line with the existing [Tags use a composite natural key](./resource-identifiers#tags-use-a-composite-natural-key) contract — the page documented that soft-delete frees the natural-key handle for reuse, the platform was leaving orphan tag rows live and blocking reuse. Pre-launch fix; no `v1.0.0`-or-later wire baseline to break.
+
+- **Cascade on parent soft-delete.** `DELETE /api/v1/assets/{asset_id}` and `DELETE /api/v1/locations/{location_id}` soft-delete every tag row attached to the parent at the same instant, sharing the parent's `deleted_at`. After the cascade the tag's `(org_id, tag_type, value)` slot is free, and the same value can be attached to another asset or location in the org without a 409. See [Resource identifiers → Tag CRUD](./resource-identifiers#tag-crud) for the prose.
+- **One-shot sweep for the existing orphan footprint.** A migration ships in the same release that soft-deletes the pre-fix orphan rows (tag rows whose parent asset or location is already soft-deleted), so the natural-key slots they were occupying are released as part of the deploy. Integrators who saw a `409 conflict` on `POST /api/v1/{resource}/{id}/tags` naming a tag holder they could not see in any list (the `?external_key=...` lookup returned an empty array, the path-param `GET` returned `404 not_found`) can re-try the attach after the deploy.
+- **Conflict 409 detail does not leak hidden entity names.** Defence-in-depth: the server-side conflict lookup that builds the `409 conflict` detail string now filters soft-deleted parents on the join, so any future regression where an orphan tag row slips through returns the generic 409 (`detail: "tag <type>:<value> already exists"`, per the [errors page](./errors#error-type-catalog)) rather than naming a parent the caller has no way to address. The cascade above closes the path that produced these messages; the join filter ensures the message shape stays correct if a new code path ever reintroduces the bug.
+
 ### BB1 hygiene — Try-it wording dropped, `invalid_context` added to versioning open-enums list, `datamodel-codegen` version string unmangled
 
 Three docs hygiene items from the BB1 post-launch-asset-location-removal black-box cycle. All pre-launch presentation-layer corrections; no service behavior change.
