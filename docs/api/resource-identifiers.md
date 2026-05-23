@@ -646,6 +646,8 @@ Tags are managed as subresources of their parent asset or location. Two write en
 
 Tag writes use the parent resource's write scope, not a separate `tags:write` — there is no per-tag scope.
 
+Soft-deleting a parent asset or location cascades to its attached tag rows in the same transaction with the same `deleted_at`, releasing the `(org_id, tag_type, value)` natural-key slot for immediate reattachment on another entity in the same organization. The cascaded tag rows follow the same [soft-delete visibility](#soft-delete-visibility) rules as their parent — hidden by default on the parent's read shape, surfaceable through `?include_deleted=true` on list surfaces that accept it.
+
 The same endpoint accepts all three kinds — the discriminator travels in the body:
 
 ```bash
