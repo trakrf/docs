@@ -32,14 +32,14 @@ Every `valid_from` on the response is RFC 3339 in UTC. `valid_to` is either RFC 
   "data": [
     {
       "id": 7,
-      "external_key": "LOC-0001",
+      "external_key": "LOC-001",
       "name": "Warehouse A",
       "valid_from": "2026-01-15T00:00:00Z",
       "valid_to": "2026-12-31T23:59:59Z"
     },
     {
       "id": 8,
-      "external_key": "LOC-0002",
+      "external_key": "LOC-002",
       "name": "Warehouse B",
       "valid_from": "2026-02-01T00:00:00Z",
       "valid_to": null
