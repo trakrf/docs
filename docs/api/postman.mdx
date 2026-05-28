@@ -46,9 +46,9 @@ Either format works; pick whichever your client prefers.
      The bare host with no `/api/v1` suffix — operation paths already
      include the version prefix. The API is served from the `app.`
      subdomain, not the marketing site.
-   - `bearerToken` to your API key (the JWT shown once at creation). See
-     [Authentication → Mint your first API key](./authentication#mint-your-first-api-key)
-     for how to create one.
+   - `bearerToken` to an access token obtained from `POST /api/v1/oauth/token`. Mint a `client_id`/`client_secret` pair first; see
+     [Authentication → Get an access token](./authentication#get-an-access-token)
+     for the exchange (the token expires after 15 minutes — refresh it when it does).
 5. The collection's **Authorization** is preconfigured as a Bearer token
    referencing `{{bearerToken}}`.
 
