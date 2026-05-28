@@ -11,7 +11,7 @@ import EnvSwitcher from "@site/src/components/EnvSwitcher";
 
 # Quickstart
 
-Goes from "I have an API key" to "I called the TrakRF API and got a `200` back" in about ten minutes, with nothing but an HTTP client. If you don't have a key yet, mint one from the SPA's **Account menu → API Keys → New Key** ([detail](./authentication#mint-your-first-api-key)) and come back.
+Goes from "I have API credentials" to "I called the TrakRF API and got a `200` back" in about ten minutes, with nothing but an HTTP client. If you don't have credentials yet, mint a `client_id`/`client_secret` from the SPA's **Account menu → API Keys → New Key** ([detail](./authentication#mint-your-first-api-key)) and come back — §2 covers exchanging them for an access token.
 
 :::tip Arriving from "Getting started — using the API"?
 [`/docs/getting-started/api`](/docs/getting-started/api) is the User Guide front-door for the API track. Its §1 "Pick your environment" and §2 "Make your first call" mirror the first two sections of this page near-verbatim — if you've already worked through them, **skim or skip to [§3 Round-trip: create, read, update, delete](#3-round-trip-create-read-update-delete)**. The two pages are intentionally two front doors (User Guide track vs. API reference); the overlap is by design.
@@ -29,7 +29,7 @@ If your account lives on the other environment, use the switcher above — the e
 
 <EnvBaseURLBlock />
 
-Preview-scoped keys will not authenticate against production and vice versa; the switcher above keeps the curl snippets aligned with whichever world your key was minted on.
+Preview-scoped credentials will not authenticate against production and vice versa; the switcher above keeps the curl snippets aligned with whichever world your credentials were minted on.
 
 ## 2. Verify your credentials work {#2-verify-your-key-works}
 

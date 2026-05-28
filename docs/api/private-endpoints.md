@@ -56,10 +56,10 @@ For server-to-server or scripted integrations, mint a `client_id`/`client_secret
 
 `scopes` is a flat string array of the [extensible scope enum](./authentication#scopes). Treat unknown values as forward-compatible; new scope strings may appear in any v1 release.
 
-:::note API-key authentication only
-`/orgs/me` accepts API keys only. Session JWTs from the web app return `401 unauthorized` on this endpoint. All other public-read and public-write endpoints accept both credential types.
+:::note API-credential access tokens only
+`/orgs/me` accepts access tokens minted from API credentials only — exchange your `client_id`/`client_secret` at `POST /api/v1/oauth/token` and send the resulting access token (see [Authentication](./authentication)). Session JWTs from the web app return `401 unauthorized` on this endpoint. All other public-read and public-write endpoints accept both credential types.
 
-Session JWTs don't carry an `api_key_id` analogue, so the response shape — which includes the presented key's UUID — is API-key-only by construction.
+Session JWTs don't carry an `api_key_id` analogue, so the response shape — which includes the originating credential's UUID — is API-credential-only by construction.
 :::
 
 If you're using `/orgs/me` as a health check, consider also probing a "real" endpoint (e.g. `GET /api/v1/assets?limit=1`) so your checks exercise the database path, not just the token verification path.
