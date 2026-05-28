@@ -15,7 +15,7 @@ This is the front door for the API track. It takes you from "I have an API key" 
 
 ## What you'll need
 
-- A TrakRF account and an API key. <EnvSignInLink>Sign in (or sign up) at the <EnvLabel /> app</EnvSignInLink>, then mint a key from the **Account menu → API Keys → New Key** ([detail](../api/authentication#mint-your-first-api-key)). The token is shown once at creation — copy it immediately.
+- A TrakRF account and API credentials. <EnvSignInLink>Sign in (or sign up) at the <EnvLabel /> app</EnvSignInLink>, then mint a `client_id`/`client_secret` from the **Account menu → API Keys → New Key** ([detail](../api/authentication#mint-your-first-api-key)). The `client_secret` is shown once at creation — copy it immediately.
 - An API client of your choice — `curl`, Postman, HTTPie, or your language's standard HTTP library. This guide uses `curl` in examples.
 - 10 minutes.
 
@@ -33,16 +33,25 @@ Preview-scoped keys will not authenticate against production and vice versa; the
 
 ## 2. Make your first call
 
-Save your API key to an environment variable for the rest of this page:
+Exchange your credentials for a short-lived access token and save it for the rest of this page:
 
 ```bash
-export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+export TRAKRF_ACCESS_TOKEN=$(curl -s -X POST "$BASE_URL/api/v1/oauth/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "grant_type": "client_credentials",
+        "client_id": "6f1c2a8e-7d3b-4e90-9a11-2c4d5e6f7a8b",
+        "client_secret": "trakrf_9f8e7d6c5b4a39281706f5e4d3c2b1a0ffeeddccbbaa99887766554433221100"
+      }' | python3 -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
+# Or, if jq is installed: ... | jq -r '.access_token'
 ```
 
-The `/api/v1/orgs/me` endpoint returns the organization the API key is scoped to. It's the canonical "tell me about myself" probe — requires no specific scope, depends on no prior data, and confirms end-to-end that your key authenticates against the right environment. **Use an API key here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](../api/private-endpoints#orgs-me) for the precise rule.
+Access tokens live 15 minutes; re-exchange when one expires. Full detail: [Authentication → Get an access token](../api/authentication#get-an-access-token).
+
+The `/api/v1/orgs/me` endpoint returns the organization your credentials are scoped to. It's the canonical "tell me about myself" probe — requires no specific scope, depends on no prior data, and confirms end-to-end that your access token authenticates against the right environment. **Use an API-credential access token here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](../api/private-endpoints#orgs-me) for the precise rule.
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/orgs/me"
 ```
 
