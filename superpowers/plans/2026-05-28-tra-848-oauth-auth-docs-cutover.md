@@ -1,3 +1,68 @@
+# TRA-848 — OAuth2 Auth Docs Cutover Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Rewrite the integrator auth docs from the legacy "API key is a JWT, used directly as Bearer" model to the OAuth2 `client_credentials` flow (mint `client_id`/opaque `client_secret` → exchange at `/oauth/token` → short-lived access-token Bearer → refresh).
+
+**Architecture:** `docs/api/authentication.md` is rewritten as the canonical reference. The two onboarding walkthroughs are updated where they bootstrap auth. Incidental curl examples on other pages get a mechanical env-var rename so we never teach hardcoding a 15-minute token. Key-management endpoints stay internal (UI-only minting). A changelog entry records the change.
+
+**Tech Stack:** Docusaurus (Markdown/MDX), pnpm. No app code. "Tests" = `pnpm build` / `pnpm typecheck` / `pnpm lint`, grep guards for forbidden strings, and live curl probes against preview.
+
+**Reference:** Design spec at `superpowers/specs/2026-05-28-tra-848-oauth-auth-docs-cutover-design.md`. Verified contract values are reproduced in each task below.
+
+**Working directory:** worktree `/home/mike/trakrf-docs/.claude/worktrees/tra-848-oauth-auth-cutover` on branch `worktree-tra-848-oauth-auth-cutover`.
+
+---
+
+## Verified contract (single source of truth for all tasks)
+
+- **Mint** (app UI → Account menu → API Keys → New key) returns ONCE:
+  - `client_id` = the key's `jti` (a UUID), e.g. `6f1c2a8e-7d3b-4e90-9a11-2c4d5e6f7a8b`
+  - `client_secret` = opaque `trakrf_` + 64 hex chars, e.g. `trakrf_9f8e7d6c5b4a39281706f5e4d3c2b1a0ffeeddccbbaa99887766554433221100`; SHA-256 hashed server-side; shown once.
+- **Exchange** `POST /api/v1/oauth/token` (JSON in, `error` envelope out):
+  - `client_credentials`: body `{grant_type, client_id, client_secret}` → `{access_token, refresh_token, token_type:"Bearer", expires_in:900}`
+  - `refresh_token`: body `{grant_type, refresh_token}` → same shape, rotated
+- `access_token` = short-lived JWT (15 min). `refresh_token` = opaque 64-hex (30 days), single-use; replay → 401 + revokes the chain.
+- Status codes on `/oauth/token`: 200 / 400 (validation, unsupported `grant_type`) / 401 (invalid creds or refresh token).
+- Example env var going forward: `$TRAKRF_ACCESS_TOKEN` (a short-lived access token), replacing `$TRAKRF_API_KEY`.
+
+---
+
+## Baseline (do first)
+
+- [ ] **Step B1: Install deps in the worktree**
+
+Run: `cd /home/mike/trakrf-docs/.claude/worktrees/tra-848-oauth-auth-cutover && pnpm install`
+Expected: completes; `node_modules/` present.
+
+- [ ] **Step B2: Confirm a clean build baseline before edits**
+
+Run: `pnpm build`
+Expected: build succeeds. If it fails on `main` before any edits, STOP and report — do not attribute a pre-existing failure to this work.
+
+- [ ] **Step B3: Verify the live contract on preview (so examples match reality)**
+
+```bash
+# Empty body → 400
+curl -s -o /dev/null -w "%{http_code}\n" -X POST https://app.preview.trakrf.id/api/v1/oauth/token -H "Content-Type: application/json" -d '{}'
+# Bad client_credentials → 401 invalid client credentials
+curl -s -X POST https://app.preview.trakrf.id/api/v1/oauth/token -H "Content-Type: application/json" \
+  -d '{"grant_type":"client_credentials","client_id":"nope","client_secret":"nope"}'
+```
+Expected: `400`, then a 401 `error` envelope with `"detail":"Invalid client credentials"`. Confirms the endpoint and shapes before writing examples.
+
+---
+
+## Task 1: Rewrite `docs/api/authentication.md` (canonical)
+
+**Files:**
+- Modify (full rewrite): `docs/api/authentication.md`
+
+- [ ] **Step 1.1: Replace the entire file with the new content below**
+
+Write `docs/api/authentication.md` to exactly:
+
+````markdown
 ---
 sidebar_position: 1
 ---
@@ -263,3 +328,305 @@ curl -i -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
 ```
 
 A `200 OK` with a JSON body confirms the token and scope are correct. A `401 unauthorized` indicates a missing, malformed, or expired token (re-exchange and retry); `403 forbidden` indicates the credential lacks the scope required for that endpoint.
+````
+
+- [ ] **Step 1.2: Guard against leftover legacy framing**
+
+Run:
+```bash
+grep -nE "API key.*is a JWT|your-api-key-jwt|use (it|the returned JWT) as|TRAKRF_API_KEY" docs/api/authentication.md
+```
+Expected: no matches. If any match, fix the prose before continuing.
+
+- [ ] **Step 1.3: Build + lint**
+
+Run: `pnpm build && pnpm lint`
+Expected: both pass.
+
+- [ ] **Step 1.4: Commit**
+
+```bash
+git add docs/api/authentication.md
+git commit -m "docs(api): rewrite authentication for OAuth2 client_credentials flow (TRA-848)"
+```
+
+---
+
+## Task 2: Update `docs/api/quickstart.mdx` auth bootstrap
+
+**Files:**
+- Modify: `docs/api/quickstart.mdx` (auth-bootstrap prose + all `$TRAKRF_API_KEY` example occurrences)
+
+- [ ] **Step 2.1: Update the intro TL;DR (line ~20)**
+
+Replace:
+```
+If you're already familiar with API-key-authenticated REST APIs, the TL;DR is: send your key as `Authorization: Bearer <jwt>` and hit `$BASE_URL/api/v1/...`. The full walkthrough follows.
+```
+With:
+```
+If you're already familiar with OAuth2 `client_credentials`, the TL;DR is: POST your `client_id`/`client_secret` to `$BASE_URL/api/v1/oauth/token`, then send the returned `access_token` as `Authorization: Bearer <access_token>` to `$BASE_URL/api/v1/...`. The full walkthrough follows.
+```
+
+- [ ] **Step 2.2: Rewrite §2 "Verify your key works" credential setup (lines ~34–53)**
+
+Replace the section from the `## 2. Verify your key works` heading through the first `curl ... /orgs/me` block (the lines covering the `:::note Browser required` admonition, the `export TRAKRF_API_KEY=...` block, and the intro sentence before the curl) with:
+
+````markdown
+## 2. Verify your credentials work
+
+If you don't already have credentials, sign in to the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>, open the **Account menu → API Keys → New Key**, name the key, pick scopes, and submit. The `client_id` and `client_secret` are shown once at creation — copy the `client_secret` immediately; it cannot be shown again. Full walkthrough: [Authentication → Mint your first API key](./authentication#mint-your-first-api-key).
+
+:::note Browser required to mint credentials
+Minting credentials requires an interactive browser session — there is no programmatic mint endpoint by design. CI/headless setups should mint credentials out-of-band, store the `client_id`/`client_secret` in a secret store (env var, vault, GitHub Actions secret), and reference them from there. See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for the rationale and a contact path if your use case genuinely needs programmatic provisioning.
+:::
+
+Exchange your credentials for a short-lived access token, and capture it for the rest of this page:
+
+```bash
+export TRAKRF_ACCESS_TOKEN=$(curl -s -X POST "$BASE_URL/api/v1/oauth/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "grant_type": "client_credentials",
+        "client_id": "6f1c2a8e-7d3b-4e90-9a11-2c4d5e6f7a8b",
+        "client_secret": "trakrf_9f8e7d6c5b4a39281706f5e4d3c2b1a0ffeeddccbbaa99887766554433221100"
+      }' | python3 -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
+# Or, if jq is installed: ... | jq -r '.access_token'
+```
+
+The access token lives 15 minutes; re-run this exchange (or use the `refresh_token`) when it expires. Full detail: [Authentication → Get an access token](./authentication#get-an-access-token).
+
+`GET /api/v1/orgs/me` (`getCurrentOrg` in generated clients) returns the organization your credentials are scoped to. It's the canonical "tell me about myself" endpoint, requires no specific scope, and confirms end-to-end that your access token authenticates against the right environment. **Use an API-credential access token here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](./private-endpoints#orgs-me) for the precise rule.
+````
+
+- [ ] **Step 2.3: Update the §2 troubleshooting bullet about `X-API-Key` (line ~79)**
+
+Replace `the JWT was sent under `X-API-Key`` wording so it reads "the access token was sent under `X-API-Key`". Exact replace:
+```
+- `401 unauthorized` with `detail: "Use Authorization: Bearer <token>"` — the JWT was sent under `X-API-Key` (or another header). The server only accepts the `Authorization: Bearer` form, despite the credential being called an "API key." See [Authentication → Request header](./authentication#request-header).
+```
+With:
+```
+- `401 unauthorized` with `detail: "Use Authorization: Bearer <token>"` — the token was sent under `X-API-Key` (or another header). The server only accepts the `Authorization: Bearer` form. See [Authentication → Request header](./authentication#request-header).
+```
+
+- [ ] **Step 2.4: Swap all remaining `$TRAKRF_API_KEY` → `$TRAKRF_ACCESS_TOKEN` in this file**
+
+Run: `sed -i 's/\$TRAKRF_API_KEY/$TRAKRF_ACCESS_TOKEN/g' docs/api/quickstart.mdx`
+Then verify: `grep -n "TRAKRF_API_KEY" docs/api/quickstart.mdx` → expected: no matches.
+
+- [ ] **Step 2.5: Update §4 Postman var description (line ~169)**
+
+Replace `- \`bearerToken\` → the JWT from step 2` with `- \`bearerToken\` → the \`access_token\` from step 2 (refresh it when it expires)`.
+
+- [ ] **Step 2.6: Update §5 codegen credential sentence (line ~187)**
+
+Replace `pass the API key minted in step 2 wherever the generated client expects an access token.` with `pass the access token obtained in step 2 wherever the generated client expects an access token; refresh it via the \`client_credentials\` / \`refresh_token\` exchange as needed.`
+
+- [ ] **Step 2.7: Build, guard, commit**
+
+Run:
+```bash
+pnpm build && grep -n "TRAKRF_API_KEY" docs/api/quickstart.mdx
+```
+Expected: build passes; no `TRAKRF_API_KEY` matches.
+```bash
+git add docs/api/quickstart.mdx
+git commit -m "docs(api): update quickstart for OAuth2 token exchange (TRA-848)"
+```
+
+---
+
+## Task 3: Update `docs/getting-started/api.mdx` auth bootstrap
+
+**Files:**
+- Modify: `docs/getting-started/api.mdx`
+
+- [ ] **Step 3.1: Update "What you'll need" credential bullet (line ~18)**
+
+Replace:
+```
+- A TrakRF account and an API key. <EnvSignInLink>Sign in (or sign up) at the <EnvLabel /> app</EnvSignInLink>, then mint a key from the **Account menu → API Keys → New Key** ([detail](../api/authentication#mint-your-first-api-key)). The token is shown once at creation — copy it immediately.
+```
+With:
+```
+- A TrakRF account and API credentials. <EnvSignInLink>Sign in (or sign up) at the <EnvLabel /> app</EnvSignInLink>, then mint a `client_id`/`client_secret` from the **Account menu → API Keys → New Key** ([detail](../api/authentication#mint-your-first-api-key)). The `client_secret` is shown once at creation — copy it immediately.
+```
+
+- [ ] **Step 3.2: Rewrite §2 "Make your first call" credential setup (lines ~36–47)**
+
+Replace from `Save your API key to an environment variable for the rest of this page:` through the `export TRAKRF_API_KEY=...` block and into the `/orgs/me` intro sentence with:
+
+````markdown
+Exchange your credentials for a short-lived access token and save it for the rest of this page:
+
+```bash
+export TRAKRF_ACCESS_TOKEN=$(curl -s -X POST "$BASE_URL/api/v1/oauth/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "grant_type": "client_credentials",
+        "client_id": "6f1c2a8e-7d3b-4e90-9a11-2c4d5e6f7a8b",
+        "client_secret": "trakrf_9f8e7d6c5b4a39281706f5e4d3c2b1a0ffeeddccbbaa99887766554433221100"
+      }' | python3 -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
+# Or, if jq is installed: ... | jq -r '.access_token'
+```
+
+Access tokens live 15 minutes; re-exchange when one expires. Full detail: [Authentication → Get an access token](../api/authentication#get-an-access-token).
+
+The `/api/v1/orgs/me` endpoint returns the organization your credentials are scoped to. It's the canonical "tell me about myself" probe — requires no specific scope, depends on no prior data, and confirms end-to-end that your access token authenticates against the right environment. **Use an API-credential access token here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](../api/private-endpoints#orgs-me) for the precise rule.
+````
+
+- [ ] **Step 3.3: Swap remaining `$TRAKRF_API_KEY` → `$TRAKRF_ACCESS_TOKEN`**
+
+Run: `sed -i 's/\$TRAKRF_API_KEY/$TRAKRF_ACCESS_TOKEN/g' docs/getting-started/api.mdx`
+Verify: `grep -n "TRAKRF_API_KEY" docs/getting-started/api.mdx` → no matches.
+
+- [ ] **Step 3.4: Build, guard, commit**
+
+Run: `pnpm build && grep -n "TRAKRF_API_KEY" docs/getting-started/api.mdx` (expect: pass, no matches)
+```bash
+git add docs/getting-started/api.mdx
+git commit -m "docs(getting-started): update API front-door for OAuth2 token exchange (TRA-848)"
+```
+
+---
+
+## Task 4: Mechanical sweep of incidental curl examples
+
+These pages only reference `$TRAKRF_API_KEY` inside `Authorization: Bearer` curl examples — no auth prose to change.
+
+**Files:**
+- Modify: `docs/api/http-method-coverage.md` (2), `docs/api/pagination-filtering-sorting.md` (13), `docs/api/data-model.md` (1), `docs/api/date-fields.md` (2), `docs/api/resource-identifiers.md` (21)
+
+- [ ] **Step 4.1: Swap the env var across all five files**
+
+```bash
+sed -i 's/\$TRAKRF_API_KEY/$TRAKRF_ACCESS_TOKEN/g' \
+  docs/api/http-method-coverage.md \
+  docs/api/pagination-filtering-sorting.md \
+  docs/api/data-model.md \
+  docs/api/date-fields.md \
+  docs/api/resource-identifiers.md
+```
+
+- [ ] **Step 4.2: Verify none remain anywhere under docs/**
+
+Run: `grep -rn "TRAKRF_API_KEY" docs/`
+Expected: no matches (authentication.md, quickstart, getting-started already handled in Tasks 1–3).
+
+- [ ] **Step 4.3: Build + commit**
+
+Run: `pnpm build` (expect pass)
+```bash
+git add docs/api/http-method-coverage.md docs/api/pagination-filtering-sorting.md docs/api/data-model.md docs/api/date-fields.md docs/api/resource-identifiers.md
+git commit -m "docs(api): use short-lived access-token env var in examples (TRA-848)"
+```
+
+---
+
+## Task 5: Reconcile `docs/api/private-endpoints.md` and `docs/api/postman.mdx` prose
+
+**Files:**
+- Modify: `docs/api/private-endpoints.md` (Programmatic access section)
+- Modify: `docs/api/postman.mdx` (token wording)
+
+- [ ] **Step 5.1: Update private-endpoints "Programmatic access" (lines ~13–17)**
+
+Replace:
+```
+For server-to-server or scripted integrations, the supported credential is an **API key** issued via the in-app **Account menu → API Keys** flow (see [Authentication](./authentication)). Session JWTs minted by `POST /api/v1/auth/login` exist to keep the first-party SPA logged in and may change without notice — they are not a public auth path.
+```
+With:
+```
+For server-to-server or scripted integrations, mint a `client_id`/`client_secret` pair via the in-app **Account menu → API Keys** flow and exchange it for a short-lived access token at `POST /api/v1/oauth/token` (see [Authentication](./authentication)). Session JWTs minted by `POST /api/v1/auth/login` exist to keep the first-party SPA logged in and may change without notice — they are not a public auth path.
+```
+
+- [ ] **Step 5.2: Verify the `/orgs/me` JWT references still read correctly**
+
+The `/orgs/me` section refers to "the presented bearer" and "the JWT's `sub` claim" — these remain accurate because the access token IS a JWT. No change needed. Confirm by reading lines 50–63; do not edit unless a reference is now wrong.
+
+- [ ] **Step 5.3: Update postman.mdx token wording**
+
+Run: `grep -n "JWT\|API key\|bearerToken\|api key" docs/api/postman.mdx`
+For each hit where the Postman `bearerToken` variable or "API key" is described as the credential sent on requests, adjust the prose so the bearer value is the **access token** obtained from `/oauth/token` (not the minted key directly). Keep spec-import and collection-variable mechanics intact. Make the minimal prose edits that remove the "the JWT/key is your bearer" implication.
+
+- [ ] **Step 5.4: Build + commit**
+
+Run: `pnpm build` (expect pass)
+```bash
+git add docs/api/private-endpoints.md docs/api/postman.mdx
+git commit -m "docs(api): reconcile programmatic-access + Postman prose to token exchange (TRA-848)"
+```
+
+---
+
+## Task 6: Add a changelog entry
+
+**Files:**
+- Modify: `docs/api/changelog.md` (prepend a new entry; do NOT rewrite past entries)
+
+- [ ] **Step 6.1: Read the file to match its existing entry format**
+
+Run: `sed -n '1,40p' docs/api/changelog.md` and mirror the heading/date style already in use.
+
+- [ ] **Step 6.2: Add a top entry describing the auth model change**
+
+Content (adapt heading style to match existing entries):
+```markdown
+## 2026-05-28 — OAuth2 `client_credentials` authentication
+
+API authentication moved from "use your API key JWT directly as a Bearer token" to the OAuth2 `client_credentials` flow:
+
+- Minting an API key now returns a `client_id` + opaque `client_secret` pair (shown once) instead of a JWT.
+- Exchange the pair at `POST /api/v1/oauth/token` for a short-lived access token (15 min) plus a 30-day single-use refresh token.
+- Send the **access token** as `Authorization: Bearer`. A long-lived key JWT is no longer accepted as a Bearer credential.
+
+See [Authentication](./authentication) for the full flow.
+```
+
+- [ ] **Step 6.3: Build + commit**
+
+Run: `pnpm build` (expect pass)
+```bash
+git add docs/api/changelog.md
+git commit -m "docs(api): changelog entry for OAuth2 auth cutover (TRA-848)"
+```
+
+---
+
+## Task 7: Final verification
+
+- [ ] **Step 7.1: Full quality gate**
+
+Run: `pnpm build && pnpm typecheck && pnpm lint`
+Expected: all pass.
+
+- [ ] **Step 7.2: Repo-wide forbidden-string guard**
+
+Run:
+```bash
+grep -rn "TRAKRF_API_KEY" docs/
+grep -rnE "use (your key|the returned JWT) as|API key is a JWT|your-api-key-jwt" docs/
+```
+Expected: no matches in either.
+
+- [ ] **Step 7.3: Live contract spot-check against preview**
+
+Re-run the Baseline B3 probes and confirm the documented status codes/shapes still hold. (Full `client_credentials` round-trip requires a real minted credential; if one is available in the test org, exchange it and confirm `access_token`/`refresh_token`/`expires_in:900`. Otherwise the 400/401 probes plus the published spec are sufficient evidence.)
+
+- [ ] **Step 7.4: Visual spot-check**
+
+Run: `pnpm serve` (or `pnpm dev`) and open the rendered Authentication, Quickstart, and Getting-started→API pages. Confirm: the four-step flow renders, code blocks are intact, internal anchors (`#get-an-access-token`, `#refresh-an-access-token`, `#mint-your-first-api-key`) resolve. Note explicitly if you cannot launch a browser to verify.
+
+- [ ] **Step 7.5: Finish the branch**
+
+Use superpowers:finishing-a-development-branch to open the PR (target `main`, conventional-commit title). Do NOT merge without explicit user confirmation.
+
+---
+
+## Self-review (against the spec)
+
+- **Spec coverage:** authentication.md rewrite (Task 1) ✓; quickstart + getting-started updates (Tasks 2–3) ✓; light sweep (Task 4) ✓; private-endpoints + postman prose (Task 5) ✓; security-properties section (Task 1, §"Security properties") ✓; management endpoints kept internal (no task documents them) ✓; changelog (Task 6) ✓.
+- **Placeholders:** worked example values are concrete and verified; access_token/refresh_token JWT vs opaque shapes are explicit. No TBD/TODO.
+- **Type/name consistency:** env var is `$TRAKRF_ACCESS_TOKEN` everywhere; anchors `#get-an-access-token`, `#refresh-an-access-token`, `#mint-your-first-api-key` are defined in Task 1 and referenced in Tasks 2–3 and the verification guard.
+- **Out of scope honored:** no backend/spec change; `/orgs/{id}/api-keys` not documented publicly.

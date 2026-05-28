@@ -57,7 +57,7 @@ Current location is **not** a field on the asset resource. `GET /api/v1/assets` 
 The most common integrator pattern is "I have a list of asset external keys from my system of record and I want their current locations." The canonical batch-lookup form is the asset-locations report:
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/reports/asset-locations?asset_external_key=SKU-7421-A&asset_external_key=BACK-STORAGE-2"
 ```
 

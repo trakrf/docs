@@ -47,7 +47,7 @@ The asymmetry is intentional. `external_key` flows into URL paths and log lines 
 Single-resource endpoints take the canonical integer `id`:
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets/4287"
 ```
 
@@ -64,14 +64,14 @@ The wire width of every surrogate id is **int64** (`format: int64` on the spec);
 When you have the natural key but not the canonical `id`, filter the list endpoint by `external_key`:
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets?external_key=SKU-7421-A"
 ```
 
 The list envelope returns 0 or 1 matches in `data` (the partial unique index `(org_id, external_key) WHERE deleted_at IS NULL` caps live rows at one per key). An empty array is the miss signal — there is no `404` for a natural-key miss on this filter. Soft-deleted rows are not addressable through it; if you need to inspect a deleted record, look it up by `id`. The filter also composes with the default temporal scope — a row whose `valid_from` is in the future, or whose `valid_to` has elapsed, is invisible to this lookup even when the natural key matches. See [Pagination, filtering, sorting → Filtering](./pagination-filtering-sorting#filtering) for the rule and the surrogate-id recovery path.
 
 ```bash
-ASSET_ID=$(curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
+ASSET_ID=$(curl -sH "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets?external_key=SKU-7421-A" \
      | jq -r '.data[0].id // empty')
 [ -z "$ASSET_ID" ] && echo "no asset with that external_key"
@@ -80,7 +80,7 @@ ASSET_ID=$(curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
 The same shape is available on locations:
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/locations?external_key=BACK-STORAGE-2"
 ```
 
@@ -94,11 +94,11 @@ Where a list endpoint filters on a related resource, both forms work. The asset-
 
 ```bash
 # Canonical: filter by location id
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/reports/asset-locations?location_id=42"
 
 # Alternate: filter by location external_key
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/reports/asset-locations?location_external_key=BACK-STORAGE-2"
 ```
 
@@ -181,7 +181,7 @@ The `metadata` field is stored opaquely. `PATCH` replaces the entire `metadata` 
 
 # PATCH sends a new metadata value:
 curl -X PATCH "$BASE_URL/api/v1/assets/$ASSET_ID" \
-  -H "Authorization: Bearer $TRAKRF_API_KEY" \
+  -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
   -H "Content-Type: application/merge-patch+json" \
   -d '{"metadata": {"owner": "logistics"}}'
 
@@ -275,7 +275,7 @@ Strict-unknown-field validation still applies for fields that are **not** declar
 # Asset writable fields:    name, description, is_active, metadata, valid_from, valid_to.
 # Location writable fields: name, description, is_active, parent_id OR parent_external_key, valid_from, valid_to.
 curl -X PATCH \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/merge-patch+json" \
      -d '{"description": "back-stockroom shelf 3, bin B"}' \
      "$BASE_URL/api/v1/assets/4287"
@@ -286,11 +286,11 @@ For a verbatim `GET` → `PATCH` round-trip — useful when an integration's dat
 ```bash
 # GET → mutate → PATCH round-trip. Every read-only field — id, timestamps,
 # tags, external_key — silently match-strips server-side.
-curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -sH "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets/4287" \
 | jq '.data | .description = "back-stockroom shelf 3, bin B"' \
 | curl -X PATCH \
-       -H "Authorization: Bearer $TRAKRF_API_KEY" \
+       -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
        -H "Content-Type: application/merge-patch+json" \
        -d @- \
        "$BASE_URL/api/v1/assets/4287"
@@ -340,7 +340,7 @@ A partner system that has cached or indexed records under the old `external_key`
 
 ```bash
 curl -X POST \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"external_key": "SKU-7421-B"}' \
      "$BASE_URL/api/v1/assets/4287/rename"
@@ -356,7 +356,7 @@ Location rename mutates only the renamed row's `external_key`. Descendants are n
 
 ```bash
 curl -X POST \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"external_key": "WAREHOUSE-MAIN"}' \
      "$BASE_URL/api/v1/locations/7/rename"
@@ -413,7 +413,7 @@ Set either `parent_id` or `parent_external_key` on create or update to nest unde
 `parent_id` and `parent_external_key` are one-hop only — they describe the immediate parent, not the chain to the root. For multi-hop traversal use the dedicated endpoint:
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/locations/42/ancestors"
 ```
 
@@ -433,11 +433,11 @@ Three endpoints traverse the location hierarchy from a starting node. All three 
 
 ```bash
 # Walk the parent chain for breadcrumbs
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/locations/42/ancestors"
 
 # Subtree scope — every location reachable below this node
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/locations/42/descendants"
 ```
 
@@ -496,21 +496,21 @@ The pick is "lowest unused slot among live rows," not a monotonic counter: the n
 ```bash
 # Caller-supplied external_key
 curl -X POST \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"name": "Pallet jack #14", "external_key": "SKU-7421-A"}' \
      "$BASE_URL/api/v1/assets"
 
 # Server-assigned external_key (returns external_key: "ASSET-0142" or similar)
 curl -X POST \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"name": "Pallet jack #14"}' \
      "$BASE_URL/api/v1/assets"
 
 # Same shape on locations — omit external_key to receive a LOC-NNN value
 curl -X POST \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"name": "Back storage, bay 2"}' \
      "$BASE_URL/api/v1/locations"
@@ -655,21 +655,21 @@ The same endpoint accepts all three kinds — the discriminator travels in the b
 ```bash
 # Attach an RFID tag to an asset
 curl -X POST \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"tag_type": "rfid", "value": "E2-8042-2D-19F0-AB10"}' \
      "$BASE_URL/api/v1/assets/4287/tags"
 
 # Attach a BLE beacon to the same asset
 curl -X POST \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"tag_type": "ble", "value": "C0:1A:DA:7E:F0:01"}' \
      "$BASE_URL/api/v1/assets/4287/tags"
 
 # Attach a barcode to a location
 curl -X POST \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"tag_type": "barcode", "value": "0123456789012"}' \
      "$BASE_URL/api/v1/locations/82/tags"

@@ -15,7 +15,7 @@ Use `HEAD` for cheap existence and auth probes that don't need the payload — h
 
 ```bash
 # Cheap existence probe
-curl -I -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -I -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets/4287"
 ```
 
@@ -54,7 +54,7 @@ TypeScript integrators using [`openapi-fetch`](https://openapi-ts.dev/openapi-fe
 To probe which methods a path supports without consulting the spec, send any request that triggers a `405` and read the response `Allow` header (per [RFC 7231 §6.5.5](https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.5)). The same value lands in the error envelope's `detail`, so a JSON-only client can branch without reading raw headers:
 
 ```bash
-curl -i -X PATCH -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -i -X PATCH -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets"
 ```
 
