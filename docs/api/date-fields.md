@@ -106,7 +106,7 @@ Create an asset with an explicit `valid_from` and no `valid_to`, then read it ba
 ```bash
 # Create — capture the assigned id from the response
 ASSET_ID=$(curl -s -X POST \
-     -H "Authorization: Bearer $TRAKRF_API_KEY" \
+     -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{
        "external_key": "ASSET-0042",
@@ -116,7 +116,7 @@ ASSET_ID=$(curl -s -X POST \
      "$BASE_URL/api/v1/assets" | jq -r '.data.id')
 
 # Read it back by canonical id
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets/$ASSET_ID"
 ```
 

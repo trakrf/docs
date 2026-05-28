@@ -42,11 +42,11 @@ Shell examples below use a `$BASE_URL` env var — set it to `https://app.trakrf
 
 ```bash
 # First page (default limit)
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets"
 
 # Second page of 100
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets?limit=100&offset=100"
 ```
 
@@ -129,11 +129,11 @@ Repeat the parameter to express "any of":
 ```bash
 # Assets currently at LOC-A OR LOC-B (by external_key) — current location
 # is read from the asset-locations report, not the asset resource
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/reports/asset-locations?location_external_key=LOC-A&location_external_key=LOC-B"
 
 # Same intent, by canonical id
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/reports/asset-locations?location_id=42&location_id=43"
 ```
 
@@ -145,11 +145,11 @@ Pass `true` or `false`. Omitting `is_active` returns rows of either value (the d
 
 ```bash
 # Active currently-effective assets only (default soft-delete behavior)
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets?is_active=true"
 
 # Include soft-deleted rows alongside live ones; null-check deleted_at on each row
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets?include_deleted=true"
 ```
 
@@ -165,7 +165,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 ```bash
 # Find assets whose name, external_key, description, or tag value matches "forklift"
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets?q=forklift"
 ```
 
@@ -179,7 +179,7 @@ curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
 
 ```bash
 # Since the start of 2026-04
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z"
 ```
 
@@ -249,7 +249,7 @@ The asset `location_id` / `location_external_key` fields are a separate case —
 List active assets, newest first, 100 per page:
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets?is_active=true&sort=-created_at&limit=100"
 ```
 
@@ -260,7 +260,7 @@ To list assets by current location, filter the [asset-locations report](#asset-l
 List immediate children of a parent location (filtered by the parent's `external_key`), sorted by `external_key`:
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/locations?parent_external_key=WAREHOUSE-A&sort=external_key&limit=200"
 ```
 
@@ -271,14 +271,14 @@ For explicit ancestor/descendant traversal, use the dedicated endpoints: `GET /a
 Where each asset was last seen — one row per asset. Filter by the location(s) you care about:
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/reports/asset-locations?location_external_key=DOCK-1&sort=-asset_last_seen"
 ```
 
 Or resolve a batch of asset external_keys from a master system to their current locations in one round-trip:
 
 ```bash
-curl -G -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -G -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/reports/asset-locations" \
      --data-urlencode "asset_external_key=AST-0001" \
      --data-urlencode "asset_external_key=AST-0002" \
@@ -292,7 +292,7 @@ This is the canonical [master-data / scan-data](./data-model) consumption flow: 
 Asset movement history over a window, newest event first (path takes the canonical integer asset `id`):
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z&to=2026-04-30T23:59:59Z&sort=-event_observed_at&limit=200"
 ```
 
