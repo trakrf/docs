@@ -17,7 +17,7 @@ Goes from "I have an API key" to "I called the TrakRF API and got a `200` back" 
 [`/docs/getting-started/api`](/docs/getting-started/api) is the User Guide front-door for the API track. Its §1 "Pick your environment" and §2 "Make your first call" mirror the first two sections of this page near-verbatim — if you've already worked through them, **skim or skip to [§3 Round-trip: create, read, update, delete](#3-round-trip-create-read-update-delete)**. The two pages are intentionally two front doors (User Guide track vs. API reference); the overlap is by design.
 :::
 
-If you're already familiar with API-key-authenticated REST APIs, the TL;DR is: send your key as `Authorization: Bearer <jwt>` and hit `$BASE_URL/api/v1/...`. The full walkthrough follows.
+If you're already familiar with OAuth2 `client_credentials`, the TL;DR is: POST your `client_id`/`client_secret` to `$BASE_URL/api/v1/oauth/token`, then send the returned `access_token` as `Authorization: Bearer <access_token>` to `$BASE_URL/api/v1/...`. The full walkthrough follows.
 
 ## 1. Pick your environment
 
@@ -31,24 +31,33 @@ If your account lives on the other environment, use the switcher above — the e
 
 Preview-scoped keys will not authenticate against production and vice versa; the switcher above keeps the curl snippets aligned with whichever world your key was minted on.
 
-## 2. Verify your key works
+## 2. Verify your credentials work {#2-verify-your-key-works}
 
-If you don't already have an API key, sign in to the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>, open the **Account menu → API Keys → New Key**, name the key, and submit. The full JWT is shown once at creation — copy it immediately; it cannot be shown again. Full walkthrough (scope picker, expiration, organization switcher): [Authentication → Mint your first API key](./authentication#mint-your-first-api-key).
+If you don't already have credentials, sign in to the <EnvSignInLink><EnvLabel /> app</EnvSignInLink>, open the **Account menu → API Keys → New Key**, name the key, pick scopes, and submit. The `client_id` and `client_secret` are shown once at creation — copy the `client_secret` immediately; it cannot be shown again. Full walkthrough: [Authentication → Mint your first API key](./authentication#mint-your-first-api-key).
 
-:::note Browser required to mint a key
-Minting an API key requires an interactive browser session — there is no programmatic mint endpoint by design. CI/headless setups should mint a key out-of-band, paste it into a secret store (env var, vault, GitHub Actions secret), and reference it from there. See [Authentication → Where keys come from](./authentication#where-keys-come-from) for the design rationale and a contact path if your use case genuinely needs programmatic provisioning.
+:::note Browser required to mint credentials
+Minting credentials requires an interactive browser session — there is no programmatic mint endpoint by design. CI/headless setups should mint credentials out-of-band, store the `client_id`/`client_secret` in a secret store (env var, vault, GitHub Actions secret), and reference them from there. See [Authentication → Mint your first API key](./authentication#mint-your-first-api-key) for the rationale and a contact path if your use case genuinely needs programmatic provisioning.
 :::
 
-Save the key to an environment variable for the rest of this page:
+Exchange your credentials for a short-lived access token, and capture it for the rest of this page:
 
 ```bash
-export TRAKRF_API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+export TRAKRF_ACCESS_TOKEN=$(curl -s -X POST "$BASE_URL/api/v1/oauth/token" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "grant_type": "client_credentials",
+        "client_id": "6f1c2a8e-7d3b-4e90-9a11-2c4d5e6f7a8b",
+        "client_secret": "trakrf_9f8e7d6c5b4a39281706f5e4d3c2b1a0ffeeddccbbaa99887766554433221100"
+      }' | python3 -c "import json,sys; print(json.load(sys.stdin)['access_token'])")
+# Or, if jq is installed: ... | jq -r '.access_token'
 ```
 
-`GET /api/v1/orgs/me` (`getCurrentOrg` in generated clients) returns the organization the API key is scoped to. It's the canonical "tell me about myself" endpoint, requires no specific scope, and confirms end-to-end that your key authenticates against the right environment. **Use an API key here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](./private-endpoints#orgs-me) for the precise rule.
+The access token lives 15 minutes; re-run this exchange (or use the `refresh_token`) when it expires. Full detail: [Authentication → Get an access token](./authentication#get-an-access-token).
+
+`GET /api/v1/orgs/me` (`getCurrentOrg` in generated clients) returns the organization your credentials are scoped to. It's the canonical "tell me about myself" endpoint, requires no specific scope, and confirms end-to-end that your access token authenticates against the right environment. **Use an API-credential access token here — `/orgs/me` rejects session JWTs from the web app, even though most other public endpoints accept them.** See [Private endpoints → Response shape: `/orgs/me`](./private-endpoints#orgs-me) for the precise rule.
 
 ```bash
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/orgs/me"
 ```
 
@@ -76,7 +85,7 @@ If the `name` matches the organization you minted the key under, you're authenti
 Troubleshooting:
 
 - `401 unauthorized` — the key is missing, malformed, revoked, or scoped to the other environment (preview vs production). Re-check the `Authorization` header and the [Base URL](./authentication#base-url).
-- `401 unauthorized` with `detail: "Use Authorization: Bearer <token>"` — the JWT was sent under `X-API-Key` (or another header). The server only accepts the `Authorization: Bearer` form, despite the credential being called an "API key." See [Authentication → Request header](./authentication#request-header).
+- `401 unauthorized` with `detail: "Use Authorization: Bearer <token>"` — the token was sent under `X-API-Key` (or another header). The server only accepts the `Authorization: Bearer` form. See [Authentication → Request header](./authentication#request-header).
 - `429 rate_limited` — you're over budget; wait the `Retry-After` seconds. See [Rate limits](./rate-limits).
 - **Browser console error with no response body** — CORS. The API is server-to-server only; call it from a backend. See [Server-to-server design](./authentication#server-to-server).
 
@@ -104,7 +113,7 @@ This walks through the write path end-to-end with an asset. It needs `assets:wri
 ```bash
 # Create — capture the assigned id from the response
 ASSET=$(curl -s -X POST "$BASE_URL/api/v1/assets" \
-  -H "Authorization: Bearer $TRAKRF_API_KEY" \
+  -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
         "external_key": "ASSET-QUICKSTART",
@@ -114,20 +123,20 @@ ASSET_ID=$(echo "$ASSET" | python3 -c "import json,sys; print(json.load(sys.stdi
 # Or, if jq is installed: ASSET_ID=$(echo "$ASSET" | jq -r '.data.id')
 
 # Read it back by canonical id
-curl -H "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets/$ASSET_ID"
 
 # Update — partial merge-patch per RFC 7396. Only fields in the body are
 # changed; omitted fields are left unchanged. Send `null` to clear a
 # nullable field; `{}` is a documented no-op.
 curl -X PATCH "$BASE_URL/api/v1/assets/$ASSET_ID" \
-  -H "Authorization: Bearer $TRAKRF_API_KEY" \
+  -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
   -H "Content-Type: application/merge-patch+json" \
   -d '{"name": "Quickstart test asset (renamed)"}'
 
 # Delete
 curl -X DELETE "$BASE_URL/api/v1/assets/$ASSET_ID" \
-  -H "Authorization: Bearer $TRAKRF_API_KEY"
+  -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN"
 ```
 
 :::tip TypeScript with `openapi-fetch`?
@@ -144,11 +153,11 @@ When you cache a GET response and `PATCH` later, `updated_at` is the field that 
 
 ```bash
 # GET → mutate → PATCH on an asset (full-body round-trip; no fields stripped)
-curl -sH "Authorization: Bearer $TRAKRF_API_KEY" \
+curl -sH "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets/$ASSET_ID" \
 | python3 -c "import json,sys; d=json.load(sys.stdin)['data']; d['name']='Quickstart test asset (renamed again)'; print(json.dumps(d))" \
 | curl -X PATCH "$BASE_URL/api/v1/assets/$ASSET_ID" \
-       -H "Authorization: Bearer $TRAKRF_API_KEY" \
+       -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
        -H "Content-Type: application/merge-patch+json" \
        -d @-
 ```
@@ -166,7 +175,7 @@ Prefer a GUI? Postman (and Insomnia, Bruno, Hoppscotch) imports the OpenAPI spec
 1. In Postman, **File → Import → Link**, paste <EnvBaseURL />/api/openapi.yaml.
 2. Set the collection variables:
    - `baseUrl` → `https://app.trakrf.id` (or `https://app.preview.trakrf.id` for preview accounts) — bare host, no `/api/v1` suffix; paths in the collection already include the version prefix
-   - `bearerToken` → the JWT from step 2
+   - `bearerToken` → the `access_token` from step 2 (refresh it when it expires)
 3. Collection auth is preconfigured as a Bearer token referencing `{{bearerToken}}`.
 
 Full detail: [API clients](./postman).
@@ -184,7 +193,7 @@ Feed either into `openapi-generator-cli`, NSwag, `oapi-codegen`, etc. to scaffol
 
 The bare-form `/openapi.yaml` and `/openapi.json` at the app origin also resolve to the canonical spec (via `301 Moved Permanently` to the `/api/`-prefixed paths above), matching the convention used by many SaaS APIs (Stripe, GitHub, and others). Either form is acceptable — pick whichever your codegen tooling prefers.
 
-The spec declares its security scheme as `BearerAuth` (HTTP Bearer, JWT format), so class-emitting generators surface the credential as a Bearer access token — `openapi-generator-cli`'s `typescript-fetch` target produces a `Configuration` with an `accessToken` field, and the Java/Python targets follow the same shape. The wire format remains `Authorization: Bearer <jwt>`; pass the API key minted in step 2 wherever the generated client expects an access token.
+The spec declares its security scheme as `BearerAuth` (HTTP Bearer, JWT format), so class-emitting generators surface the credential as a Bearer access token — `openapi-generator-cli`'s `typescript-fetch` target produces a `Configuration` with an `accessToken` field, and the Java/Python targets follow the same shape. The wire format remains `Authorization: Bearer <jwt>`; pass the access token obtained in step 2 wherever the generated client expects an access token, and refresh it via the `client_credentials` / `refresh_token` exchange as needed.
 
 :::tip Verified-working codegen targets
 TrakRF spec round-trips end-to-end against `openapi-typescript@7.x` (TypeScript types feeding `openapi-fetch`), `openapi-generator-cli` python (`Optional[...]` for every nullable read field), and the typescript / Java targets from the same generator. If you reach for `datamodel-codegen` (Pydantic from OpenAPI), be aware that `datamodel-codegen` 0.57.0 emits `nullable: true` read-shape fields as **non-Optional** required types, so Pydantic raises `ValidationError` on every nullable field that actually comes back `null` (`deleted_at` on every resource, `valid_to`, and the location `parent_id` / `parent_external_key` pair). Either switch to the `openapi-generator-cli` python target or run `datamodel-codegen` with `--use-annotated --use-union-operator` plus a post-processing pass that wraps nullable fields in `Optional[…]`. The same note lives on the [interactive reference's intro](/api).
