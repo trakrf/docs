@@ -28,11 +28,14 @@ API_TEST_DOCS_URL=https://docs.test.example
 API_TEST_LOGIN=test-admin@example.com
 API_TEST_PASS=test-password
 BB1_ORG_ID=111
-BB1_API_KEY=jwt-bb1-fake
+BB1_CLIENT_ID=client-bb1-fake
+BB1_CLIENT_SECRET=trakrf_bb1fakesecret
 BB2_ORG_ID=222
-BB2_API_KEY=jwt-bb2-fake
+BB2_CLIENT_ID=client-bb2-fake
+BB2_CLIENT_SECRET=trakrf_bb2fakesecret
 BB3_ORG_ID=333
-BB3_API_KEY=jwt-bb3-fake
+BB3_CLIENT_ID=client-bb3-fake
+BB3_CLIENT_SECRET=trakrf_bb3fakesecret
 EOF
   echo "$env_path"
 }
@@ -230,7 +233,7 @@ set -e
 assert_false "validate: two numbers rejected" "$rc"
 rm -rf "$prefix"
 
-# T19. Pre-key env contents: only URLs + BB_ORG/BB_API_KEY/BB_ORG_ID, no login/pass
+# T19. Pre-key env contents: only URLs + BB_ORG/BB_CLIENT_ID/BB_CLIENT_SECRET/BB_ORG_ID, no login/pass
 prefix=$(make_prefix); env_file=$(make_env "$prefix")
 BB_SOURCE_ENV="$env_file" BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle BB2 >/dev/null 2>&1
 target_env="$prefix/bb-1-BB2/.env.local"
@@ -242,18 +245,24 @@ grep -q "^API_TEST_DOCS_URL=https://docs.test.example$" "$target_env" && rc=0 ||
 assert_true "filter (pre-key): API_TEST_DOCS_URL present" "$rc"
 grep -q "^BB_ORG=BB2$" "$target_env" && rc=0 || rc=$?
 assert_true "filter (pre-key): BB_ORG=BB2" "$rc"
-grep -q "^BB_API_KEY=jwt-bb2-fake$" "$target_env" && rc=0 || rc=$?
-assert_true "filter (pre-key): BB_API_KEY matches BB2 source" "$rc"
+grep -q "^BB_CLIENT_ID=client-bb2-fake$" "$target_env" && rc=0 || rc=$?
+assert_true "filter (pre-key): BB_CLIENT_ID matches BB2 source" "$rc"
+grep -q "^BB_CLIENT_SECRET=trakrf_bb2fakesecret$" "$target_env" && rc=0 || rc=$?
+assert_true "filter (pre-key): BB_CLIENT_SECRET matches BB2 source" "$rc"
 grep -q "^BB_ORG_ID=222$" "$target_env" && rc=0 || rc=$?
 assert_true "filter (pre-key): BB_ORG_ID matches BB2 source" "$rc"
 ! grep -q "^API_TEST_LOGIN=" "$target_env" && rc=0 || rc=$?
 assert_true "filter (pre-key): no API_TEST_LOGIN" "$rc"
 ! grep -q "^API_TEST_PASS=" "$target_env" && rc=0 || rc=$?
 assert_true "filter (pre-key): no API_TEST_PASS" "$rc"
-! grep -q "^BB1_API_KEY=" "$target_env" && rc=0 || rc=$?
-assert_true "filter (pre-key): no other orgs' keys (BB1)" "$rc"
-! grep -q "^BB3_API_KEY=" "$target_env" && rc=0 || rc=$?
-assert_true "filter (pre-key): no other orgs' keys (BB3)" "$rc"
+! grep -q "^BB1_CLIENT_ID=" "$target_env" && rc=0 || rc=$?
+assert_true "filter (pre-key): no other orgs' keys (BB1 client_id)" "$rc"
+! grep -q "^BB1_CLIENT_SECRET=" "$target_env" && rc=0 || rc=$?
+assert_true "filter (pre-key): no other orgs' keys (BB1 client_secret)" "$rc"
+! grep -q "^BB3_CLIENT_ID=" "$target_env" && rc=0 || rc=$?
+assert_true "filter (pre-key): no other orgs' keys (BB3 client_id)" "$rc"
+! grep -q "^BB3_CLIENT_SECRET=" "$target_env" && rc=0 || rc=$?
+assert_true "filter (pre-key): no other orgs' keys (BB3 client_secret)" "$rc"
 rm -rf "$prefix"
 
 # T20. Mint env contents: URLs + LOGIN/PASS, no BB_* vars
@@ -272,10 +281,14 @@ grep -q "^API_TEST_PASS=test-password$" "$target_env" && rc=0 || rc=$?
 assert_true "filter (mint): API_TEST_PASS present" "$rc"
 ! grep -q "^BB_ORG=" "$target_env" && rc=0 || rc=$?
 assert_true "filter (mint): no BB_ORG" "$rc"
-! grep -q "^BB_API_KEY=" "$target_env" && rc=0 || rc=$?
-assert_true "filter (mint): no BB_API_KEY" "$rc"
-! grep -q "^BB[1-3]_API_KEY=" "$target_env" && rc=0 || rc=$?
-assert_true "filter (mint): no BBn_API_KEY" "$rc"
+! grep -q "^BB_CLIENT_ID=" "$target_env" && rc=0 || rc=$?
+assert_true "filter (mint): no BB_CLIENT_ID" "$rc"
+! grep -q "^BB_CLIENT_SECRET=" "$target_env" && rc=0 || rc=$?
+assert_true "filter (mint): no BB_CLIENT_SECRET" "$rc"
+! grep -q "^BB[1-3]_CLIENT_ID=" "$target_env" && rc=0 || rc=$?
+assert_true "filter (mint): no BBn_CLIENT_ID" "$rc"
+! grep -q "^BB[1-3]_CLIENT_SECRET=" "$target_env" && rc=0 || rc=$?
+assert_true "filter (mint): no BBn_CLIENT_SECRET" "$rc"
 rm -rf "$prefix"
 
 # T21. Missing source key for selected org → fail with clear error
@@ -285,15 +298,16 @@ cat > "$env_path" <<'EOF'
 API_TEST_APP_URL=https://app.test.example
 API_TEST_DOCS_URL=https://docs.test.example
 BB1_ORG_ID=111
-BB1_API_KEY=jwt-bb1-fake
+BB1_CLIENT_ID=client-bb1-fake
+BB1_CLIENT_SECRET=trakrf_bb1fakesecret
 EOF
 set +e
 err=$(BB_SOURCE_ENV="$env_path" BB_TMP_PREFIX="$prefix" BB_SKIP_PREFLIGHT=1 just bb_cycle BB2 2>&1)
 rc=$?
 set -e
-assert_false "validate (pre-key): missing BB2_API_KEY rejected" "$rc"
-echo "$err" | grep -q "BB2_API_KEY" && rc=0 || rc=$?
-assert_true "validate (pre-key): error message names BB2_API_KEY" "$rc"
+assert_false "validate (pre-key): missing BB2_CLIENT_ID rejected" "$rc"
+echo "$err" | grep -q "BB2_CLIENT_ID" && rc=0 || rc=$?
+assert_true "validate (pre-key): error message names BB2_CLIENT_ID" "$rc"
 rm -rf "$prefix"
 
 # T22. Missing login/pass for mint track → fail with clear error
