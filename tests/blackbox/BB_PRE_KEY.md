@@ -48,7 +48,7 @@ BB1, BB2, and BB3 carry identical, deterministic data. You can assert against li
 
 **Scans:** populated. Each org carries ~25 `asset_scans` per asset over a 90-day window (~675 per org), and the materialized `location_id` on every asset reflects the most-recent scan. `tracking:read` coverage is in-scope — exercise both `/api/v1/assets/{asset_id}/history` and `/api/v1/reports/asset-locations` with literal-value assertions.
 
-**Tags:** not copied. Tags are not in v1 public-API scope.
+**Tags:** not pre-seeded on fixture rows. Tags **are** part of the v1 public-API surface, though — the `POST`/`DELETE …/tags` subresources on both assets and locations, gated by the parent resource's `:write` scope. Don't skip the tags surface just because the fixture ships no tag rows: exercise it by creating your own (e.g. `POST /api/v1/assets/{asset_id}/tags`) and round-tripping.
 
 ## Key scope and lifecycle
 
