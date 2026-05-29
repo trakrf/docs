@@ -10,40 +10,41 @@ default:
 
 # Run justfile recipe tests
 test:
-    @bash scripts/test_bb_cycle.sh
+    @bash scripts/test_bb.sh
 
-# Picks the next cycle number (or accepts an explicit one), runs the
-# deploy-lag preflight against the preview docs site, then copies
-# tests/blackbox/ out to /tmp/bb-NN for isolated execution. Prints a
-# copy-paste command to start the session.
+# Picks the cycle.round[.session] target directly, runs the deploy-lag
+# preflight against the preview docs site, then copies tests/blackbox/
+# out to /tmp/bb-{cycle.round[.session]} for isolated execution and
+# launches Claude with the wrapper that matches the chosen track.
 #
-# Why copy out: the BB cycle is meant to mimic an external integrator's
-# experience using only published artifacts. Working out of /tmp keeps
-# in-flight dev context in the working tree from leaking into the test
-# environment.
+# Naming scheme (cycle.round.session): see tests/blackbox/BB.md
+# - cycle: era/phase (cycle 2 = post-TRA-564 closure)
+# - round: batch of parallel sessions within a cycle
+# - session: parallel org index in {1,2,3}, pre-key only (mint has no session)
+#
+# Session N maps to fixture org BB{N}: session 1 = BB1, session 2 = BB2,
+# session 3 = BB3. The BB{n} name stays in env var names (BB1_CLIENT_ID
+# etc) and methodology — those are the fixtures' durable identifiers.
 #
 # Usage:
-#   just bb_cycle              # mint track, auto-num
-#   just bb_cycle 32           # mint track, explicit cycle number
-#   just bb_cycle BB1          # pre-key track for BB1 org, auto-num
-#   just bb_cycle BB1 32       # pre-key track for BB1, cycle 32
-#   just bb_cycle 32 BB1       # same as above (order-agnostic)
+#   just bb 2.3        # mint track, cycle 2 round 3
+#   just bb 2.3.1      # pre-key BB1 fixture (session 1), cycle 2 round 3
+#   just bb 2.3.2      # pre-key BB2 fixture (session 2), cycle 2 round 3
+#   just bb 2.3.3      # pre-key BB3 fixture (session 3), cycle 2 round 3
 #
 # Environment overrides (mostly for tests):
 #   BB_SOURCE_ENV        host .env.local to source (default: tests/blackbox/.env.local)
 #   BB_SKIP_PREFLIGHT=1  skip the preflight loop (manual testing only)
-#   BB_TMP_PREFIX        directory holding bb-NN dirs (default: /tmp)
+#   BB_TMP_PREFIX        directory holding bb-* dirs (default: /tmp)
 #   BB_NO_LAUNCH=1       skip the final exec claude (recipe tests only)
 #
-# Start a fresh blackbox test cycle: preflight, isolate to /tmp/bb-NN, then print the session-start command
-bb_cycle arg1="" arg2="":
+# Start a fresh blackbox test cycle: validate, preflight, isolate, launch
+bb cr:
     #!/usr/bin/env bash
     set -euo pipefail
 
     prefix="${BB_TMP_PREFIX:-/tmp}"
 
-    # Source the host .env.local (or BB_SOURCE_ENV override for tests).
-    # Required for both preflight and the filtered .env.local write step.
     source_env="${BB_SOURCE_ENV:-tests/blackbox/.env.local}"
     if [ -f "$source_env" ]; then
       set -a
@@ -52,63 +53,29 @@ bb_cycle arg1="" arg2="":
       set +a
     fi
 
-    # 1. Sniff args into (selector, n). Each arg may be a selector (BB1/BB2/BB3),
-    #    a positive integer (cycle number), or empty. Order-agnostic.
-    selector=""
-    n=""
-    for a in "{{arg1}}" "{{arg2}}"; do
-      [ -z "$a" ] && continue
-      if [[ "$a" =~ ^BB[1-3]$ ]]; then
-        if [ -n "$selector" ]; then
-          echo "ERROR: two selectors provided ($selector, $a)" >&2
-          exit 1
-        fi
-        selector="$a"
-      elif [[ "$a" =~ ^[0-9]+$ ]]; then
-        if [ -n "$n" ]; then
-          echo "ERROR: two cycle numbers provided ($n, $a)" >&2
-          exit 1
-        fi
-        n="$a"
-      else
-        echo "ERROR: unrecognized arg: '$a' (expected BB[1-3] or a positive integer)" >&2
-        exit 1
-      fi
-    done
-
-    # 2. Determine cycle number. If not explicit, scan existing bb-NN[-BBn] dirs
-    #    and pick the smallest NN where our specific target doesn't yet exist.
-    if [ -z "$n" ]; then
-      max=0
-      shopt -s nullglob
-      for d in "$prefix"/bb-[0-9]*; do
-        [ -d "$d" ] || continue
-        suffix="${d##*/bb-}"
-        if [[ "$suffix" =~ ^([0-9]+)(-BB[1-3])?$ ]]; then
-          num="${BASH_REMATCH[1]}"
-          if (( num > max )); then
-            max=$num
-          fi
-        fi
-      done
-      shopt -u nullglob
-      candidate=$(( max == 0 ? 1 : max ))
-      while :; do
-        target_check="$prefix/bb-$candidate"
-        [ -n "$selector" ] && target_check="$target_check-$selector"
-        [ ! -e "$target_check" ] && break
-        candidate=$(( candidate + 1 ))
-      done
-      n=$candidate
+    # 1. Parse cycle.round[.session]. Segment count determines track.
+    cr="{{cr}}"
+    if [[ "$cr" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+      cycle="${BASH_REMATCH[1]}"
+      round="${BASH_REMATCH[2]}"
+      session=""
+      selector=""
+    elif [[ "$cr" =~ ^([0-9]+)\.([0-9]+)\.([1-3])$ ]]; then
+      cycle="${BASH_REMATCH[1]}"
+      round="${BASH_REMATCH[2]}"
+      session="${BASH_REMATCH[3]}"
+      selector="BB${session}"
+    else
+      echo "ERROR: expected cycle.round (mint) or cycle.round.session with session in {1,2,3} (pre-key), got: $cr" >&2
+      echo "       Examples:  just bb 2.3   |   just bb 2.3.1" >&2
+      exit 1
     fi
 
-    # 3. Build target path. Pre-key dirs carry the selector as a suffix.
-    target="$prefix/bb-$n"
-    [ -n "$selector" ] && target="$target-$selector"
+    target="$prefix/bb-${cr}"
 
-    # 4. Validate source env vars for the chosen track. Doing this before
-    #    mkdir means a missing var aborts cleanly without leaving an
-    #    orphan target dir that would block a retry.
+    # 2. Validate source env vars for the chosen track. Doing this
+    #    before mkdir means a missing var aborts cleanly without
+    #    leaving an orphan target dir.
     if [ -n "$selector" ]; then
       src_client_id_var="${selector}_CLIENT_ID"
       src_client_secret_var="${selector}_CLIENT_SECRET"
@@ -139,30 +106,24 @@ bb_cycle arg1="" arg2="":
       fi
     fi
 
-    # 5. Refuse if target exists — prevents clobbering an in-flight cycle
+    # 3. Refuse if target exists
     if [ -e "$target" ]; then
-      echo "ERROR: $target already exists. Pick another cycle number or remove it." >&2
+      echo "ERROR: $target already exists. Pick another cycle.round[.session] or remove it." >&2
       exit 1
     fi
 
-    # 6. Preflight: confirm the preview docs deploy has caught up to
-    #    origin/main. Cloudflare Pages builds typically take a couple of
-    #    minutes; if we run BB before the new deploy lands the cycle will
-    #    test the previous commit.
+    # 4. Preflight
     if [ "${BB_SKIP_PREFLIGHT:-}" != "1" ]; then
-      echo "==> BB cycle $n — running deploy-lag preflight"
+      echo "==> BB ${cr} — running deploy-lag preflight"
       echo
 
-      deadline=$(( $(date +%s) + 300 ))   # ~5 min
+      deadline=$(( $(date +%s) + 300 ))
       interval=20
       while :; do
         if bash tests/blackbox/check-deploy-lag.sh; then
           break
         fi
         rc=$?
-        # Only retry on exit 4 (preview deploy lag — Cloudflare Pages
-        # still catching up to the published tip). Other failures (env,
-        # unreachable origin) are not transient.
         if [ "$rc" -ne 4 ]; then
           echo "ERROR: preflight failed with exit code $rc (non-transient). Resolve and retry." >&2
           exit "$rc"
@@ -179,9 +140,7 @@ bb_cycle arg1="" arg2="":
       echo
     fi
 
-    # 7. Isolate: copy tests/blackbox/ into the target, then replace the
-    #    copied .env.local with a track-specific filtered file. Each session
-    #    sees exactly the env an external integrator would.
+    # 5. Isolate + write filtered .env.local
     echo "==> Isolating to $target"
     mkdir -p "$target"
     cp -r tests/blackbox/. "$target/"
@@ -201,17 +160,14 @@ bb_cycle arg1="" arg2="":
       fi
     } > "$target/.env.local"
 
-    # 8. Launch the session directly. The wrapper file matches the chosen
-    #    track; the wrapper itself points back at BB.md for the shared
-    #    methodology. Claude's own "trust this directory?" prompt is the
-    #    backstop if you want to bail before the session starts.
+    # 6. Launch
     if [ -n "$selector" ]; then
       wrapper="BB_PRE_KEY.md"
     else
       wrapper="BB_MINT_KEY.md"
     fi
     echo
-    echo "==> Launching BB cycle $n in $target (wrapper: $wrapper)"
+    echo "==> Launching BB ${cr} in $target (wrapper: $wrapper)"
     direnv allow "$target"
     cd "$target"
     if [ "${BB_NO_LAUNCH:-}" = "1" ]; then
