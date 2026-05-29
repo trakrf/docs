@@ -17,6 +17,16 @@ Use whichever HTTP client / language you'd naturally reach for. The variation be
 
 Verify every claim in the docs against the live service. When the docs and the service disagree, that is a primary finding. Check both the OpenAPI spec AND the prose quickstart / tutorial pages — the two can drift independently. Generated-client users hit the spec; humans following the prose pages hit the prose.
 
+## Cycle naming (cycle.round.session)
+
+Each BB run is addressed by a `cycle.round[.session]` identifier — the same string passed to `just bb`, and the name of the isolated `/tmp/bb-<id>` directory the session runs in:
+
+- **cycle** — the era/phase of the API under test. Bumps when the contract changes enough that prior findings no longer compare.
+- **round** — a batch of parallel sessions within a cycle. Bumps each time the orchestrator starts a new wave.
+- **session** — the parallel org index, `1`–`3`, present on the **pre-key (contract) track only**. The mint track is single-instance and carries no session segment.
+
+Two segments (`2.3`) is a mint run; three segments (`2.3.1`) is a pre-key run. Session N maps to fixture org **BB{N}**: session 1 = BB1, session 2 = BB2, session 3 = BB3. `BB{n}` is the fixtures' durable identifier — it stays in the env var names (`BB1_CLIENT_ID` etc.) and throughout this methodology; the session digit is just how the run is addressed on the command line.
+
 ## Allowed tools
 
 Work only from what a customer developer has:
@@ -201,7 +211,7 @@ Begin FINDINGS.md with a context block recording:
 - Codegen tool(s) and version(s) used in step 10 — list each separately
 - Date and time of the run (UTC)
 
-Cycles aren't comparable without this. The orchestrator running the eval will add a cycle label (BB13, BB14, …) on triage; you don't need to assign one yourself.
+Cycles aren't comparable without this. The orchestrator running the eval assigns the cycle.round.session identifier (see [Cycle naming](#cycle-naming-cycleroundsession) above) on triage; you don't need to assign one yourself.
 
 ### Terminology coherence pass
 
