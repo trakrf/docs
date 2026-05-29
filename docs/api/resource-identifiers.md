@@ -57,7 +57,7 @@ This is the conventional REST shape and the URL stays valid even if the asset's 
 
 Numeric `id` values are surrogate keys — unique within their entity type, not across types. The same integer can exist as both an asset id and a tag id; that's expected behavior. The API disambiguates by URL position (`/assets/{asset_id}`, `/locations/{location_id}/tags/{tag_id}`) or query-parameter name (`location_id`, `parent_id`), so an id is never passed without its entity context at the API boundary. Client code matches ids to entity type — standard surrogate-key discipline.
 
-The wire width of every surrogate id is **int64** (`format: int64` on the spec); the runtime ceiling is **2³¹−1**. The gap is deliberate — see [ID format: int64 wire, int32 runtime](./id-format) for the rationale, the `too_large` error envelope, and what it means for typed-client codegen.
+Every surrogate id is declared **int64** (`format: int64`, `maximum: 9007199254740991`) on the spec — the same type and ceiling on response bodies, request bodies, `_id` query filters, and path parameters. The `maximum` is JavaScript's `Number.MAX_SAFE_INTEGER` (2⁵³−1), so every admissible id is exactly representable in a `number`-typed client. See [ID format: int64 wire, int64 runtime](./id-format) for the rationale, the id-boundary error envelopes, and what it means for typed-client codegen.
 
 ## Natural-key lookup uses `?external_key=`
 

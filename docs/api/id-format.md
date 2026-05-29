@@ -3,36 +3,50 @@ sidebar_position: 3
 title: ID format
 ---
 
-# ID format: int64 wire, int32 runtime
+# ID format: int64 wire, int64 runtime
 
-Every surrogate id on the TrakRF v1 API — primary keys (`id`), foreign-key references (`parent_id`, `location_id`, `asset_id`, `tag_id`, `org_id`), and the numeric path / query parameters that consume them — is declared `format: int64` on the OpenAPI spec. The service-side runtime accepts values up to **2³¹−1** (`2147483647`) today; values above that bound are rejected with `400 validation_error` / `code: too_large`. This page documents the gap between the wire width and the runtime ceiling, why it exists, and the error envelope you'll see if a client sends a value above the runtime bound.
+Every surrogate id on the TrakRF v1 API — primary keys (`id`), foreign-key references (`parent_id`, `location_id`, `asset_id`, `tag_id`, `org_id`), and the numeric path / query parameters that consume them — is declared `format: int64` with `maximum: 9007199254740991` on the OpenAPI spec. That declaration is uniform: response bodies, request bodies, `_id` query filters, and path parameters all carry the same type and the same ceiling, so there is no wire-vs-runtime width gap to reason about. The one bound worth knowing is **`9007199254740991` — JavaScript's `Number.MAX_SAFE_INTEGER` (2⁵³−1)** — the largest integer a browser SPA or any `number`-typed client can hold without precision loss. This page documents why the ceiling sits where it does and the error envelopes you'll see at the id boundaries.
+
+:::note The int64 contract covers surrogate ids only
+Non-id integer fields keep their natural width — for example `duration_seconds` is `int32` and is not a surrogate id. Don't generalize "ids are int64" to "every integer is int64."
+:::
 
 ## The contract at a glance
 
-| Layer       | Width                           | Note                                                                                                     |
-| ----------- | ------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Wire (spec) | int64 (`format: int64`)         | Generated SDKs surface ids as `Long` (Java/Kotlin), `bigint`-capable `number` (TS), `int` (Python), etc. |
-| Runtime     | int32 ceiling (`1..2147483647`) | Values above the ceiling return `400` with `code: too_large` and `params.max: 2147483647`.               |
-| Storage     | int32 (Postgres `int4`)         | Underlying database column. Drives the runtime ceiling.                                                  |
+| Layer       | Width / bound                                        | Note                                                                                    |
+| ----------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Wire (spec) | int64 (`format: int64`), `maximum: 9007199254740991` | Generated SDKs surface ids as `Long` (Java/Kotlin), `number` (TS), `int` (Python), etc. |
+| Runtime     | int64                                                | The service accepts and stores the full declared range; no narrower runtime ceiling.    |
+| Storage     | int64 (Postgres `int8`)                              | Underlying database column.                                                             |
 
-The wider wire type is a **long-horizon contract**, not a claim that current ids exceed int32. ID generation stays within the int32 range during v1 — the runtime ceiling is documented and stable for v1.
+The declared `maximum` is the **JS-safe-integer cap** (2⁵³−1), not a storage limit — `int8` reaches 2⁶³−1. It is declared because the TrakRF SPA, and any client that holds ids in a JavaScript `number`, loses precision above 2⁵³−1; pinning the ceiling there keeps every minted id exactly representable on every client. ID generation stays within that bound for v1.
 
-## Why the wire is wider than the runtime
+## Why int64, and why the 2⁵³−1 cap
 
-The TrakRF id namespace is randomly distributed across the int32 range, not monotonically assigned from `1`. The current cardinality leaves ample headroom for v1, but a future migration to int64 — driven by namespace exhaustion or a strategy shift toward externally-supplied randomized ids — would be a breaking change for typed clients if the spec declared `int32` today:
+The TrakRF id namespace is randomly distributed across a wide range, not monotonically assigned from `1`. Declaring `int64` from v1 launch means a future widening of the id space is a non-event for typed clients — they are already typed wide enough:
 
-- Java `Integer` would need to migrate to `Long`.
-- Kotlin `Int` would need to migrate to `Long`.
-- C# `int` would need to migrate to `long`.
-- TypeScript clients using `number` would need to guard against values above `Number.MAX_SAFE_INTEGER` (2⁵³−1).
+- Java / Kotlin clients surface ids as `Long`.
+- C# clients surface `long`.
+- TypeScript clients hold ids in `number`, exact up to 2⁵³−1 — exactly the declared `maximum`, so a value the spec admits is always a value the client can represent.
 
-Declaring `int64` on the wire from v1 launch defers all of those breaks. Generated SDK regeneration on the int32 → int64 storage cutover becomes a zero-change ABI for the integer-handling code: clients are already typed wide enough.
+The `maximum: 9007199254740991` ceiling is the load-bearing half of that promise on the JS side: it guarantees the spec never admits an id a `number`-typed client would round. A client that synthesizes ids on its own side (uncommon — ids are server-assigned) should stay within the same bound.
 
-The runtime ceiling captures the current storage reality. A client that synthesizes ids on its own side (uncommon — ids are server-assigned) or pastes an unintended value into a path-param URL gets a clean `400` rather than a server-side overflow.
+## Error envelopes at the id boundaries
 
-## Error envelope: `too_large` on path / body / query
+Surrogate ids no longer carry a dedicated "too large" rejection. A syntactically valid id that doesn't resolve takes the ordinary lookup path for its surface:
 
-Sending an id above `2147483647` on any surface — path-param, request body, or query parameter — returns `400 validation_error` with `code: too_large` and `params.max: 2147483647`:
+| Surface                | Example                                          | Result                                                                      |
+| ---------------------- | ------------------------------------------------ | --------------------------------------------------------------------------- |
+| **Path parameter**     | `GET /api/v1/assets/2147483648`                  | `404 not_found` — in range, simply doesn't resolve to a row                 |
+| **Query `_id` filter** | `GET /api/v1/locations?parent_id=2147483648`     | `200` with an empty `data[]` page — a filter that matches nothing           |
+| **Request-body FK**    | `POST /api/v1/locations {"parent_id": 2147483648}` | `400 validation_error` / `code: fk_not_found` — the referenced row doesn't exist |
+
+The bounds controls are unchanged:
+
+| Input                                                   | Result                                          |
+| ------------------------------------------------------- | ----------------------------------------------- |
+| Path `0` or `-5`                                        | `400 validation_error` / `code: too_small`      |
+| Non-numeric (`abc`) or an int64 overflow (20+ digits)   | `400 validation_error` / `code: invalid_value`  |
 
 ```http
 GET /api/v1/assets/2147483648
@@ -41,36 +55,26 @@ GET /api/v1/assets/2147483648
 ```json
 {
   "error": {
-    "type": "validation_error",
-    "title": "Validation failed",
-    "status": 400,
-    "detail": "asset_id must be ≤ 2147483647",
+    "type": "not_found",
+    "title": "Not found",
+    "status": 404,
+    "detail": "asset not found",
     "instance": "/api/v1/assets/2147483648",
-    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX",
-    "fields": [
-      {
-        "field": "asset_id",
-        "code": "too_large",
-        "message": "asset_id must be ≤ 2147483647",
-        "params": { "max": 2147483647 }
-      }
-    ]
+    "request_id": "01JXXXXXXXXXXXXXXXXXXXXXXX"
   }
 }
 ```
 
-The same envelope applies to request-body ids (`parent_id` on `POST /api/v1/locations`) and to list-filter query parameters that take an id (`?location_id=`, `?parent_id=`). `location_id` is not a writable field on the asset surface — it's scan-data, not master-data; see [Data model](./data-model) — so the request-body too-large path doesn't apply to it on asset POST or PATCH (the field rejects on presence with `read_only`, not on range with `too_large`). Branch on `code: too_large` and `params.max` rather than parsing the `message` string — see [Errors → Validation errors](./errors#validation-errors) for the catalog.
-
-Out-of-range path-param ids (zero, negative, the `2³¹` overflow case shown above) take the `validation_error` path with `params.max`, **not** `404 not_found`. The `404` path is reserved for in-range ids that don't resolve to an existing row. See [Errors → Path- and query-parameter validation errors](./errors#path-and-query-parameter-validation-errors) for the broader path-param bounds rule.
+An id that overflows the int64 wire entirely (a 20-digit value that can't be parsed as int64) fails to decode and returns `400 validation_error` / `code: invalid_value`, not `404`. Zero and negative path ids fail the `minimum: 1` bound with `code: too_small`. Branch on `error.type` and `fields[].code` rather than parsing the `detail` string — see [Errors → Path- and query-parameter validation errors](./errors#path-and-query-parameter-validation-errors).
 
 ## What this means for clients
 
-- **Typed-client integrators** — your generated client already represents ids at int64 width. Path- and query-parameter id schemas additionally declare `maximum: 2147483647` so a value above the runtime cap surfaces at the client-validation layer (when the generator honors `maximum`) instead of round-tripping to a server-side `400 too_large`. Request-body id fields stay descriptive int64 with no maximum, so a body-supplied id above the cap still reaches the server and returns the same `400` envelope. Treat the int64 type as the contract; the runtime cap is a service-side constraint you only need to plan around if you synthesize ids yourself.
-- **Pasting / URL construction** — when an id reaches your code from a URL or a CSV row, validate it fits in int32 before sending. The `400` envelope above tells you when you missed.
-- **No migration planning required for v1** — TrakRF's v1 stability commitment ([Versioning](./versioning)) covers both the wire type (won't narrow) and the runtime ceiling (won't tighten without a major-version cut). If the runtime ceiling widens during v1, that's an additive change — clients already typed wide enough see no impact.
+- **Typed-client integrators** — your generated client already represents ids at int64 width, and the `maximum: 9007199254740991` on the spec keeps every admissible id inside the JS-safe range for `number`-typed targets. Treat the int64 type as the contract; there is no runtime ceiling narrower than the wire to plan around.
+- **Pasting / URL construction** — when an id reaches your code from a URL or a CSV row, a wrong value resolves to `404 not_found` (path), an empty page (query filter), or `fk_not_found` (request-body FK) rather than a range error. Validate that the value parses as an integer; the envelopes above tell you when it doesn't.
+- **No migration planning required for v1** — TrakRF's v1 stability commitment ([Versioning](./versioning)) covers the wire type: it won't narrow. The id space stays within 2⁵³−1 for v1.
 
 ## Cross-references
 
 - [Resource identifiers → Numeric `id` is a surrogate key](./resource-identifiers#numeric-id-is-a-surrogate-key) — what surrogate ids mean on the read side.
-- [Errors → Path- and query-parameter validation errors](./errors#path-and-query-parameter-validation-errors) — the broader bounds-checking rule and a worked example.
-- [Versioning → Stability commitment (v1)](./versioning#stability-commitment-v1) — the additive-only stance covering both wire type and runtime ceiling.
+- [Errors → Path- and query-parameter validation errors](./errors#path-and-query-parameter-validation-errors) — the broader bounds-checking rule and worked examples.
+- [Versioning → Stability commitment (v1)](./versioning#stability-commitment-v1) — the additive-only stance covering the wire type.
