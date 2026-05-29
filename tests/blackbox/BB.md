@@ -2,10 +2,10 @@
 
 This file is the shared methodology for trakrf API black-box cycles. Two entry-point wrappers configure how a session starts:
 
-- **[BB_MINT_KEY.md](./BB_MINT_KEY.md)** — onboarding track. Start without an API key, log in to the SPA, mint a key, then run this methodology. Single-instance; exercises the human-developer quickstart end-to-end.
-- **[BB_PRE_KEY.md](./BB_PRE_KEY.md)** — contract track. Start with a pre-minted API key pinned to a parallelism-fixture org (BB1/BB2/BB3) and skip the mint flow. Parallelizable across orgs.
+- **[BB_MINT_KEY.md](./BB_MINT_KEY.md)** — onboarding track. Start without credentials, log in to the SPA, mint a credential pair, then run this methodology. Single-instance; exercises the human-developer quickstart end-to-end.
+- **[BB_PRE_KEY.md](./BB_PRE_KEY.md)** — contract track. Start with a pre-minted credential pair pinned to a parallelism-fixture org (BB1/BB2/BB3) and skip the mint flow. Parallelizable across orgs.
 
-Start from a wrapper. Follow its setup, then return here and run the shared methodology top to bottom. Where the sections below refer to "your API key," the wrapper has already specified its origin.
+Start from a wrapper. Follow its setup, then return here and run the shared methodology top to bottom. Where the sections below refer to "your access token," the wrapper has already specified how you obtained it (minted in the SPA on the mint track; exchanged from a client_credentials pair on the contract track).
 
 ## Methodology stance
 
@@ -36,7 +36,7 @@ If you find yourself blocked by a UI step during onboarding, document the fricti
 
 The following are acknowledged design state, not workflow gaps. Do not flag as findings:
 
-- **No programmatic API key mint.** Key issuance is bound to user identity through the SPA, by design. The SPA mint flow is the supported onboarding path for both human and automated/headless callers — automated callers mint a key out-of-band and store it in their secrets infrastructure (this matches how Stripe API keys work). A programmatic seam is YAGNI for v1; the team will revisit if a customer surfaces real demand.
+- **No programmatic API key mint.** Key issuance is bound to user identity through the SPA, by design. The SPA mint flow is the supported onboarding path for both human and automated/headless callers — automated callers mint credentials out-of-band and store them in their secrets infrastructure (this matches how Stripe API keys work). A programmatic seam is YAGNI for v1; the team will revisit if a customer surfaces real demand.
 - **`/auth/login` is Internal.** Listed in `private-endpoints.md` as Internal / subject to change without notice. Do not investigate, integrate against, or report on it. Treat as out-of-scope even though it appears in the docs.
 - **No session-only key list/revoke endpoints in the API.** Listing and revocation are SPA-side affordances only. Documented as session-only, not exposed to the API surface.
 
@@ -54,7 +54,7 @@ The docs origin 302-redirects these paths to the platform's canonical spec on `a
 
 ### 2. Walk every path
 
-For each endpoint in the spec, make a real call (with your API key) and verify:
+For each endpoint in the spec, make a real call (with your access token) and verify:
 
 - Does the endpoint respond at all? (404 = spec lies about the route)
 - Does the response status code match one of the declared responses?
@@ -146,7 +146,7 @@ For each generator, run a CRUD lifecycle through the generated client against th
 - Compile errors or codegen failures.
 - Runtime deserialization errors against real responses.
 - Cases where a fetched object cannot be round-tripped back into a write call (field name mismatches between read and write schemas, type asymmetries, missing or polysemic identifiers).
-- Authentication setup friction — does the generated client know how to attach the API key from the spec alone, or did you have to wire it manually?
+- Authentication setup friction — does the generated client know how to attach the access token from the spec alone, or did you have to wire it manually?
 - Generated identifier names — are model class names, method names, and field names clean and conventional in the target language? Flag double-prefixed names (e.g., `AssetPublicAssetView` where the spec schema is `asset.PublicAssetView`), unusual casing (`assets_create` where `createAsset` is conventional), or names that leak the backend's package/namespace structure into the client.
 
 ### 11. Multi-format spec sanity
@@ -278,6 +278,6 @@ This makes the cycle's finding count honest: a probe that surfaces 5 things wher
 
 ## Cleanup
 
-Delete any API keys or artifacts you create during the session before ending it. Leave pre-existing artifacts alone — including platform-managed fixture keys (e.g., the persistent `bb-parallel-permanent` keys on the BB1/BB2/BB3 orgs), which are reused across cycles and not yours to revoke. Fixture data (the seeded locations and assets on those orgs) is also out of scope for cleanup; the orchestrator handles fixture maintenance.
+Delete any credentials or artifacts you create during the session before ending it. Leave pre-existing artifacts alone — including the platform-managed fixture credential (`bb-parallel-permanent`) on each BB1/BB2/BB3 org, which is reused across cycles and not yours to revoke. (Short-lived access tokens you mint expire on their own — nothing to clean up.) Fixture data (the seeded locations and assets on those orgs) is also out of scope for cleanup; the orchestrator handles fixture maintenance.
 
 If the test fixture has accumulated soft-deleted rows from prior cycles that interfere with your probes (e.g., `?include_deleted=true` returns dramatically more rows than the default), note it in the report but don't try to clean up prior cycles' artifacts — the orchestrator handles fixture maintenance.
