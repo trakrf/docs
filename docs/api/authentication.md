@@ -67,6 +67,10 @@ A successful exchange returns:
 
 A `400` means the body failed validation or `grant_type` was unsupported; a `401` (`detail: "Invalid client credentials"`) means the `client_id`/`client_secret` pair did not verify. Errors use the standard [error envelope](./errors).
 
+:::note Refresh tokens on `client_credentials` grants
+TrakRF returns a `refresh_token` on every `client_credentials` response, which deviates from the SHOULD-NOT in [RFC 6749 §4.4.3](https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.3) for that grant. The deviation is deliberate: it lets you rotate access tokens via the `refresh_token` grant without re-sending `client_secret` to the token endpoint — a real win for server-to-server integrations that keep `client_secret` in secrets infrastructure rather than on their app servers. The §4.4.3 SHOULD-NOT guards browser-issued token flows with implicit credentials; TrakRF's bearer model has neither, so the rationale doesn't apply. Treat the `refresh_token` with the same protection you give the `client_secret`, and use it to rotate access tokens — see [Refresh an access token](#refresh-an-access-token).
+:::
+
 ## Request header
 
 Every authenticated request must include the **access token** as a Bearer token in the `Authorization` header:
@@ -191,6 +195,10 @@ response = requests.get(f"{base_url}/api/v1/assets", headers=headers)
 response.raise_for_status()
 print(response.json())
 ```
+
+:::caution Python stdlib `urllib` users: set an explicit User-Agent
+Cloudflare's edge WAF blocks the default `Python-urllib/N` User-Agent that `urllib.request.urlopen()` sends, returning a non-API `403 error code: 1010` HTML response **before** the request reaches TrakRF — so you get a Cloudflare error page, not the documented JSON [error envelope](./errors). Set an explicit `User-Agent` header on every request, or use a library that sends a sensible default — `requests` (above), `httpx`, `urllib3`, or any of the generated SDK clients (`openapi-generator-cli`'s Python target sends `OpenAPI-Generator/1.0.0/python`, which passes). This is a deploy-edge behavior, not an API contract: `curl` and the generated clients work without any adjustment.
+:::
 
 ### JavaScript (fetch)
 
