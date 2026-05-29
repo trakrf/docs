@@ -4,41 +4,56 @@ sidebar_position: 4
 
 # Rate limits
 
-The TrakRF API applies a per-key rate limit to protect the shared service from runaway integrations. Normal customer traffic is well below the limits; this page exists so integrators have the authoritative answer when they hit a `429`.
+The TrakRF API applies a per-key rate limit to protect the shared service from runaway integrations. Normal customer traffic is well below the limits; this page is the authoritative answer for integrators who want to pace requests or who hit a `429`.
 
 ## How the limit works
 
-Each API key has its own **token bucket**:
+Each API key has its own **token bucket** described by two numbers:
 
-- **Refill rate** — the steady-state request budget.
-- **Bucket capacity** — the burst allowance. Requests can spike up to this before the steady-state budget takes over.
+- **Burst ceiling — 120.** The most requests you can make in a short spike before a `429`. This is the bucket's capacity, reported live in `X-RateLimit-Limit`.
+- **Sustained rate — 60 requests / 60 seconds.** The long-run budget the bucket refills at (~1 token per second), advertised in the `RateLimit-Policy` header as `60;w=60`.
 
-Tokens replenish continuously at the refill rate. A request costs one token. When the bucket is empty, further requests receive `429 Rate Limit Exceeded` until tokens replenish.
+A request costs one token; tokens refill continuously at the sustained rate. When the bucket is empty, further requests get `429` until a token refills. So you can burst up to 120 requests, but holding throughput above 60/minute drains the bucket and throttles you down to the sustained rate.
 
 ## Default tier
 
 All keys start with this allowance unless your organization's subscription specifies otherwise:
 
-| Limit        | Value                |
-| ------------ | -------------------- |
-| Steady-state | 60 requests / minute |
-| Burst        | 120 requests         |
+| Allowance      | Value              | Header                      |
+| -------------- | ------------------ | --------------------------- |
+| Sustained rate | 60 requests / 60 s | `RateLimit-Policy: 60;w=60` |
+| Burst ceiling  | 120 requests       | `X-RateLimit-Limit: 120`    |
 
 Tier-specific allowances keyed to subscription plans are on the roadmap. If your integration needs more throughput than the default tier, [contact support](mailto:support@trakrf.id).
 
 ## Response headers
 
-Every API response on the public surface — including 4xx and 5xx errors (`401`, `403`, `404`, `409`, `415`, `429`, `500`) — includes three headers describing the current state of your bucket:
+Every API response on the public surface — including 4xx and 5xx errors (`401`, `403`, `404`, `405`, `409`, `415`, `429`, `500`) — carries four rate-limit headers describing your bucket. They are real pacing signals; you can drive client-side throttling off them.
 
-| Header                  | Units              | Meaning                                                                                                                                                                                                           |
-| ----------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `X-RateLimit-Limit`     | integer requests   | Your steady-state budget per 60-second window (e.g. `60`).                                                                                                                                                        |
-| `X-RateLimit-Remaining` | integer requests   | Steady-state budget remaining, bounded by `Limit`. Decrements only after the burst margin is consumed — a value of `Limit` does not mean a full request budget, it means you are still inside the burst headroom. |
-| `X-RateLimit-Reset`     | Unix epoch seconds | Wall-clock time at which `Remaining` will next equal `Limit`. Equal to "now" when you already have full quota.                                                                                                    |
+| Header                  | Units                    | Meaning                                                                                                                                                                                                                                      |
+| ----------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RateLimit-Policy`      | `quota;w=window-seconds` | The **sustained** rate — `60;w=60` is 60 requests per 60 seconds. This is where the steady-state "60/min" lives. The burst ceiling in `X-RateLimit-Limit` is higher; throughput held above this policy is eventually throttled with a `429`. |
+| `X-RateLimit-Limit`     | integer requests         | The **burst ceiling** — the maximum requests in a single burst before a `429` (the bucket's capacity, `120` on the default tier). The lower sustained rate is advertised separately in `RateLimit-Policy`.                                   |
+| `X-RateLimit-Remaining` | integer requests         | Requests remaining before a `429`. **Decrements by one on every request**, from `X-RateLimit-Limit` down to `0`, and refills over time toward the ceiling at the sustained rate. Clients **may** pace on this value.                         |
+| `X-RateLimit-Reset`     | Unix epoch seconds       | When `X-RateLimit-Remaining` will next equal `X-RateLimit-Limit` — i.e. when the bucket has fully refilled to the ceiling. Equals "now" when you are already at the ceiling.                                                                 |
 
-The headers ride on every response status the public surface emits, so clients can read them even when the request itself failed — error responses are not a blind spot for budget-tracking dashboards or observability metrics.
+The headers ride on every response status the public surface emits — including `429` itself — so clients can read them even when the request failed, and budget-tracking dashboards aren't blind on errors.
 
-**Don't pace on `X-RateLimit-Remaining`.** It looks like a preemptive-pacing input but it isn't one. The bucket holds 2× `Limit` tokens (the burst margin), and `Remaining` is reported as `min(bucket, Limit)` so the header never exceeds the steady-state cap a customer was sold. The practical consequence: `Remaining` stays at `Limit` while the bucket is anywhere inside the burst margin, and only starts decrementing once the bucket has drained below the steady-state line. By the time the header moves, the burst margin is already gone and the next bad spike trips `429`. A client that watches `Remaining < threshold` to back off is using a signal that can't fire until throttling is imminent. Pace on `429` + `Retry-After` instead — that's the integrator-correct contract on this surface.
+### What you'll observe
+
+Starting from a full bucket, `X-RateLimit-Remaining` decrements one-for-one and trips `429` when it reaches zero:
+
+```
+req 1    → 200   X-RateLimit-Remaining: 119
+req 2    → 200   X-RateLimit-Remaining: 118
+ …
+req 120  → 200   X-RateLimit-Remaining: 0
+req 121  → 429   Retry-After: 1
+```
+
+`RateLimit-Policy: 60;w=60` rides every one of those responses. After a burst, the bucket refills at ~1 token/second, so sustained throughput settles at 60/minute.
+
+**Pacing guidance:** pace short-term bursts off `X-RateLimit-Remaining` (slow down as it approaches `0`), and size sustained throughput against `RateLimit-Policy` (stay at or below 60/60s so you don't drain the bucket). Honor `429` + `Retry-After` as the backstop.
 
 ## When you hit the limit
 
@@ -50,7 +65,7 @@ Throttled requests get a `429` with the standard error envelope:
     "type": "rate_limited",
     "title": "Rate limited",
     "status": 429,
-    "detail": "Retry after 30 seconds",
+    "detail": "Rate limit exceeded; retry after 1 second",
     "instance": "/api/v1/assets",
     "request_id": "01J..."
   }
@@ -60,24 +75,24 @@ Throttled requests get a `429` with the standard error envelope:
 …plus the `Retry-After` header:
 
 ```
-Retry-After: 30
+Retry-After: 1
 ```
 
-The `Retry-After` value is an integer number of **seconds** to wait before the next request will succeed (assuming no other throttled requests in the meantime). Respect it — retrying immediately will cost another token and may extend the throttle window.
+`Retry-After` is an integer number of **seconds** to wait before retrying — delta-seconds, floored at `1`, never an HTTP-date. Respect it: retrying earlier costs another token against an empty bucket and can extend the throttle window. The envelope's `request_id` is mirrored in the `X-Request-Id` response header (see [Errors → Filing support tickets](./errors#filing-support-tickets)).
 
 ## Recommended client behavior
 
-- **Back off on 429.** Wait at least `Retry-After` seconds before retrying. Exponential backoff with jitter on repeated 429s is ideal. This is the primary pacing signal on the public surface — see the warning above on why preemptive pacing against `X-RateLimit-Remaining` does not work.
-- **Treat the `X-RateLimit-*` headers as observability, not pacing.** Surface them in dashboards and request-budget metrics if useful, but don't drive client-side throttling decisions off `Remaining` or `Reset` — drive throttling off `429` + `Retry-After`.
+- **Pace proactively off the headers.** Watch `X-RateLimit-Remaining` for burst budget — slow down as it nears `0` — and keep sustained throughput at or under the `RateLimit-Policy` rate (60/60s on the default tier). Both are real pacing signals now: `Remaining` decrements 1:1, so it moves with every request rather than lagging.
+- **Back off on 429.** Wait at least `Retry-After` seconds before retrying; exponential backoff with jitter on repeated 429s is ideal. `Retry-After` is the authoritative backstop even if header-based pacing slips.
 - **Don't treat 429 as a server error.** It's a client-side signal — retry policy should differ from retry-on-500. See [Errors](./errors) for the full retry guidance.
 
 ## All endpoints participate in the bucket
 
-Every endpoint on the public surface — including `GET /api/v1/orgs/me` and every write under `/api/v1/assets` and `/api/v1/locations` — counts against your bucket and emits `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers. There are no carve-outs.
+Every endpoint on the public surface — including `GET /api/v1/orgs/me` and every write under `/api/v1/assets` and `/api/v1/locations` — counts against your bucket and emits the `RateLimit-Policy` and `X-RateLimit-*` headers. There are no carve-outs.
 
-At 60 requests/minute the steady-state budget comfortably covers normal integration traffic, but a few patterns are worth flagging:
+At 60 requests/minute sustained, the budget comfortably covers normal integration traffic, but a few patterns are worth flagging:
 
-- **Liveness/connectivity probes against `GET /api/v1/orgs/me`** — these count, so probe at a frequency your budget tolerates. Once per minute is the simplest pattern that always fits inside the default tier with room to spare; once every 30 seconds is fine if `/orgs/me` is the only thing the probe hits. Aggressive sub-second probes will trip throttling.
+- **Liveness/connectivity probes against `GET /api/v1/orgs/me`** — these count, so probe at a frequency your budget tolerates. Once per minute always fits the default tier with room to spare; once every 30 seconds is fine if `/orgs/me` is the only thing the probe hits. Aggressive sub-second probes will drain the bucket and trip throttling.
 - **Bulk writes** — every `POST` / `PATCH` / `DELETE` under `/api/v1/assets` and `/api/v1/locations` consumes one token. For ingest workloads above the default tier, [contact support](mailto:support@trakrf.id) about a custom tier rather than spreading writes across multiple keys.
 
 `GET /api/v1/orgs/me` returns the standard `{ "data": ... }` envelope, same as every other endpoint on the public surface. See [Private endpoints → /orgs/me](./private-endpoints#orgs-me) for the full catalog entry.
@@ -88,4 +103,4 @@ Limits apply to each API key independently. An organization with three keys has 
 
 ## Horizontal scaling
 
-Rate limiting is currently implemented in-process on a single backend instance. A horizontally-scaled deployment will move the bucket state to Redis or similar; the `X-RateLimit-*` headers and `429` semantics remain identical.
+Rate limiting is currently implemented in-process on a single backend instance. A horizontally-scaled deployment will move the bucket state to Redis or similar; the `RateLimit-Policy`, `X-RateLimit-*` headers, and `429` semantics remain identical.
