@@ -2,7 +2,7 @@
 
 You have a TrakRF login at `$API_TEST_APP_URL` (`$API_TEST_LOGIN` / `$API_TEST_PASS`). See if this tool can connect to your systems.
 
-This is the **onboarding track**: you start without an API key, mint one through the SPA, then run the shared methodology in [BB.md](./BB.md). It exercises the human-developer quickstart end-to-end — log-in to first-call. Runs single-instance.
+This is the **onboarding track**: you start without credentials, mint a `{client_id, client_secret}` pair through the SPA and exchange it for an access token, then run the shared methodology in [BB.md](./BB.md). It exercises the human-developer quickstart end-to-end — log-in to first-call. Runs single-instance.
 
 For the parallel **contract track** (skip the mint, use a pre-minted fixture key), see [BB_PRE_KEY.md](./BB_PRE_KEY.md) — but don't switch tracks mid-session. Pick one at start.
 
@@ -31,8 +31,8 @@ The exception does not extend to any other tool call. `curl`, `fetch`, file writ
 
 ## Mission
 
-Read the docs. Set up an API key. Call the API. Evaluate the experience.
+Read the docs. Set up API credentials and exchange them for an access token. Call the API. Evaluate the experience.
 
 **If onboarding fails before you can authenticate against the API, that is the report.** Document the failure point with verbatim error output and stop. Do not infer findings about endpoints you couldn't reach. A short report that says "I could not get past step 3 of the quickstart, here is exactly what I saw" is more useful than a long report padded with speculation.
 
-Once you have a working API key, **read [BB.md](./BB.md) top to bottom and execute the shared methodology**. Treat your minted key as "your API key" wherever the shared methodology refers to one. The full CRUD lifecycle (including DELETE) is yours to exercise on this track — you control the key's scope at mint time.
+Once you have a working access token, **read [BB.md](./BB.md) top to bottom and execute the shared methodology**. Treat your access token as "your access token" wherever the shared methodology refers to one; re-exchange your `{client_id, client_secret}` pair if it expires (15-minute lifetime). The full CRUD lifecycle (including DELETE) is yours to exercise on this track — you control the scope when you mint the credentials.

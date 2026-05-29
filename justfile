@@ -110,12 +110,18 @@ bb_cycle arg1="" arg2="":
     #    mkdir means a missing var aborts cleanly without leaving an
     #    orphan target dir that would block a retry.
     if [ -n "$selector" ]; then
-      src_key_var="${selector}_API_KEY"
+      src_client_id_var="${selector}_CLIENT_ID"
+      src_client_secret_var="${selector}_CLIENT_SECRET"
       src_id_var="${selector}_ORG_ID"
-      src_key="${!src_key_var:-}"
+      src_client_id="${!src_client_id_var:-}"
+      src_client_secret="${!src_client_secret_var:-}"
       src_id="${!src_id_var:-}"
-      if [ -z "$src_key" ]; then
-        echo "ERROR: $src_key_var is empty or unset in $source_env" >&2
+      if [ -z "$src_client_id" ]; then
+        echo "ERROR: $src_client_id_var is empty or unset in $source_env" >&2
+        exit 1
+      fi
+      if [ -z "$src_client_secret" ]; then
+        echo "ERROR: $src_client_secret_var is empty or unset in $source_env" >&2
         exit 1
       fi
       if [ -z "$src_id" ]; then
@@ -186,7 +192,8 @@ bb_cycle arg1="" arg2="":
       echo "API_TEST_DOCS_URL=${API_TEST_DOCS_URL:-}"
       if [ -n "$selector" ]; then
         echo "BB_ORG=$selector"
-        echo "BB_API_KEY=$src_key"
+        echo "BB_CLIENT_ID=$src_client_id"
+        echo "BB_CLIENT_SECRET=$src_client_secret"
         echo "BB_ORG_ID=$src_id"
       else
         echo "API_TEST_LOGIN=$API_TEST_LOGIN"
