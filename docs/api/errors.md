@@ -85,7 +85,7 @@ The hosting edge layer adds a separate **`x-railway-request-id`** response heade
 
 ### HTTP method coverage
 
-The catalog above covers `405 method_not_allowed`. `HEAD` and `OPTIONS` are not enumerated per path in the OpenAPI reference — they're handled uniformly across every endpoint and documented at [HTTP method coverage](./http-method-coverage). The short version: `HEAD` is supported wherever `GET` is declared and behaves identically minus the response body; `OPTIONS` is not honored — it returns `405` like any other unsupported verb (the API is server-to-server only, no CORS); the `Allow` header on a `405` response (mirrored in `error.detail`) is the runtime way to discover what each path supports.
+The catalog above covers `405 method_not_allowed`. `HEAD` and `OPTIONS` are not enumerated per path in the OpenAPI reference — they're handled uniformly across every endpoint and documented at [HTTP method coverage](./http-method-coverage). The short version: `HEAD` is supported wherever `GET` is declared and behaves identically minus the response body; `OPTIONS` is honored as a CORS preflight, returning `204 No Content` with the `Access-Control-*` headers (see [HTTP method coverage → `OPTIONS`](./http-method-coverage#options)) — not a `405`, and not an error envelope (the API follows a server-to-server design with permissive CORS that also supports browser-based integration paths); the `Allow` header on a `405` response (mirrored in `error.detail`) is the runtime way to discover what each path supports.
 
 ### 401 challenge: `WWW-Authenticate` header {#401-challenge-header}
 

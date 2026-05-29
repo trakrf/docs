@@ -23,13 +23,20 @@ curl -I -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
 
 The spec carries no `head:` entries by design — declaring 22 of them would balloon the surface without adding contract that isn't already implied by the `GET` declarations. The runtime signal is the `Allow` header on a `405` response, which lists `HEAD` alongside the methods the route declares ([Discovering supported methods at runtime](#discovering-supported-methods-at-runtime)). **Generated typed clients (`openapi-generator-cli`, `openapi-fetch`, `oapi-codegen`, NSwag, etc.) will not expose a `HEAD` method on their client classes** because no spec entry drives the codegen; reach for raw `fetch` / `requests` / `http.NewRequest` when you need a `HEAD` probe from a generated SDK.
 
-## `OPTIONS` — uniformly 405 on the public surface {#options}
+## `OPTIONS` — CORS preflight (`204`) {#options}
 
-The TrakRF API is **server-to-server only — no third-party browser origins are permitted**, so the production and preview deploys ship with CORS disabled. Under that posture, `OPTIONS` is treated as an unsupported verb and returns `405 Method Not Allowed` with an `Allow` header listing the methods the path actually supports — the same shape as any other `405` ([Discovering supported methods at runtime](#discovering-supported-methods-at-runtime)). There is no `Access-Control-Allow-Origin` (and no other `Access-Control-Allow-*` headers). A browser issuing the automatic preflight before a cross-origin call sees the `405`, refuses the actual call, and surfaces a CORS error to your console — which is the intended outcome. Call the API from a backend service instead (see [Authentication → Server-to-server design](./authentication#server-to-server)).
+The API supports cross-origin browser access. A CORS preflight — an `OPTIONS` request on any `/api/v1/*` route — returns `204 No Content` with no body and no `Allow` header:
 
-CORS-enabled deploys (not used for public traffic today) keep the standard `204 No Content` preflight response with `Access-Control-Allow-Methods` and friends — included here only to explain why a self-hosted or future-environment caller might see a different shape than production.
+```text
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, HEAD, POST, PATCH, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization, X-Request-ID
+Access-Control-Max-Age: 3600
+```
 
-Server-to-server clients won't normally invoke `OPTIONS` at all; the `Allow` header on any `405` is the runtime way to discover supported methods, and `OPTIONS` is one of the verbs that produces such a `405`.
+These `Access-Control-*` headers are present on every response, including unauthenticated ones (e.g. a `401`). The preflight is handled before authentication, so server-to-server clients — which never issue `OPTIONS` — are unaffected. See [Authentication → Server-to-server design](./authentication#server-to-server) for why permissive CORS is safe alongside bearer auth.
+
+Because `OPTIONS` is answered as a preflight rather than routed as a normal verb, it never returns a `405` or an `Allow` header. To discover which methods a path supports at runtime, send a genuinely unsupported verb and read the `Allow` header on the `405` ([Discovering supported methods at runtime](#discovering-supported-methods-at-runtime)).
 
 ## Request body `Content-Type` per method {#patch-content-type}
 
@@ -76,7 +83,7 @@ Content-Type: application/json
 }
 ```
 
-`HEAD` appears in `Allow` wherever `GET` does. `OPTIONS` is not listed in `Allow` either — it's the verb that produces the `405` on CORS-disabled deploys (see [OPTIONS](#options) above).
+`HEAD` appears in `Allow` wherever `GET` does. `OPTIONS` is never listed in `Allow` — it's answered as a CORS preflight (`204`, see [OPTIONS](#options) above), not routed through the `405` path. Use any genuinely unsupported verb — like the `PATCH` probe above — to trigger the `405` that carries the `Allow` header.
 
 ## `Location` header on `201 Created`
 

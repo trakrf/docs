@@ -87,7 +87,7 @@ Troubleshooting:
 - `401 unauthorized` — the key is missing, malformed, revoked, or scoped to the other environment (preview vs production). Re-check the `Authorization` header and the [Base URL](./authentication#base-url).
 - `401 unauthorized` with `detail: "Use Authorization: Bearer <token>"` — the token was sent under `X-API-Key` (or another header). The server only accepts the `Authorization: Bearer` form. See [Authentication → Request header](./authentication#request-header).
 - `429 rate_limited` — you're over budget; wait the `Retry-After` seconds. See [Rate limits](./rate-limits).
-- **Browser console error with no response body** — CORS. The API is server-to-server only; call it from a backend. See [Server-to-server design](./authentication#server-to-server).
+- **Calling from a browser** — cross-origin requests are permitted (`Access-Control-Allow-Origin: *`), so a browser `fetch` works against the API. CORS is not an access boundary here; protect your bearer token instead — don't ship long-lived secrets in client-side code. See [Server-to-server design](./authentication#server-to-server).
 
 Every error response is wrapped in an `error` key — a `401` looks like:
 

@@ -238,7 +238,9 @@ Preview-scoped credentials will not authenticate against production and vice ver
 
 ## Server-to-server design {#server-to-server}
 
-The TrakRF API is intended for **server-to-server** integration. Responses do not include `Access-Control-Allow-Origin` headers, so browser-based JavaScript calls are blocked by the browser's CORS policy. Call the API from a backend service and never ship credentials or access tokens in client-side code — the CORS block is also a guardrail against leaking credentials to end-user devices.
+TrakRF's public API is built for **server-to-server** integration: partners typically call it from their own backend, where API credentials never leave the server. That describes how the API is most commonly used — it is not an access restriction. Cross-origin browser requests are permitted (`Access-Control-Allow-Origin: *`).
+
+Bearer tokens are attached explicitly to each request via the `Authorization` header. The API uses no cookies, no HTTP Basic auth, and no other ambient credentials — so a bearer token can't be exposed through a cross-origin read the way a session cookie can, because the browser never attaches it automatically. CORS is therefore not a credential-protection mechanism here, and we don't treat it as one. Keeping tokens safe is the client's responsibility: don't embed long-lived secrets in client-side code, and rely on refresh-token rotation to keep access tokens short-lived (15 minutes).
 
 **Session JWTs are also accepted** on most public endpoints (same `Authorization: Bearer <jwt>` form), because the web app and the API share a router. A session JWT is effectively unscoped for its short lifetime and is only convenient for ad-hoc UI-driven requests; integrators should use the `client_credentials` flow so that auth is durable and scope-limited. (One exception: `/orgs/me` accepts API-credential access tokens only — see [Private endpoints → Response shape: `/orgs/me`](./private-endpoints#orgs-me).)
 
