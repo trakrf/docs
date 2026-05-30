@@ -23,7 +23,7 @@ The declared `maximum` is the **JS-safe-integer cap** (2⁵³−1), not a storag
 
 ## Why int64, and why the 2⁵³−1 cap
 
-The surrogate `id` is a high-entropy, server-assigned integer — **globally unique across every resource type** (no two rows, of any type, share an `id`), **opaque** (don't parse it, order by it, or infer a count or creation time from it), and **permanent** (it never changes and is never reused — there is no hard delete, and the shared id sequence is never reseeded). It is scattered across a wide range rather than monotonically assigned from `1`. Declaring `int64` from v1 launch means a future widening of the id space is a non-event for typed clients — they are already typed wide enough:
+The surrogate `id` is a high-entropy, server-assigned integer — **globally unique across every resource type** (no two rows, of any type, share an `id`), **opaque** (don't parse it, order by it, or infer a count or creation time from it), and **permanent** (it never changes and is never reused — the API never hard-deletes, and the shared id sequence is never reseeded). It is scattered across a wide range rather than monotonically assigned from `1`. Declaring `int64` from v1 launch means a future widening of the id space is a non-event for typed clients — they are already typed wide enough:
 
 - Java / Kotlin clients surface ids as `Long`.
 - C# clients surface `long`.
