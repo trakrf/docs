@@ -55,9 +55,18 @@ This is the conventional REST shape and the URL stays valid even if the asset's 
 
 ### Numeric `id` is a surrogate key
 
-Numeric `id` values are surrogate keys — server-assigned, high-entropy, and **globally unique across every resource type**: no two rows, whether two assets or an asset and a tag, ever share an `id`. They are **opaque** (don't parse an `id`, order by it, or infer a count or creation time from it) and **permanent** (an `id` never changes and is never reused — the API never hard-deletes, and ids are minted from a single shared sequence that is never reseeded). The API still carries each id with its entity context — by URL position (`/assets/{asset_id}`, `/locations/{location_id}/tags/{tag_id}`) or query-parameter name (`location_id`, `parent_id`) — and client code matches ids to their entity type as standard surrogate-key discipline. Use `id` as your durable foreign key when you mirror TrakRF data.
+Numeric `id` values are surrogate keys — server-assigned, high-entropy, and **globally unique across every resource type**: no two rows, whether two assets or an asset and a tag, ever share an `id`. They are **opaque** (don't parse an `id`, order by it, or infer a count or creation time from it) and **permanent** (an `id` never changes and is never reused — the API never hard-deletes, and ids are minted from a single shared sequence that is never reseeded). The API still carries each id with its entity context — by URL position (`/assets/{asset_id}`, `/locations/{location_id}/tags/{tag_id}`) or query-parameter name (`location_id`, `parent_id`) — and client code matches ids to their entity type as standard surrogate-key discipline. `id` is a stable internal anchor — server-assigned, opaque, and not arbitrarily rekeyed — which makes it useful as a sync/reconciliation handle when you mirror TrakRF data. It is **not** your business foreign key: key your own system of record on the natural key (`external_key`) where one exists, and reach for `id` only as the durable handle when no natural key is available. See [Joining your system of record](#joining-your-system-of-record) for the per-resource rule.
 
 Every surrogate id is declared **int64** (`format: int64`, `maximum: 9007199254740991`) on the spec — the same type and ceiling on response bodies, request bodies, `_id` query filters, and path parameters. The `maximum` is JavaScript's `Number.MAX_SAFE_INTEGER` (2⁵³−1), so every admissible id is exactly representable in a `number`-typed client. See [ID format: int64 wire, int64 runtime](./id-format) for the rationale, the id-boundary error envelopes, and what it means for typed-client codegen.
+
+### Joining your system of record {#joining-your-system-of-record}
+
+When you mirror TrakRF data into your own system, join on the **natural key**, not the surrogate `id`:
+
+- **Assets and locations** — join on `external_key`, your own handle (a SKU, an asset tag, an ERP code, a facility code). It is the value your warehouse software, ERP, or operator already recognizes, and it round-trips on every response.
+- **General rule** — join on a stable natural key where one exists; where none does, `id` is the durable handle. Use `id` as a reconciliation anchor in that case, not as a business key you export into other systems.
+
+The public integration surface is assets, locations, and tags. Users and organization administration are not public joinable resources in v1 — an integration authenticates as a single organization through its API key (see [`/orgs/me`](./private-endpoints#orgs-me)), so there is no cross-org or cross-user join to maintain.
 
 ## Natural-key lookup uses `?external_key=`
 
