@@ -34,6 +34,10 @@ pnpm lint         # Linting
 5. Use conventional commits: `feat:`, `fix:`, `docs:`, `chore:`
 6. Prefer incremental commits over amending
 
+## Worktrees
+
+Use **`.claude/worktrees/`** for git worktrees — this is the canonical location across all trakrf repos. Claude Code's native worktree tool (`EnterWorktree`) writes there and cannot be redirected, so the convention matches the tool rather than fighting it. The directory is gitignored (narrowly — the rest of `.claude/` stays tracked). Do not reintroduce a root-level `.worktrees/` or a symlink bridge.
+
 ## Style & Conventions
 
 - **TypeScript** for any config or custom components
