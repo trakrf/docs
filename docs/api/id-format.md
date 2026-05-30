@@ -23,13 +23,17 @@ The declared `maximum` is the **JS-safe-integer cap** (2⁵³−1), not a storag
 
 ## Why int64, and why the 2⁵³−1 cap
 
-The TrakRF id namespace is randomly distributed across a wide range, not monotonically assigned from `1`. Declaring `int64` from v1 launch means a future widening of the id space is a non-event for typed clients — they are already typed wide enough:
+The surrogate `id` is a high-entropy, server-assigned integer — **globally unique across every resource type** (no two rows, of any type, share an `id`), **opaque** (don't parse it, order by it, or infer a count or creation time from it), and **permanent** (it never changes and is never reused — there is no hard delete, and the shared id sequence is never reseeded). It is scattered across a wide range rather than monotonically assigned from `1`. Declaring `int64` from v1 launch means a future widening of the id space is a non-event for typed clients — they are already typed wide enough:
 
 - Java / Kotlin clients surface ids as `Long`.
 - C# clients surface `long`.
 - TypeScript clients hold ids in `number`, exact up to 2⁵³−1 — exactly the declared `maximum`, so a value the spec admits is always a value the client can represent.
 
 The `maximum: 9007199254740991` ceiling is the load-bearing half of that promise on the JS side: it guarantees the spec never admits an id a `number`-typed client would round. A client that synthesizes ids on its own side (uncommon — ids are server-assigned) should stay within the same bound.
+
+:::note `id` is not `external_key`
+This page is about the surrogate `id`. The string `external_key` (`ASSET-NNNN` / `LOC-NNN`) is a separate, per-organization handle with its own allocation — dense and low-valued, minted as `MAX(live key) + 1`. A dense or low-numbered `external_key` implies nothing about `id`; the two are allocated independently. See [Resource identifiers → `external_key` is optional on create](./resource-identifiers#external_key-is-optional-on-create).
+:::
 
 ## Error envelopes at the id boundaries
 
