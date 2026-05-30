@@ -44,9 +44,9 @@ BB1, BB2, and BB3 carry identical, deterministic data. You can assert against li
 **Assets — 27 per org:**
 
 - 11 OC-origin (`ASSET-0001` … `ASSET-0011`), 9 CD-origin under the `ASSET-NNNN` namespace above the OC ceiling (`ASSET-0012` … `ASSET-0020`), and 7 CD-origin under the `CD-ASSET-NNNN` namespace (`CD-ASSET-0001` … `CD-ASSET-0007` — the rows that would have collided with OC). 11 + 9 + 7 = 27.
-- Every asset has `location_id` resolved from scan history — no asset on this fixture reads as `location_id: null`.
+- Every asset has a resolvable current location, but location is **not** a field on the asset object — it is resolved from scan history via the asset-locations report (`GET /api/v1/reports/asset-locations`) and per-asset history (`GET /api/v1/assets/{asset_id}/history`), both gated `tracking:read`. No fixture asset reads as location-unknown.
 
-**Scans:** populated. Each org carries ~25 `asset_scans` per asset over a 90-day window (~675 per org), and the materialized `location_id` on every asset reflects the most-recent scan. `tracking:read` coverage is in-scope — exercise both `/api/v1/assets/{asset_id}/history` and `/api/v1/reports/asset-locations` with literal-value assertions.
+**Scans:** populated. Each org carries ~25 `asset_scans` per asset over a 90-day window (~675 per org), and the current location reported for every asset (via the scan-data endpoints above) reflects its most-recent scan. `tracking:read` coverage is in-scope — exercise both `/api/v1/assets/{asset_id}/history` and `/api/v1/reports/asset-locations` with literal-value assertions.
 
 **Tags:** not pre-seeded on fixture rows. Tags **are** part of the v1 public-API surface, though — the `POST`/`DELETE …/tags` subresources on both assets and locations, gated by the parent resource's `:write` scope. Don't skip the tags surface just because the fixture ships no tag rows: exercise it by creating your own (e.g. `POST /api/v1/assets/{asset_id}/tags`) and round-tripping.
 
