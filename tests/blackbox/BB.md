@@ -206,7 +206,7 @@ Begin FINDINGS.md with a context block recording:
 - Environment URL (`API_TEST_APP_URL` value)
 - Docs URL (`API_TEST_DOCS_URL` value)
 - Track (mint-key or pre-key) and — for pre-key — the value of `$BB_ORG` and `$BB_ORG_ID`
-- Spec/build version — fetch `$API_TEST_DOCS_URL/health.json` and record what it returns. If `/health.json` 404s, that's a finding; record what you did get.
+- Spec/build version — fetch `$API_TEST_APP_URL/health.json` (the app origin carries `version` + `spec_refreshed_at`; the docs origin's `/health.json` carries only the docs build stamp). Record what it returns. If `/health.json` 404s, that's a finding; record what you did get.
 - HTTP client(s) used in the exploratory pass (curl, Python `requests`, Node `fetch`, generated TypeScript client, etc.)
 - Codegen tool(s) and version(s) used in step 10 — list each separately
 - Date and time of the run (UTC)
