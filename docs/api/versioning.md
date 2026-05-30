@@ -32,6 +32,10 @@ Within `/api/v1/`, TrakRF commits to the following:
 
 Clients written against v1 will continue to work as TrakRF adds features. Clients that treat unknown response fields or unknown enum values as errors will not — so don't.
 
+### The surrogate `id` is an internal anchor, not your join key
+
+The `id` field is stable and won't be arbitrarily rekeyed, which makes it a usable sync / reconciliation anchor. It is **not** the integrator's business foreign key — don't key your own system of record on it. Join on the natural key (`external_key`) where one exists; see [Resource identifiers → Joining your system of record](./resource-identifiers#joining-your-system-of-record). The field-stability commitment above (names and types of returned fields don't change without a major version) is the contract that applies to `id`; TrakRF does not publish a permanence guarantee beyond it, because treating `id` as a durable external business key re-introduces the coupling the natural-key model is designed to avoid.
+
 ## Open vs closed enums
 
 Enums on the wire come in two flavors, and the difference matters for client code:
