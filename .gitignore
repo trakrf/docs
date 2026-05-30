@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
 
-# Git worktrees
-.worktrees/
+# Git worktrees — Claude Code's native worktree tool writes here; this is the
+# canonical location (gitignored). Narrow ignore: the rest of .claude/ stays tracked.
+.claude/worktrees/
 
 # Docusaurus
 build/
