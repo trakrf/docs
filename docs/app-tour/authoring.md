@@ -120,6 +120,19 @@ browser's native Bluetooth pairing dialog is OS/browser chrome that Playwright c
 and the reader bridge bypasses pairing entirely (it connects without ever showing that dialog).
 The current image is cropped from an earlier, pre-bridge capture rather than reshot.
 
+### Verify row counts before trusting a capture
+
+In local dev, React's StrictMode double-invokes an effect on the Assets screen that appends to
+state instead of replacing it, so the page renders **every row twice** — 16 rows and a
+`Total Assets 16` tile against a fixture of 8. Production builds don't do this, so a screenshot
+taken this way shows something no customer will ever see.
+
+It is easy to miss, and it contaminated four images the first time this tour was captured,
+including the dimmed background behind the create-asset modal. Before capturing any page that
+lists data, check the visible count against the fixture: **8 assets, 5 locations**. If the
+numbers are doubled, temporarily remove `React.StrictMode` from
+`platform/frontend/src/main.tsx`, recapture, and restore it afterwards.
+
 ### Locate has a Start button
 
 Locate exposes an on-screen **Start** button once a reader is connected — it is not
