@@ -10,25 +10,16 @@ interface TourEntry {
 
 const ENTRIES: TourEntry[] = [
   {
-    id: "home",
-    title: "Home",
-    description: "Main dashboard with quick access to all features.",
-  },
-  {
-    id: "inventory",
-    title: "Inventory",
-    description: "View scanned items and check what's missing from a list.",
+    id: "scan",
+    title: "Scan",
+    description:
+      "Read RFID tags or barcodes and reconcile them against a list.",
   },
   {
     id: "locate",
     title: "Locate",
     description:
       "Find a specific item by walking the area with a handheld reader.",
-  },
-  {
-    id: "barcode",
-    title: "Barcode",
-    description: "Use a phone camera to scan regular barcodes.",
   },
   {
     id: "assets",
@@ -49,6 +40,26 @@ const ENTRIES: TourEntry[] = [
     id: "settings",
     title: "Settings",
     description: "Configure device and application settings.",
+  },
+  {
+    id: "readers",
+    title: "Readers",
+    description: "Register and manage fixed RFID readers.",
+  },
+  {
+    id: "live-feed",
+    title: "Live feed",
+    description: "Watch tag reads arrive in real time.",
+  },
+  {
+    id: "outputs",
+    title: "Outputs",
+    description: "Configure output devices triggered by geofence events.",
+  },
+  {
+    id: "geofence-defaults",
+    title: "Geofence defaults",
+    description: "Org-wide geofence tuning applied to every portal.",
   },
   {
     id: "help",

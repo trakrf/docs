@@ -1,18 +1,18 @@
 ---
-sidebar_position: 2
-title: Inventory
-description: View scanned items and check what's missing from a list.
+sidebar_position: 1
+title: Scan
+description: Read RFID tags or barcodes and reconcile them against a list.
 ---
 
-# Inventory
+# Scan
 
 ## Desktop
 
-![Inventory desktop screenshot](/img/app-tour/inventory-desktop.png)
+![Scan desktop screenshot](/img/app-tour/scan-desktop.png)
 
 ## Mobile
 
-![Inventory mobile screenshot](/img/app-tour/inventory-mobile.png)
+![Scan mobile screenshot](/img/app-tour/scan-mobile.png)
 
 ## What this page does
 

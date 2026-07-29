@@ -48,6 +48,19 @@ const config: Config = {
     locales: ["en"],
   },
 
+  plugins: [
+    [
+      "@docusaurus/plugin-client-redirects",
+      {
+        redirects: [
+          { from: "/app-tour/inventory", to: "/docs/app-tour/scan" },
+          { from: "/app-tour/home", to: "/docs/app-tour/scan" },
+          { from: "/app-tour/barcode", to: "/docs/app-tour/scan" },
+        ],
+      },
+    ],
+  ],
+
   presets: [
     [
       "classic",
