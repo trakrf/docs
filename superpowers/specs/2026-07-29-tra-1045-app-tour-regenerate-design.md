@@ -124,13 +124,15 @@ database and backend and runs migrations). `authoring.md` documents this, includ
 requirement to run the commit that ships in TRA-1046 so the docs match what users get.
 
 Launch is `just frontend dev-bridge` (→ `VITE_BLE_BRIDGE_ENABLED=true node scripts/dev-bridge.js`),
-which connects the app to the physical reader through the bridge. One prerequisite is easy to
-miss: `scripts/dev-bridge.js:34` resolves the host as
-`BLE_MCP_HOST || BLE_MCP_WS_HOST || 'localhost'`, and there is currently no
-`frontend/.env.local`, so a bare invocation dials `localhost:8080` and fails. Capturing against
-a bridge on another machine requires `BLE_MCP_HOST=<bridge-host>` in the environment or in
-`frontend/.env.local`. The `public/web-ble-mock.bundle.js` symlink into `node_modules` is
-already present, so injection needs no setup.
+which connects the app to the physical reader through the bridge. This needs no additional
+setup: `scripts/dev-bridge.js:34` resolves `BLE_MCP_HOST || BLE_MCP_WS_HOST || 'localhost'`, and
+`BLE_MCP_HOST` is already set in `~/platform/.env.local` (loaded by `.envrc` via
+`dotenv_if_exists`, so every recipe in the platform tree inherits it). The
+`public/web-ble-mock.bundle.js` symlink into `node_modules` is likewise already in place.
+
+Bridge settings live at the platform root, not in `frontend/.env.local` — the latter does not
+exist. Alongside the host, the root file sets `BLE_MCP_WS_PORT`, `BLE_MCP_HTTP_PORT`,
+`BLE_MCP_HTTP_TOKEN`, and `BLE_DEVICE_NAME=CS108`.
 
 The sidebar renders a version string, which will differ in local dev. Confirm what it shows and,
 if it reads as a dev artifact, note it rather than pretending otherwise.
