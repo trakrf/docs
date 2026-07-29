@@ -63,7 +63,7 @@ With an asset registered and a reader paired (see [Reader Setup](./reader-setup)
 
 1. Open **Inventory** from the left nav.
 
-   ![Inventory page ready to scan — device connected (89%), empty Scanned list, full toolbar, empty footer stats](/img/user-guide/inventory-connected-idle.png)
+   ![Inventory page ready to scan — device connected (89%), empty Scanned list, full toolbar, empty footer stats](/img/user-guide/scan-connected-idle.png)
 
 2. Confirm the device-status chip in the top-right reads **Connected**, not **Disconnected**.
    - On a supported browser with no paired reader, the banner reads "Connect your device to start scanning" and the **Connect Device** button is live.
@@ -75,7 +75,7 @@ With an asset registered and a reader paired (see [Reader Setup](./reader-setup)
    - **Not Listed** — tags seen that don't match anything expected.
    - **Total Scanned** — unique EPCs seen this session.
    - **Saveable** — of those, how many match a registered asset.
-     ![Inventory mid-scan — 12 tags captured at Bay 7 Shelf 1 via location tag, per-row signal and count](/img/user-guide/inventory-scanning.png)
+     ![Inventory mid-scan — 12 tags captured at Bay 7 Shelf 1 via location tag, per-row signal and count](/img/user-guide/scan-scanning.png)
 
 5. Release the trigger when you've covered the area. The list stays on screen; you can resume by pressing the trigger again.
 6. Use the top toolbar as needed:
