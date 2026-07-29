@@ -53,6 +53,9 @@ const config: Config = {
       "@docusaurus/plugin-client-redirects",
       {
         redirects: [
+          { from: "/docs/app-tour/inventory", to: "/docs/app-tour/scan" },
+          { from: "/docs/app-tour/home", to: "/docs/app-tour/scan" },
+          { from: "/docs/app-tour/barcode", to: "/docs/app-tour/scan" },
           { from: "/app-tour/inventory", to: "/docs/app-tour/scan" },
           { from: "/app-tour/home", to: "/docs/app-tour/scan" },
           { from: "/app-tour/barcode", to: "/docs/app-tour/scan" },
