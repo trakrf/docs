@@ -70,7 +70,7 @@ With an asset registered and a reader paired (see [Reader Setup](./reader-setup)
    - On an unsupported browser (no Web BLE), the banner lists the supported browsers instead and **Connect Device** is disabled — see [Reader Setup: browser support](./reader-setup#browser-support).
 3. Pick a scan mode next to the **Scanned** counter. **RFID** sweeps every tag in range on each pass; **Barcode** reads a single code at a time — whichever the reader is aimed at.
 
-   ![Scan toolbar in RFID mode with a populated Scanned list — mixed recognized assets and raw EPCs, Scans and Assets footer tiles](/img/user-guide/scan-mode-rfid.png)
+   ![Scan toolbar in RFID mode with RFID selected and 13 tags scanned — recognized assets such as Toolbox and Camera listed by name alongside raw EPCs, each with signal strength and read count](/img/user-guide/scan-mode-rfid.png)
 
    ![Scan toolbar in Barcode mode, idle — Barcode selected, empty Scanned list, full toolbar including Save](/img/user-guide/scan-mode-barcode.png)
 
