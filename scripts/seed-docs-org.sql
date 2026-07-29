@@ -55,28 +55,35 @@ BEGIN
         v_org, 'LOC-LAB', 'Lab', 'Test bench',
         NULL, now(), NULL, TRUE, '{}'::jsonb, '[]'::jsonb);
 
-    -- ASSET-CAMERA carries the physical bench reader's test tag (10021) so a
-    -- live scan resolves to a named asset instead of showing as an unknown
-    -- EPC. Every other asset keeps a placeholder EPC.
+    -- Physical bench tags are sequential 10018-10023 (six tags). In BARCODE
+    -- scan mode the reader reads 10021 only; in RFID mode it reads all six.
+    -- Five of the six are deliberately registered here so a live scan
+    -- exercises all five Scan tiles at once:
+    --   - 10018-10022 each resolve to a registered asset below -> Found.
+    --   - 10023 is intentionally left UNregistered to any asset -> Extra.
+    --   - ASSET-PALLET-JACK, ASSET-MICROSCOPE, and ASSET-LABEL-PRINTER keep
+    --     placeholder EPCs the bench reader will never produce -> Missing.
+    -- Do not "fix" 10023 by registering it — that would remove the Extra
+    -- tile's only example.
     PERFORM trakrf.create_asset_with_tags(v_org, 'ASSET-CAMERA', 'Camera',
         'Canon EOS R6 body', now(), NULL, TRUE, '{}'::jsonb,
         '[{"type":"rfid","value":"10021"}]'::jsonb);
 
     PERFORM trakrf.create_asset_with_tags(v_org, 'ASSET-LAPTOP', 'Laptop',
         'ThinkPad X1 Carbon', now(), NULL, TRUE, '{}'::jsonb,
-        '[{"type":"rfid","value":"E280689400005015C9E1B202"}]'::jsonb);
+        '[{"type":"rfid","value":"10018"}]'::jsonb);
 
     PERFORM trakrf.create_asset_with_tags(v_org, 'ASSET-TABLET', 'Tablet',
         'iPad Pro 11-inch', now(), NULL, TRUE, '{}'::jsonb,
-        '[{"type":"rfid","value":"E280689400005015C9E1B203"}]'::jsonb);
+        '[{"type":"rfid","value":"10019"}]'::jsonb);
 
     PERFORM trakrf.create_asset_with_tags(v_org, 'ASSET-PROJECTOR', 'Projector',
         'Epson conference room projector', now(), NULL, TRUE, '{}'::jsonb,
-        '[{"type":"rfid","value":"E280689400005015C9E1B204"}]'::jsonb);
+        '[{"type":"rfid","value":"10020"}]'::jsonb);
 
     PERFORM trakrf.create_asset_with_tags(v_org, 'ASSET-TOOLBOX', 'Toolbox',
         'Field service toolkit', now(), NULL, TRUE, '{}'::jsonb,
-        '[{"type":"rfid","value":"E280689400005015C9E1B205"}]'::jsonb);
+        '[{"type":"rfid","value":"10022"}]'::jsonb);
 
     PERFORM trakrf.create_asset_with_tags(v_org, 'ASSET-PALLET-JACK', 'Pallet Jack',
         'Electric pallet jack', now(), NULL, TRUE, '{}'::jsonb,
