@@ -20,4 +20,4 @@ Live feed shows every tag a connected reader can see, matched to an asset or not
 
 ## How it fits in the app
 
-Where **Scan** turns reads into a checklist against a saved list, Live feed is a diagnostic view of raw signal: read counts and RSSI per tag, useful for placing readers, tuning antenna coverage, or confirming a newly registered reader (from **Readers**) is actually publishing.
+Where **Scan** turns reads into a checklist against an uploaded CSV, Live feed is a diagnostic view of raw signal: read counts and RSSI per tag, useful for placing readers, tuning antenna coverage, or confirming a newly registered reader (from **Readers**) is actually publishing.

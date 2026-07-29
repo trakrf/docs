@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 2
 title: Locate
 description: Find a specific item by walking the area with a handheld reader.
 ---

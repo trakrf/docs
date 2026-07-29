@@ -63,25 +63,28 @@ With an asset registered and a reader paired (see [Reader Setup](./reader-setup)
 
 1. Open **Scan** from the left nav.
 
-   ![Scan page ready to scan — device connected (89%), empty Scanned list, full toolbar, empty footer stats](/img/user-guide/scan-connected-idle.png)
+   ![Scan page ready to scan — device connected (75%), empty Scanned list, full toolbar, empty footer stats](/img/user-guide/scan-connected-idle.png)
 
 2. Confirm the device-status chip in the top-right reads **Connected**, not **Disconnected**.
    - On a supported browser with no paired reader, the banner reads "Connect your device to start scanning" and the **Connect Device** button is live.
    - On an unsupported browser (no Web BLE), the banner lists the supported browsers instead and **Connect Device** is disabled — see [Reader Setup: browser support](./reader-setup#browser-support).
-3. (Optional) Click **Select** under "No location tag detected" to tell TrakRF which location this scan represents. Scanning a location tag with the reader does the same thing automatically.
-4. Press and hold the handheld's trigger. Tags in range stream into the **Scanned** list in real time. The footer cards update live:
-   - **Found** — tags that match an expected list (only populated if you've uploaded a CSV of expected tags).
-   - **Missing** — tags on the expected list that haven't been seen yet.
-   - **Extra** — tags seen that weren't on the list.
-   - **Scans** — unique EPCs seen this session.
-   - **Assets** — of those, how many match a registered asset.
-     ![Scan mid-scan — 12 tags captured at Bay 7 Shelf 1 via location tag, per-row signal and count](/img/user-guide/scan-scanning.png)
+3. Pick a scan mode next to the **Scanned** counter. **RFID** sweeps every tag in range on each pass; **Barcode** reads a single code at a time — whichever the reader is aimed at.
 
-5. Release the trigger when you've covered the area. The list stays on screen; you can resume by pressing the trigger again.
-6. Use the top toolbar as needed:
+   ![Scan toolbar in RFID mode with a populated Scanned list — mixed recognized assets and raw EPCs, Scans and Assets footer tiles](/img/user-guide/scan-mode-rfid.png)
+
+   ![Scan toolbar in Barcode mode, idle — Barcode selected, empty Scanned list, full toolbar including Save](/img/user-guide/scan-mode-barcode.png)
+
+4. (Optional) Click **Select** under "No location tag detected" to tell TrakRF which location this scan represents. Scanning a location tag with the reader does the same thing automatically.
+5. Press and hold the handheld's trigger. Tags in range stream into the **Scanned** list in real time. By default the footer shows two cards:
+   - **Scans** — unique tags seen this session.
+   - **Assets** — of those, how many match a registered asset.
+
+     ![Scan mid-scan — 13 tags in the results list, a mix of recognized assets and raw EPCs, per-row signal and count](/img/user-guide/scan-scanning.png)
+
+6. Release the trigger when you've covered the area. The list stays on screen; you can resume by pressing the trigger again.
+7. Use the top toolbar as needed:
    - **Start** — software-trigger equivalent of holding the hardware trigger; handy for bench testing or when you want hands-free scanning.
-   - **Sample** — shorter burst; useful for spot checks.
-   - **Reconcile** — marks the current scan as a reconciliation against an expected list.
+   - **Reconcile** — pick a CSV of expected tag or asset identifiers to check the current scan against. Three more footer cards appear once it's loaded: **Found** (assets matched), **Missing** (assets on the CSV that haven't been seen), and **Extra** (scanned tags not in the CSV).
    - **Clear** — wipes the in-progress list without saving.
    - **Off / On** — audio feedback toggle.
 
