@@ -99,3 +99,45 @@ BEGIN
 
     RAISE NOTICE 'Seeded org % with 5 locations and 8 assets', v_org;
 END $$;
+
+-- Second org, "TrakRF Docs Empty," for the empty-state screenshots (Assets and
+-- Locations with zero rows) that TrakRF Docs's seeded 8 assets / 5 locations
+-- make unreachable there. Reuses the same admin user as TrakRF Docs so the
+-- docs-tour account can switch between the two orgs from the UI's own org
+-- switcher, exactly as it was created by hand during the first capture pass.
+--
+-- Created purely in SQL (no UI signup): mirrors what
+-- backend/internal/services/auth/auth.go's Signup does for a personal org — an
+-- organizations row with owner_user_id set, plus an org_users admin membership
+-- row — but leaves subscription_expires_at NULL (perpetual), matching the
+-- internal CreateOrgWithAdmin path rather than the expiring self-service trial
+-- path, since this fixture must not go stale. No capabilities are granted and
+-- no locations/assets are created — the org's entire purpose is to stay empty.
+DO $$
+DECLARE
+    v_owner_user BIGINT;
+    v_empty_org  BIGINT;
+BEGIN
+    IF EXISTS (SELECT 1 FROM trakrf.organizations
+                WHERE name = 'TrakRF Docs Empty' AND deleted_at IS NULL) THEN
+        RAISE NOTICE 'TrakRF Docs Empty already present — skipping';
+        RETURN;
+    END IF;
+
+    SELECT owner_user_id INTO v_owner_user
+      FROM trakrf.organizations
+     WHERE name = 'TrakRF Docs' AND deleted_at IS NULL;
+
+    IF v_owner_user IS NULL THEN
+        RAISE EXCEPTION 'Org "TrakRF Docs" not found — run this script''s first block (or sign up through the UI) before seeding the empty org';
+    END IF;
+
+    INSERT INTO trakrf.organizations (name, identifier, owner_user_id)
+    VALUES ('TrakRF Docs Empty', 'trakrf-docs-empty', v_owner_user)
+    RETURNING id INTO v_empty_org;
+
+    INSERT INTO trakrf.org_users (org_id, user_id, role)
+    VALUES (v_empty_org, v_owner_user, 'admin');
+
+    RAISE NOTICE 'Seeded empty org % (owner %) with 0 locations and 0 assets', v_empty_org, v_owner_user;
+END $$;
