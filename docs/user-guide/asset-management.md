@@ -1,12 +1,12 @@
 ---
 sidebar_position: 2
 title: Asset Management
-description: Register assets, scan them, save an inventory, and review history.
+description: Register assets, scan them, save the results, and review history.
 ---
 
 # Asset Management
 
-This walkthrough covers the end-to-end asset flow: creating a location, registering an asset with an RFID tag, running a scan session on the **Inventory** screen, saving the results, and reviewing them in **Reports**.
+This walkthrough covers the end-to-end asset flow: creating a location, registering an asset with an RFID tag, running a scan session on the **Scan** screen, saving the results, and reviewing them in **Reports**.
 
 If you haven't paired a handheld reader yet, finish [Reader Setup](./reader-setup) first — steps 3–4 below require a connected reader.
 
@@ -54,16 +54,16 @@ The asset now appears in the list. The footer cards (**Total Assets**, **Active*
 ![Populated Assets list — table with Asset ID, Name, Location, Tags, Status, Actions columns and a Share action](/img/user-guide/assets-populated.png)
 
 :::tip Bulk-import via scan
-If you have a pile of already-tagged items and no spreadsheet of EPCs, it's often faster to scan them first (step 3) and then use **Assets** to attach names to the tags you captured. The scanner doesn't require an asset record to read a tag — it'll just show the raw EPC under "Not Listed" until you register it.
+If you have a pile of already-tagged items and no spreadsheet of EPCs, it's often faster to scan them first (step 3) and then use **Assets** to attach names to the tags you captured. The scanner doesn't require an asset record to read a tag — it'll just show the raw EPC under **Extra** until you register it.
 :::
 
 ## 3. Run a scan session
 
 With an asset registered and a reader paired (see [Reader Setup](./reader-setup)), you're ready to scan.
 
-1. Open **Inventory** from the left nav.
+1. Open **Scan** from the left nav.
 
-   ![Inventory page ready to scan — device connected (89%), empty Scanned list, full toolbar, empty footer stats](/img/user-guide/scan-connected-idle.png)
+   ![Scan page ready to scan — device connected (89%), empty Scanned list, full toolbar, empty footer stats](/img/user-guide/scan-connected-idle.png)
 
 2. Confirm the device-status chip in the top-right reads **Connected**, not **Disconnected**.
    - On a supported browser with no paired reader, the banner reads "Connect your device to start scanning" and the **Connect Device** button is live.
@@ -72,10 +72,10 @@ With an asset registered and a reader paired (see [Reader Setup](./reader-setup)
 4. Press and hold the handheld's trigger. Tags in range stream into the **Scanned** list in real time. The footer cards update live:
    - **Found** — tags that match an expected list (only populated if you've uploaded a CSV of expected tags).
    - **Missing** — tags on the expected list that haven't been seen yet.
-   - **Not Listed** — tags seen that don't match anything expected.
-   - **Total Scanned** — unique EPCs seen this session.
-   - **Saveable** — of those, how many match a registered asset.
-     ![Inventory mid-scan — 12 tags captured at Bay 7 Shelf 1 via location tag, per-row signal and count](/img/user-guide/scan-scanning.png)
+   - **Extra** — tags seen that weren't on the list.
+   - **Scans** — unique EPCs seen this session.
+   - **Assets** — of those, how many match a registered asset.
+     ![Scan mid-scan — 12 tags captured at Bay 7 Shelf 1 via location tag, per-row signal and count](/img/user-guide/scan-scanning.png)
 
 5. Release the trigger when you've covered the area. The list stays on screen; you can resume by pressing the trigger again.
 6. Use the top toolbar as needed:
@@ -107,11 +107,11 @@ Saving is what promotes a scan from "live on my screen" to "part of the audit tr
 
 ## Find a specific tag
 
-Inventory answers "what's here?" **Locate** answers "where is this one?" Paste or type the EPC of the tag you're hunting for (or jump over from an asset's row action) and TrakRF turns the reader into a metal detector: a signal-strength gauge, peak/average stats, and an audio-feedback option whose pitch **and** beep rate both climb as you close the distance.
+**Scan** answers "what's here?" **Locate** answers "where is this one?" Paste or type the EPC of the tag you're hunting for (or jump over from an asset's row action) and TrakRF turns the reader into a metal detector: a signal-strength gauge, peak/average stats, and an audio-feedback option whose pitch **and** beep rate both climb as you close the distance.
 
 ![Locate screen searching for EPC 10019 — signal-strength gauge reading -31 dBm, stats panel, audio feedback on](/img/user-guide/locate-searching.png)
 
-Use it for single-item retrieval after an inventory scan has flagged something as missing or misplaced.
+Use it for single-item retrieval after a scan has flagged something as missing or misplaced.
 
 ## What's next
 
