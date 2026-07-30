@@ -706,4 +706,4 @@ Scan-event-derived data is projected through two endpoints:
 
 Both are gated by the `tracking:read` scope (see [Authentication → Scopes](./authentication#scopes)) — the same scope, because both are projections of the same underlying event stream.
 
-When [webhooks](./webhooks) ship, events will fire on scan events but the payloads address **assets and locations**, not scan events directly — there's no scan-event id to subscribe to or look up. An ingestor planning a scan-driven workflow should think in terms of asset history and current location, not in terms of a scan-event resource.
+[Webhooks](./webhooks) follow the same rule: an `asset.moved` event is triggered by a scan, but its payload addresses **assets and locations**, not scan events directly — there's no scan-event id to subscribe to or look up. An ingestor planning a scan-driven workflow should think in terms of asset history and current location, not in terms of a scan-event resource.

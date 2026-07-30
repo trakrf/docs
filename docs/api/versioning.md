@@ -63,7 +63,7 @@ These are designed to grow:
 
 The `x-extensible-enum: true` annotation captures intent but is not honored by today's mainstream OpenAPI codegen. `openapi-typescript@7.x` and `openapi-generator-cli` (Go, Java, Python targets among others) emit these as closed unions or fixed enum types; generated clients reject unknown values at parse time. Treat the annotation as documentation of TrakRF's stability contract, not as a generator hint — write client code against the [unknown-value pattern below](#how-to-handle-unknown-values-in-client-code), and bypass the generated enum type when surfacing the raw `type` / `code` value to your own logic.
 
-**Scope strings are not an enum.** The scopes on an API-key response (`scopes` on `GET /orgs/me`, the scope columns in the UI) are a free-form array of strings — not a wire enum, so they carry no `x-extensible-enum` marker and aren't a closed set either. TrakRF may introduce new scopes (e.g. `reports:read`, `webhooks:write`) in any v1 release, so apply the same discipline: clients that display the scopes available to a key must render unknown scope strings as-is rather than filtering them out.
+**Scope strings are not an enum.** The scopes on an API-key response (`scopes` on `GET /orgs/me`, the scope columns in the UI) are a free-form array of strings — not a wire enum, so they carry no `x-extensible-enum` marker and aren't a closed set either. TrakRF may introduce new scopes (e.g. `reports:read`, `alarms:write`) in any v1 release, so apply the same discipline: clients that display the scopes available to a key must render unknown scope strings as-is rather than filtering them out.
 
 ### How to handle unknown values in client code
 

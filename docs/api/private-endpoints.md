@@ -18,19 +18,24 @@ For server-to-server or scripted integrations, mint a `client_id`/`client_secret
 
 ## Endpoint list
 
-| Endpoint                       | Method(s) | Used by                                           | Status                      | Classification |
-| ------------------------------ | --------- | ------------------------------------------------- | --------------------------- | -------------- |
-| `/api/v1/auth/login`           | POST      | SPA login form                                    | Internal                    | Internal       |
-| `/api/v1/auth/signup`          | POST      | SPA signup form                                   | Internal                    | Internal       |
-| `/api/v1/auth/forgot-password` | POST      | SPA password recovery                             | Internal                    | Internal       |
-| `/api/v1/auth/reset-password`  | POST      | SPA password recovery                             | Internal                    | Internal       |
-| `/api/v1/auth/accept-invite`   | POST      | SPA invite acceptance                             | Internal                    | Internal       |
-| `/api/v1/users/me`             | GET       | SPA user context                                  | Internal                    | Internal       |
-| `/api/v1/users/me/current-org` | POST      | SPA organization switcher                         | Internal                    | Internal       |
-| `/api/v1/orgs`                 | GET       | SPA organization picker                           | Internal                    | Internal       |
-| `/api/v1/orgs/{id}`            | GET       | SPA organization detail                           | Internal                    | Internal       |
-| `/api/v1/assets/bulk`          | POST      | SPA asset bulk-CSV upload (`multipart/form-data`) | Internal                    | Internal       |
-| `/api/v1/orgs/me`              | GET       | API-key health check                              | Public (see [`/api`](/api)) | Public         |
+| Endpoint                             | Method(s)          | Used by                                           | Status                      | Classification |
+| ------------------------------------ | ------------------ | ------------------------------------------------- | --------------------------- | -------------- |
+| `/api/v1/auth/login`                 | POST               | SPA login form                                    | Internal                    | Internal       |
+| `/api/v1/auth/signup`                | POST               | SPA signup form                                   | Internal                    | Internal       |
+| `/api/v1/auth/forgot-password`       | POST               | SPA password recovery                             | Internal                    | Internal       |
+| `/api/v1/auth/reset-password`        | POST               | SPA password recovery                             | Internal                    | Internal       |
+| `/api/v1/auth/accept-invite`         | POST               | SPA invite acceptance                             | Internal                    | Internal       |
+| `/api/v1/users/me`                   | GET                | SPA user context                                  | Internal                    | Internal       |
+| `/api/v1/users/me/current-org`       | POST               | SPA organization switcher                         | Internal                    | Internal       |
+| `/api/v1/orgs`                       | GET                | SPA organization picker                           | Internal                    | Internal       |
+| `/api/v1/orgs/{id}`                  | GET                | SPA organization detail                           | Internal                    | Internal       |
+| `/api/v1/assets/bulk`                | POST               | SPA asset bulk-CSV upload (`multipart/form-data`) | Internal                    | Internal       |
+| `/api/v1/webhooks`                   | GET, POST          | SPA webhook registration (admin)                  | Internal                    | Internal       |
+| `/api/v1/webhooks/{webhook_id}`      | GET, PATCH, DELETE | SPA webhook management (admin)                    | Internal                    | Internal       |
+| `/api/v1/webhooks/{webhook_id}/test` | POST               | SPA **Send test event** (admin)                   | Internal                    | Internal       |
+| `/api/v1/orgs/me`                    | GET                | API-key health check                              | Public (see [`/api`](/api)) | Public         |
+
+Webhook management is internal by design rather than by omission: registering a delivery endpoint is an organization-settings action performed by an admin in the browser, not something an integrator's API key does. The delivery side — the payload TrakRF posts to your endpoint, and how to verify it — is fully documented in [Webhooks](./webhooks).
 
 ## Response shape: `/orgs/me` {#orgs-me}
 

@@ -11,6 +11,14 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
 
+### Webhooks: outbound `asset.moved` delivery {#webhooks-asset-moved}
+
+TrakRF can now push an event to an HTTPS endpoint you host when an asset is scanned at a location different from the one it was last seen at. One event type (`asset.moved`), one webhook per organization, registered from the app's **Account menu → Webhooks** rather than through the API — webhook management is an admin browser action and has no public API surface. This is additive; nothing about the existing polling endpoints changes.
+
+- **Delivery is at-most-once and delta-only.** A failed delivery is retried at roughly one and five seconds, jittered, then dropped — no dead-letter queue and no replay. Rescans at an unchanged location emit nothing at all, so this is a movement feed rather than a scan feed. Receivers must tolerate a missed event and reconcile periodically against `GET /api/v1/reports/asset-locations`.
+- **Ordering is not guaranteed and there is no `sequence` field.** Concurrent scans can deliver out of order; order by `occurred_at`. Duplicates are possible on the retry path — deduplicate on `delivery_id`.
+- **Every delivery is signed.** `X-TrakRF-Signature` carries an HMAC-SHA256 over `timestamp + "." + rawBody`, hex-encoded, with the signed timestamp in `X-TrakRF-Timestamp` so a captured delivery cannot be replayed indefinitely. The signature must be computed over the raw request bytes, not a re-serialized parse. See [Webhooks](./webhooks).
+
 ### `id` is globally unique and opaque; `external_key` auto-mint clarified to `MAX(live key) + 1` {#id-global-uniqueness-external-key-max-plus-one}
 
 Two identifier-model clarifications that sharpen the line between the surrogate `id` and the `external_key` handle. Pre-launch; no `v1.0.0`-or-later wire baseline to break. The `external_key` item is a docs correction only (service behavior unchanged); the `id` item reflects the move to a single shared id sequence landing under the hood.
