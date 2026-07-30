@@ -174,3 +174,39 @@ bb cr:
       exit 0
     fi
     exec claude --dangerously-skip-permissions "run blackbox tests per $wrapper"
+
+# ============================================================================
+# Infra Ops Passthrough
+# ============================================================================
+# Cluster, namespace, pod and CNPG knowledge lives in trakrf/infra. These
+# recipes only forward to its justfile — they never restate any of it.
+
+# Run an infra ops recipe (`just ops logs preview 1h`); bare `just ops` lists them
+ops *ARGS:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    infra_dir="${TRAKRF_INFRA_DIR:-}"
+    if [ -z "$infra_dir" ]; then
+        main_dir=$(git worktree list --porcelain 2>/dev/null \
+            | awk '/^worktree /{path=$2} /^branch refs\/heads\/main$/{print path; exit}')
+        [ -n "$main_dir" ] || main_dir="{{ justfile_directory() }}"
+        infra_dir="$(dirname "$main_dir")/infra"
+    fi
+    if [ ! -f "$infra_dir/justfile" ]; then
+        echo "ERROR: no infra checkout at $infra_dir" >&2
+        echo "       Set TRAKRF_INFRA_DIR to your trakrf/infra checkout." >&2
+        exit 1
+    fi
+    just --justfile "$infra_dir/justfile" {{ ARGS }}
+
+# Authenticate to GCP and point kubectl at the cluster (no-op if already valid)
+gcp-auth *ARGS:
+    @just ops gcp-auth {{ ARGS }}
+
+# Interactive psql on a CNPG primary: `just psql preview`
+psql *ARGS:
+    @just ops psql {{ ARGS }}
+
+# Follow backend logs: `just logs preview 1h`
+logs *ARGS:
+    @just ops logs {{ ARGS }}
