@@ -69,6 +69,27 @@ git commit -m "feat: add API reference section"
 git commit -m "fix: correct broken link in sidebar"
 ```
 
+## Which Changelog Receives What
+
+TrakRF keeps three separate changelogs for three different audiences. They are not filtered views of each other — putting an entry in the wrong one either buries it or leaks internals to customers. Before writing an entry, pick the audience first:
+
+| Changelog                           | Audience                               | Contains                                                                                                                                              |
+| ----------------------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CHANGELOG.md` in the platform repo | TrakRF engineers                       | Everything: migrations, schema moves, internal refactors, ticket numbers, upgrade steps for operators                                                 |
+| `docs/api/changelog.md` (this repo) | Integrators writing against `/api/v1/` | Changes to the public API contract only — request/response shapes, error codes, auth, spec emission. Tracks the API version, not the platform version |
+| `docs/release-notes.md` (this repo) | Customers using the app                | What a user can see or do differently. Tracks the platform version                                                                                    |
+
+Rules for the customer-facing release notes:
+
+- **Translate, never copy.** The platform changelog is the source of facts, not the source of prose. Migration numbers, schema detail, and capability-gating mechanics do not belong on a customer page.
+- **No internal identifiers.** No ticket numbers, migration numbers, PR links, or table names.
+- **Current user vocabulary.** Use the words the app uses today — "Scan", not "Inventory".
+- **Not one entry per git tag.** Most releases change nothing a user would notice; saying nothing is the correct output for those. Group by what a user would actually notice.
+- **Write so each entry stands alone.** Release announcements are mailed out and many readers only ever see the email, so avoid "as described above" and anything that depends on site navigation.
+- **Give every entry a stable anchor** (`{#v1-3-0-scan}`) so an announcement can deep-link to it. Prefix the anchor with the release so it stays unique as releases accumulate.
+- **Publish on release, never on merge.** The page must never describe something that is not yet running in production.
+- **The page is canonical; the email is a copy.** Never let the email carry content the page lacks.
+
 ## Submitting Your Work
 
 1. **Push to your fork:**
