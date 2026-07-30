@@ -33,7 +33,7 @@ const sidebars: SidebarsConfig = {
       link: { type: "doc", id: "app-tour/settings" },
       items: [
         "app-tour/readers",
-        "app-tour/live-feed",
+        "app-tour/live-reads",
         "app-tour/outputs",
         "app-tour/geofence-defaults",
       ],

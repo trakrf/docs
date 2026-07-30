@@ -20,4 +20,4 @@ Readers is where fixed RFID readers — the kind mounted over a doorway or wired
 
 ## How it fits in the app
 
-A reader's reads only reach the app on its registered MQTT topic, so this page is what ties an incoming stream of reads to a named device elsewhere in the app — including the reader count shown on **Live feed**. It's one of four device- and automation-focused pages that live under **Settings**, alongside **Live feed**, **Outputs**, and **Geofence defaults**.
+A reader's reads only reach the app on its registered MQTT topic, so this page is what ties an incoming stream of reads to a named device elsewhere in the app — including the reader count shown on **Live Reads**. It's one of four device- and automation-focused pages that live under **Settings**, alongside **Live Reads**, **Outputs**, and **Geofence defaults**.

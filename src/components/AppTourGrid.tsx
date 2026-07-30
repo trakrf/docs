@@ -47,8 +47,8 @@ const ENTRIES: TourEntry[] = [
     description: "Register and manage fixed RFID readers.",
   },
   {
-    id: "live-feed",
-    title: "Live feed",
+    id: "live-reads",
+    title: "Live Reads",
     description: "Watch tag reads arrive in real time.",
   },
   {

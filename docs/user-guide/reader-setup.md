@@ -43,7 +43,7 @@ The Convergence **CS463** fixed reader shares the CS108 API and has a BLE radio,
    A fresh CS108 battery wants roughly a 4-hour initial charge. The charge LED is **red** while charging and goes out when full. Seat the battery with its metal contacts facing **down**.
    :::
 
-2. In TrakRF, open **Settings** (left nav). You'll land on the **Device Setup** page, which has a **Device Connection** card at the top.
+2. In TrakRF, open **Settings** (left nav). The page has a **Device Connection** card at the top.
 
 3. Click **Connect Device**.
 
@@ -57,7 +57,7 @@ The Convergence **CS463** fixed reader shares the CS108 API and has a BLE radio,
 
 ## Adjust basic settings
 
-![Device Setup page with a CS108 connected — green Device Connection card, battery %, and the Signal Power slider](/img/user-guide/settings-connected.png)
+![Settings page with a CS108 connected — green Device Connection card, battery %, and the Signal Power slider](/img/user-guide/settings-connected.png)
 
 Once connected, the **Basic Settings** card on the same page exposes:
 
