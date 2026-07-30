@@ -133,6 +133,12 @@ const config: Config = {
           label: "Integrations",
         },
         {
+          type: "docSidebar",
+          sidebarId: "releaseNotesSidebar",
+          position: "left",
+          label: "Release Notes",
+        },
+        {
           href: "https://github.com/trakrf/docs",
           label: "GitHub",
           position: "right",
@@ -152,6 +158,10 @@ const config: Config = {
             {
               label: "API Reference",
               to: "/api",
+            },
+            {
+              label: "Release Notes",
+              to: "/docs/release-notes",
             },
           ],
         },

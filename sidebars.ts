@@ -66,6 +66,7 @@ const sidebars: SidebarsConfig = {
       ],
     },
   ],
+  releaseNotesSidebar: ["release-notes"],
   integrationsSidebar: [
     "integrations/index",
     {
