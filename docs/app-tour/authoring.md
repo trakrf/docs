@@ -66,6 +66,14 @@ No extra setup is needed here — the bridge host comes from `BLE_MCP_HOST` in
 server and physical reader are reachable at that host, `just frontend dev-bridge` connects to
 them on its own.
 
+**Start the bridge before the frontend.** `dev-bridge` health-checks the bridge on startup and
+exits rather than serving if it can't reach it, so `http://localhost:5173` never comes up at all.
+That gates every capture, not just the connected-reader ones. Check it first:
+
+```bash
+curl -s http://$BLE_MCP_HOST:8081/health
+```
+
 ### Confirm it's rendering prod-like
 
 Before capturing anything, open `http://localhost:5173` and check two things: no purple
