@@ -88,9 +88,15 @@ normalization, which is what makes a read line up with the number on the label. 
 value in raw reader output and a short one in the app are the same tag, not two — don't chase it as
 a mismatch when reconciling a capture against the bench.
 
-The reader also picks up ambient tags well beyond the bench ones, so session totals vary; see
-[Captures that need a saved scan first](#captures-that-need-a-saved-scan-first) for why alt text
-should follow the capture rather than the reverse.
+**Expect more than the labelled tags to read.** Alongside 10018–10023 there are soak-test tags,
+two unmarked tags taped to the cardboard, and assorted strays around the bench — so a scan total is
+never just the labelled six, and it shifts session to session.
+
+The bulk stock — several hundred tags — lives in a **closed metal toolbox**, which shields it from
+the reader. Leave that toolbox shut during captures. Opening it puts hundreds of tags in range and
+every scan-derived screenshot becomes unusable. See
+[Captures that need a saved scan first](#captures-that-need-a-saved-scan-first) — alt text should
+follow the capture, not the reverse.
 
 ### Confirm it's rendering prod-like
 
@@ -200,7 +206,8 @@ The sequence that produces them:
    (`LOC-WAREHOUSE-A`) instead of display names (`Warehouse A`).
 
 Expect the scanned-tag count to differ from whatever the prose currently claims. The reader picks
-up ambient tags beyond the five bench ones, so the total varies per session — update the alt text
+up soak-test tags and strays well beyond the labelled bench tags (see
+[The physical bench](#the-physical-bench)), so the total varies per session — update the alt text
 to match the capture rather than re-shooting for a specific number.
 
 ### Locate has a Start button
