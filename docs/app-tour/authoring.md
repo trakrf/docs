@@ -74,6 +74,24 @@ That gates every capture, not just the connected-reader ones. Check it first:
 curl -s http://$BLE_MCP_HOST:8081/health
 ```
 
+### The physical bench
+
+![The capture bench: a CS108 handheld in a printed cradle, aimed at the tagged box](/img/app-tour/test-bench.jpg)
+
+The other end of the bridge is a **CSL CS108** UHF RFID handheld with a phone mounted in a
+3D-printed cradle, pointed at a box carrying the bench tags. Every capture showing real reads —
+Scan, Locate, and anything downstream of a saved scan — comes from this setup.
+
+The bench tags are `rfidCollect` labels printed **10018** through **10023**. The printed number
+is not literally the EPC: **the EPC is zero-padded, and the leading zeros are trimmed** by tag-value
+normalization, which is what makes a read line up with the number on the label. A long zero-padded
+value in raw reader output and a short one in the app are the same tag, not two — don't chase it as
+a mismatch when reconciling a capture against the bench.
+
+The reader also picks up ambient tags well beyond the bench ones, so session totals vary; see
+[Captures that need a saved scan first](#captures-that-need-a-saved-scan-first) for why alt text
+should follow the capture rather than the reverse.
+
 ### Confirm it's rendering prod-like
 
 Before capturing anything, open `http://localhost:5173` and check two things: no purple
