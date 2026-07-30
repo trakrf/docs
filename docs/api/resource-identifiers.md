@@ -213,7 +213,7 @@ The pattern we recommend mirrors the schemas:
 | **Assets**    | `metadata` — free-form key/value, no schema, round-trips through `GET` → `PATCH`.                |
 | **Locations** | `tags` — typed natural-key pairs (`tag_type`, `value`), enforced unique within the organization. |
 
-Locations were not given an open `metadata` field because the practical "what would I stuff in here" use cases on a location (a CRM site id, a partner facility code) are already addressable through `tags` with a partner-defined `tag_type`. Reintroduction of an opaque `metadata` field on locations is a v1.1 consideration, not a v1 commitment — generated clients should not assume the field will appear and should branch on its presence if a future spec adds it. If you have a use case that genuinely needs schemaless side-channel data on a location today, [contact us](mailto:support@trakrf.id) — same evaluation track as the v2 capability requests.
+Locations were not given an open `metadata` field because the practical "what would I stuff in here" use cases on a location (a CRM site id, a partner facility code) are already addressable through `tags` with a partner-defined `tag_type`. Reintroduction of an opaque `metadata` field on locations is a consideration for a future additive v1.x revision of the API contract, not a v1 commitment — generated clients should not assume the field will appear and should branch on its presence if a future spec adds it. If you have a use case that genuinely needs schemaless side-channel data on a location today, [contact us](mailto:support@trakrf.id) — same evaluation track as the v2 capability requests.
 
 ## Read shape vs. write shape
 
