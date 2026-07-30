@@ -16,7 +16,7 @@ An `asset.moved` event fires when an asset is scanned at a location **different 
 
 **Rescans at the same location send nothing.** A fixed reader that sees a stationary tag hundreds of times an hour produces zero events. This is a movement feed — not a scan feed, and not a heartbeat. Silence means nothing has moved, not that the pipeline is down.
 
-The volume difference is substantial. On the TrakRF demo carousel, 815 scans produced 8 events.
+The volume difference is substantial. In a representative fixed-reader deployment, 815 scans produced 8 events.
 
 A scan that carries no location produces no event.
 
@@ -48,7 +48,7 @@ The test payload uses obviously-fake identifiers — an `external_key` of `TEST-
 
 ### The enable toggle
 
-Turning a webhook off stops delivery without deleting the registration or changing the secret. Events that occur while it is off are dropped, not queued — turning it back on does not replay them.
+The on/off control is the **Deliver events** checkbox on the Webhooks screen. Unchecking it does not take effect until you click **Save webhook** — the change is not live until the save completes. Once saved, turning delivery off stops it without deleting the registration or changing the secret. Events that occur while it is off are dropped, not queued — turning it back on does not replay them.
 
 ## The payload
 
@@ -71,20 +71,21 @@ Delivered as `POST` with `Content-Type: application/json`.
 }
 ```
 
-| Field                     | Notes                                                                                                                                              |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `event`                   | Always `asset.moved` in v1. Match on it anyway — more types will be added, and an unknown value should be ignored rather than treated as an error. |
-| `delivery_id`             | UUID identifying one detected move. Stable across the retries of a single delivery — use it as your idempotency key.                               |
-| `occurred_at`             | The scan instant that produced the move, in server time (RFC 3339, UTC). **Order by this**, not by arrival.                                        |
-| `data.asset.id`           | The surrogate `id`, identical to the one the REST API returns for that asset.                                                                      |
-| `data.asset.external_key` | Your natural key for the asset.                                                                                                                    |
-| `data.from_location`      | The location the asset was last seen at, or `null` for a genuine first-ever sighting.                                                              |
-| `data.to_location`        | The location it was just scanned at. Never null.                                                                                                   |
+| Field                     | Notes                                                                                                                                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `event`                   | Always `asset.moved` in v1. Match on it anyway — more types will be added, and an unknown value should be ignored rather than treated as an error.                                                                       |
+| `delivery_id`             | UUID identifying one detected move. Stable across the retries of a single delivery — use it as your idempotency key.                                                                                                     |
+| `occurred_at`             | The scan instant that produced the move, in server time (RFC 3339, UTC). **Order by this**, not by arrival.                                                                                                              |
+| `data.asset.id`           | The surrogate `id`, identical to the one the REST API returns for that asset.                                                                                                                                            |
+| `data.asset.external_key` | Your natural key for the asset.                                                                                                                                                                                          |
+| `data.asset.name`         | The asset's display name at the time of the move.                                                                                                                                                                        |
+| `data.from_location`      | The location the asset was last seen at, or `null` when TrakRF has no previous location for it — a first-ever sighting, a previous scan that resolved to no location, or an origin location that has since been deleted. |
+| `data.to_location`        | The location it was just scanned at. Never null.                                                                                                                                                                         |
 
 Three things about the shape:
 
-- **`from_location` is present and explicitly `null`** on a first sighting. The key is never omitted, so a receiver can read it unconditionally.
-- **Ids are large.** The surrogate `id` is an opaque integer up to 2⁵², so store it in a 64-bit integer type — a 32-bit field will overflow. Treat it as opaque: don't parse it, order by it, or infer a count or creation time from it. Join your own systems on `external_key`. See [ID format](./id-format) and [Resource identifiers](./resource-identifiers#numeric-id-is-a-surrogate-key).
+- **`from_location` is present and explicitly `null`** whenever there is no known origin. The key is never omitted, so a receiver can read it unconditionally — but do not treat `null` as "new asset", since a deleted origin location and a previous scan with no location both produce it too.
+- **Ids are large.** The surrogate `id` is an opaque integer well beyond what a 32-bit field holds, and within the 2⁵³−1 ceiling the spec declares, so store it in a 64-bit integer type — a 32-bit field will overflow. Treat it as opaque: don't parse it, order by it, or infer a count or creation time from it. Join your own systems on `external_key`. See [ID format](./id-format) and [Resource identifiers](./resource-identifiers#numeric-id-is-a-surrogate-key).
 - **The payload is logical data only.** No scan point, no antenna, no EPC, no scan-event id — the physical layer stays internal. If you need physical provenance, it isn't here and won't be.
 
 There is **no `sequence` field**, deliberately. See [Delivery semantics](#delivery-semantics).
@@ -127,6 +128,7 @@ function verify(rawBody, headers, secret) {
       .update(ts + "." + rawBody)
       .digest("hex");
   const got = headers["x-trakrf-signature"];
+  if (!got) return false;
   return (
     got.length === expected.length &&
     crypto.timingSafeEqual(Buffer.from(got), Buffer.from(expected))
@@ -192,7 +194,7 @@ See [Authentication](./authentication) for how to authenticate that call.
 In rough order of likelihood:
 
 1. **Nothing moved.** Delivery is delta-only. Confirm against [`GET /api/v1/reports/asset-locations`](/api) that assets have actually changed location.
-2. **The webhook is disabled.** Check the enable toggle on the Webhooks screen.
+2. **The webhook is disabled.** Check the **Deliver events** checkbox on the Webhooks screen.
 3. **The subscription lapsed.** Delivery stops for an organization that is no longer entitled, and nothing in your integration surfaces it. Check billing.
 4. **Your endpoint started failing.** Use **Send test event** — it reports the status code your endpoint returned. Anything but a 2xx, including a redirect, is a failed delivery.
 5. **The scans carry no location.** Reads that resolve to no location produce no event.
