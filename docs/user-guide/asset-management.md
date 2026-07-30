@@ -38,16 +38,17 @@ Assets are the records TrakRF checks scans against. Each asset has at least one 
 2. Click **Create Asset** (in the empty-state card) or the floating **+** button.
 3. Fill in the **Create New Asset** modal:
 
-   ![Create New Asset modal — Asset ID, Name, Description, Location, Active, Valid From/To, RFID Tags](/img/user-guide/create-asset-modal.png)
+   ![Create New Asset modal — Asset ID, Name, Description, Active, Valid From/To, RFID Tags](/img/user-guide/create-asset-modal.png)
    - **Asset ID** — leave blank to auto-generate as `ASSET-XXXX`, or type your own (e.g. a part number).
    - **Name** — required. This is what you'll see in scan results and reports.
    - **Description** — optional free text.
-   - **Location** — pick the one you created in step 1. Leave as "No location assigned" if you want it to appear under the **Unassigned** filter.
    - **Active** — checked by default. Uncheck to hide the asset from live scan comparisons without deleting it.
    - **Valid From / Valid To** — defaults to today / blank. Use these if the asset is only in circulation for a known window.
    - **RFID Tags** — click **Add Tag** and paste or type the tag's EPC (hex string). You can attach more than one tag to the same asset.
 
 4. Click **Create Asset**.
+
+There is no **Location** field on this form. An asset's location is derived from where it was last scanned, not set by hand, so the **Location** column stays blank until a saved scan places it.
 
 The asset now appears in the list. The footer cards (**Total Assets**, **Active**, **Inactive**) update immediately. After a few assets, the list looks like this:
 
@@ -63,14 +64,14 @@ With an asset registered and a reader paired (see [Reader Setup](./reader-setup)
 
 1. Open **Scan** from the left nav.
 
-   ![Scan page ready to scan — device connected (75%), empty Scanned list, full toolbar, empty footer stats](/img/user-guide/scan-connected-idle.png)
+   ![Scan page ready to scan — device connected (90%), empty Scanned list, full toolbar, empty footer stats](/img/user-guide/scan-connected-idle.png)
 
 2. Confirm the device-status chip in the top-right reads **Connected**, not **Disconnected**.
    - On a supported browser with no paired reader, the banner reads "Connect your device to start scanning" and the **Connect Device** button is live.
    - On an unsupported browser (no Web BLE), the banner lists the supported browsers instead and **Connect Device** is disabled — see [Reader Setup: browser support](./reader-setup#browser-support).
 3. Pick a scan mode next to the **Scanned** counter. **RFID** sweeps every tag in range on each pass; **Barcode** reads a single code at a time — whichever the reader is aimed at.
 
-   ![Scan toolbar in RFID mode with RFID selected and 13 tags scanned — recognized assets such as Toolbox and Camera listed by name alongside raw EPCs, each with signal strength and read count](/img/user-guide/scan-mode-rfid.png)
+   ![Scan toolbar in RFID mode with RFID selected and 16 tags scanned — recognized assets such as Toolbox and Camera listed by name alongside raw EPCs, each with signal strength and read count](/img/user-guide/scan-mode-rfid.png)
 
    ![Scan toolbar in Barcode mode, idle — Barcode selected, empty Scanned list, full toolbar including Save](/img/user-guide/scan-mode-barcode.png)
 
@@ -79,7 +80,7 @@ With an asset registered and a reader paired (see [Reader Setup](./reader-setup)
    - **Scans** — unique tags seen this session.
    - **Assets** — of those, how many match a registered asset.
 
-     ![Scan mid-scan — 13 tags in the results list, a mix of recognized assets and raw EPCs, per-row signal and count](/img/user-guide/scan-scanning.png)
+     ![Scan mid-scan — 16 tags in the results list, a mix of recognized assets and raw EPCs, per-row signal and count](/img/user-guide/scan-scanning.png)
 
 6. Release the trigger when you've covered the area. The list stays on screen; you can resume by pressing the trigger again.
 7. Use the top toolbar as needed:
@@ -98,7 +99,7 @@ Saving is what promotes a scan from "live on my screen" to "part of the audit tr
 
 1. Open **Reports** from the left nav.
 
-   ![Reports page with two assets in Locations History at Bay 7 Shelf 1, both seen today](/img/user-guide/reports-populated.png)
+   ![Reports page with five assets in Locations History at Warehouse A, all seen today](/img/user-guide/reports-populated.png)
 
 2. The top stat cards show **Total Assets Tracked**, **Assets Seen Today**, and **Stale Assets (> 7 days)** — a quick-read summary of your catalog's recency.
 3. Switch between **Locations History** (which locations saw which assets) and **Asset History** (per-asset timeline).
@@ -112,7 +113,7 @@ Saving is what promotes a scan from "live on my screen" to "part of the audit tr
 
 **Scan** answers "what's here?" **Locate** answers "where is this one?" Paste or type the EPC of the tag you're hunting for (or jump over from an asset's row action) and TrakRF turns the reader into a metal detector: a signal-strength gauge, peak/average stats, and an audio-feedback option whose pitch **and** beep rate both climb as you close the distance.
 
-![Locate screen searching for EPC 10019 — signal-strength gauge reading -31 dBm, stats panel, audio feedback on](/img/user-guide/locate-searching.png)
+![Locate screen searching for EPC 10019 — signal-strength gauge reading -35 dBm, stats panel, audio feedback on](/img/user-guide/locate-searching.png)
 
 Use it for single-item retrieval after a scan has flagged something as missing or misplaced.
 

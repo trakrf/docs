@@ -76,9 +76,21 @@ the entire reason captures happen locally — if a banner appears, something is 
 ## The fixture: the "TrakRF Docs" org
 
 1. Sign up through the local UI at `http://localhost:5173/#signup`, using an organization name
-   of exactly **`TrakRF Docs`** — the seed script matches on that string.
+   of exactly **`TrakRF Docs`** — the seed script matches on that string. **Company Website** and
+   **Phone** are required by client-side validation; leaving them blank silently fails the submit
+   with inline errors and no request is sent.
 2. Run `scripts/seed-docs-org.sql` against the local database (`just database psql <
    scripts/seed-docs-org.sql`, or the equivalent `docker exec` invocation for your local stack).
+
+   Use `just database psql` if you can. `pgcrypto` is installed **into the `trakrf` schema**, so
+   the id-generation functions the seed calls need `trakrf` on the `search_path`. A bare
+   `docker exec … psql` connects with the default search path and dies on
+   `function hmac(bytea, bytea, unknown) does not exist`; pass
+   `PGOPTIONS='-c search_path=trakrf,public'` if you go that route.
+3. **Clear the browser's local storage and reload.** Signing up before seeding means the app has
+   already cached an empty asset list, and the store's TTL is an hour — so a freshly seeded org
+   renders as "No assets yet" until the cache is dropped. Keep `auth-storage` if you don't want to
+   log in again.
 
 The script seeds 8 assets and 5 locations, grants the `geofence` capability so the Outputs and
 Geofence defaults pages render real UI instead of a locked upsell page, and creates a second,
@@ -133,10 +145,47 @@ lists data, check the visible count against the fixture: **8 assets, 5 locations
 numbers are doubled, temporarily remove `React.StrictMode` from
 `platform/frontend/src/main.tsx`, recapture, and restore it afterwards.
 
+**It is intermittent — do the check even if a previous pass looked clean.** The underlying defect
+is still open, but it did not reproduce at all during the second capture pass. Seeing correct
+counts tells you nothing about the next page you load.
+
+### Captures that need a saved scan first
+
+Four images show data that only exists after a scan has been **saved** against a location, and
+they will silently capture as empty if taken too early:
+`app-tour/assets-desktop.png`, `user-guide/assets-populated.png`,
+`app-tour/reports-desktop.png`, and `user-guide/reports-populated.png`.
+
+The sequence that produces them:
+
+1. Connect the reader, scan on the **Scan** screen, then **Stop**.
+2. Click **Select** next to "No location tag detected" and pick **Warehouse A**.
+3. Click **Save**.
+4. **Refresh the continuous aggregate.** `trakrf.asset_scan_latest` is a TimescaleDB continuous
+   aggregate, so the Assets **Location** column and every Reports figure stay empty until it
+   materialises:
+
+   ```sql
+   CALL refresh_continuous_aggregate('trakrf.asset_scan_latest', NULL, NULL);
+   ```
+
+5. Reload, then **visit Locations once** before capturing Assets. The Location column renders
+   whatever the location-metadata cache holds — with a cold cache it prints raw external keys
+   (`LOC-WAREHOUSE-A`) instead of display names (`Warehouse A`).
+
+Expect the scanned-tag count to differ from whatever the prose currently claims. The reader picks
+up ambient tags beyond the five bench ones, so the total varies per session — update the alt text
+to match the capture rather than re-shooting for a specific number.
+
 ### Locate has a Start button
 
 Locate exposes an on-screen **Start** button once a reader is connected — it is not
 trigger-only. Use it to drive a capture rather than assuming a hardware trigger pull is required.
+
+**The first Start click usually fails.** It logs `Cannot start scanning from state Busy` and
+leaves Status on **Idle** with the gauge reading "No signal" — while the Statistics panel fills in
+live RSSI, which makes it look like it worked. Click **Start** a second time; Status then reads
+**Searching** and the gauge lights up. Confirm Status says "Searching" before you capture.
 
 ### Which capture path was used
 
