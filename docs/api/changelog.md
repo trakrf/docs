@@ -7,6 +7,8 @@ title: Changelog
 
 This log records changes to the TrakRF public API under `/api/v1/` that affect integrators. Entries follow the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) convention with the v1 stability commitment in [Versioning](./versioning): within v1, changes are additive only — no silent breaking changes. Deprecations are flagged at least six months before sunset via RFC 8594 headers.
 
+Changes to the TrakRF app itself are logged separately in the [release notes](../release-notes). The two are deliberately decoupled: the API version tracks the contract documented here, while the app version moves on its own release cadence, so an app release that changes nothing for integrators produces no entry on this page.
+
 ## v1.0 — Launch (TBD)
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).
