@@ -215,10 +215,11 @@ to match the capture rather than re-shooting for a specific number.
 Locate exposes an on-screen **Start** button once a reader is connected — it is not
 trigger-only. Use it to drive a capture rather than assuming a hardware trigger pull is required.
 
-**The first Start click usually fails.** It logs `Cannot start scanning from state Busy` and
-leaves Status on **Idle** with the gauge reading "No signal" — while the Statistics panel fills in
-live RSSI, which makes it look like it worked. Click **Start** a second time; Status then reads
-**Searching** and the gauge lights up. Confirm Status says "Searching" before you capture.
+**Scripted captures can lose the first click.** A script that fills in the EPC and clicks
+**Start** back-to-back can land inside a narrow window where the reader is still settling and the
+click is dropped — Status stays on **Idle** and no scan starts. Have the script wait for **Start**
+to become enabled, or click it twice. Clicking by hand, or pulling the physical trigger, will not
+hit this. Either way, confirm Status reads **Searching** before you capture.
 
 ### Which capture path was used
 
