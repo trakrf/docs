@@ -19,7 +19,7 @@ Web BLE is a Chromium feature. TrakRF works in:
 - **Opera**
 - **[Bluefy](https://apps.apple.com/us/app/bluefy-web-ble-browser/id1492822055)** (iOS/iPadOS) — free from the App Store. iOS Safari doesn't expose Web BLE, and Chrome/Edge on iOS are Safari under the hood, so Bluefy is the only option on iPhone and iPad.
 
-Desktop Safari and Firefox do **not** support Web BLE and will show a "Supported browsers: Chrome, Edge, Opera" banner in place of the connect button.
+Desktop Safari and Firefox do **not** support Web BLE. In place of the connect button they show a banner naming the browsers that work on your platform, and TrakRF distinguishes the reasons it can't reach a reader — an unsupported browser, a browser with Web Bluetooth switched off, a machine with no Bluetooth adapter, or a page served over plain `http://` each get their own explanation.
 
 ### Bluetooth permissions
 
@@ -47,13 +47,28 @@ The Convergence **CS463** fixed reader shares the CS108 API and has a BLE radio,
 
 3. Click **Connect Device**.
 
-4. Your browser opens the Web BLE pairing dialog. Pick your reader by name — it advertises as `CS108ReaderXXXXXX`, where `XXXXXX` is the last six hex digits of its MAC — and click **Pair**.
+4. Your browser opens the Web BLE pairing dialog. Pick your reader by name — it advertises as `CS108ReaderXXXXXX`, where `XXXXXX` is the last six hex digits of its Bluetooth address — and click **Pair**.
 
    ![Chrome Web BLE pairing dialog showing a CS108 reader](/img/user-guide/pairing-dialog.png)
+
+   :::caution On Windows, expect no name here the first time
+   The dialog will most likely offer your reader as **Unknown or unsupported device** beside a string of numbers. That is normal and the reader is fine — see [Windows: the reader is listed unnamed the first time](#windows-first-connect) below before you cancel the dialog.
+   :::
 
 5. The page-status chip in the top-right flips from **Disconnected** (red) to **Connected** (green), and the **Device Status** pill in the left sidebar updates to match.
 
 6. The reader is now paired. OS-level pairing happens once per device; from then on, clicking the status button in TrakRF reopens the browser's connect dialog with the reader already listed — just select it and confirm to reconnect. You only need to re-pair through System Settings / Control Panel if you explicitly **forget** the device.
+
+### Windows: the reader is listed unnamed the first time {#windows-first-connect}
+
+On Windows, a CS108 that hasn't yet been paired in Windows itself is offered in the browser's dialog **without a name** — as `Unknown or unsupported device` followed by a string of numbers, rather than as `CS108ReaderXXXXXX`. Nothing is wrong and the reader is not unsupported. Windows doesn't hand the browser the device's name until the two have been paired at the OS level, and the browser fills the gap with that label. This is the single most common reason a first-time Windows user cancels the dialog.
+
+Those numbers are the reader's Bluetooth address, and it is printed on the serial-number label on the back of the antenna as **BT Mac Addr**. Check the two against each other — that is how you know you're selecting your own reader rather than a colleague's CS108 switched on in the same room — then select it and click **Pair**.
+
+To get a legible name instead, add the reader in **Settings → Bluetooth & devices** before you connect, entering PIN `0000` if Windows asks for one. The browser's dialog then lists it as `CS108ReaderXXXXXX - Paired` from that point on. Two things to know before you try:
+
+- **Disconnect from TrakRF first.** A Bluetooth LE device talks to one host at a time, so while the browser is holding the reader, Windows' own device search won't find it at all — you'll get an empty list and conclude the reader is broken.
+- **This step is worth doing for the name alone.** We've also seen a first connect on Windows fail until the reader was paired this way, so if the browser dialog won't connect, do this before troubleshooting anything else.
 
 ## Adjust basic settings
 
@@ -76,7 +91,7 @@ Most pairing and connection issues resolve with the same small set of steps. Try
 1. **Power-cycle the reader.** Hold the power button until the green LED goes out, wait a few seconds, power it back on. The BLE indicator should start flashing again.
 2. **Reload the TrakRF tab**, then click the status button to retry the connect. Web BLE sometimes drops silently after sleep/resume — especially on macOS.
 3. **Restart the host's Bluetooth stack.** Toggle Bluetooth off and back on in the OS (or use the airplane-mode trick on mobile).
-4. **Forget and re-pair.** Open your OS's Bluetooth settings — **System Settings → Bluetooth** on macOS, **Settings → Devices → Bluetooth** on Windows, the Bluetooth panel under Android/iOS settings — find the `CS108ReaderXXXXXX` entry, remove/forget it, then run through the pair flow above from scratch.
+4. **Forget and re-pair.** Open your OS's Bluetooth settings — **System Settings → Bluetooth** on macOS, **Settings → Bluetooth & devices** on Windows, the Bluetooth panel under Android/iOS settings — find the `CS108ReaderXXXXXX` entry, remove/forget it, then run through the pair flow above from scratch. Disconnect from TrakRF before you do: the OS can't see the reader while the browser is holding it.
 5. **Check battery seating and charge.** A low battery can let pairing succeed and then fail mid-scan. Re-seat the pack (metal contacts down) and confirm it's charged — red LED while charging, dark when full.
 6. **Try a different browser profile.** Stale site permissions are the usual cause of "it worked yesterday." A fresh profile sidesteps them without touching your main one.
 
