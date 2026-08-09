@@ -25,7 +25,7 @@ For server-to-server or scripted integrations, mint a `client_id`/`client_secret
 | `/api/v1/auth/forgot-password`       | POST               | SPA password recovery                             | Internal                    | Internal       |
 | `/api/v1/auth/reset-password`        | POST               | SPA password recovery                             | Internal                    | Internal       |
 | `/api/v1/auth/accept-invite`         | POST               | SPA invite acceptance                             | Internal                    | Internal       |
-| `/api/v1/users/me`                   | GET                | SPA user context                                  | Internal                    | Internal       |
+| `/api/v1/users/me`                   | GET, PATCH         | SPA user context and self-service profile edit    | Internal                    | Internal       |
 | `/api/v1/users/me/current-org`       | POST               | SPA organization switcher                         | Internal                    | Internal       |
 | `/api/v1/orgs`                       | GET                | SPA organization picker                           | Internal                    | Internal       |
 | `/api/v1/orgs/{id}`                  | GET                | SPA organization detail                           | Internal                    | Internal       |
