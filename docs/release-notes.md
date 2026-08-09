@@ -14,7 +14,7 @@ Two related logs cover different ground:
 
 Most releases change nothing you would notice, and those are not listed. A release appears on this page when it changes something in front of you.
 
-## v1.4.0 — August 7, 2026 {#v1-4-0}
+## v1.4.0 — August 9, 2026 {#v1-4-0}
 
 The Assets screen was showing you only part of your data, and a saved scan took up to two minutes to appear on Reports. Both are fixed. Locate now works with 128-bit tags, and you can edit your own name and email.
 
