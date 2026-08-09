@@ -8,17 +8,24 @@ description: How to regenerate or refresh the App Tour docs section.
 
 This page explains how the App Tour was generated and how to regenerate or refresh it.
 
-Screenshots are captured from **platform running locally**, not from preview. This is
-deliberate, not a convenience choice: `environmentLabel` — the purple "Preview Environment"
-banner and the `[PRE]` page-title prefix — comes from `window.__APP_CONFIG__`, which the backend
-injects at serve time. Vite's local dev server never injects it, so a local build renders exactly
-like production. Preview cannot suppress its banner, so it can never produce a customer-accurate
-screenshot; local dev is the only source that can.
+Screenshots are captured from **platform running locally, or from production** — never from
+preview. This is deliberate, not a convenience choice: `environmentLabel` — the purple "Preview
+Environment" banner and the `[PRE]` page-title prefix — comes from `window.__APP_CONFIG__`, which
+the backend injects at serve time. Vite's local dev server never injects it and production sends
+it empty, so both render exactly like production. Preview cannot suppress its banner, so it can
+never produce a customer-accurate screenshot.
+
+The two valid sources differ in one visible detail, so don't mix them within a page. The sidebar
+version under "Handheld Tag Reader" comes from `VITE_APP_VERSION`, which is injected at Docker
+build time and unset under Vite — so local dev reads `dev` where production reads the release
+(`v1.4.0`). Capturing against production also means the org you sign in as supplies the
+capability set, and every locked nav entry is visible in _every_ frame: granting or revoking one
+changes the sidebar on all screens, not just the screen that capability gates.
 
 ## Prerequisites
 
 - A `trakrf/platform` checkout (sibling to this repo works fine — `~/platform` is assumed
-  below).
+  below; adjust the paths if yours sits elsewhere, e.g. `~/trakrf/platform`).
 - Docker, for platform's local database and backend.
 - `pnpm install` completed in this repo's root.
 - Playwright MCP available to the authoring agent — it's the only capture tool used; there is no
@@ -112,13 +119,14 @@ the entire reason captures happen locally — if a banner appears, something is 
    **Phone** are required by client-side validation; leaving them blank silently fails the submit
    with inline errors and no request is sent.
 2. Run `scripts/seed-docs-org.sql` against the local database (`just database psql <
-   scripts/seed-docs-org.sql`, or the equivalent `docker exec` invocation for your local stack).
+scripts/seed-docs-org.sql`, or the equivalent `docker exec` invocation for your local stack).
 
    Use `just database psql` if you can. `pgcrypto` is installed **into the `trakrf` schema**, so
    the id-generation functions the seed calls need `trakrf` on the `search_path`. A bare
    `docker exec … psql` connects with the default search path and dies on
    `function hmac(bytea, bytea, unknown) does not exist`; pass
    `PGOPTIONS='-c search_path=trakrf,public'` if you go that route.
+
 3. **Clear the browser's local storage and reload.** Signing up before seeding means the app has
    already cached an empty asset list, and the store's TTL is an hour — so a freshly seeded org
    renders as "No assets yet" until the cache is dropped. Keep `auth-storage` if you don't want to
@@ -228,6 +236,11 @@ simulated Bluetooth notifications — real EPCs, signal strengths, and read coun
 synthesized ones. Prefer the bridge when a reader is available; fall back to
 `navigator.bluetooth.testing.simulateNotification` only if no reader is reachable, and record
 which path was used if you regenerate this tour again.
+
+The Readers, Live Reads, Outputs, and Geofence defaults images are the exception: they were
+recaptured against **production** at `v1.4.0`, signed in to an org granted only `geofence`. None
+of those four screens needs a reader — Live Reads captures its connected-but-idle state, which is
+what the published image has always shown — so no bridge was involved.
 
 ## Things to know
 
