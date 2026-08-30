@@ -505,7 +505,7 @@ Auto-mint computes **`MAX(live key) + 1`**: it takes the highest `ASSET-NNNN` / 
 - **Middle-of-range deletes leave permanent gaps.** Soft-delete `ASSET-0002` while `ASSET-0003` is still live and the next auto-mint is `MAX(0003) + 1 = ASSET-0004`, never `ASSET-0002` — the gap is not backfilled.
 - **Only deleting the current highest live key frees its number.** Soft-delete the top `ASSET-0003` with nothing higher live and the next auto-mint re-issues `ASSET-0003`.
 
-Because the number can be re-issued this way, a server-assigned `external_key` you saw before can, after a delete, later refer to a *different* resource. Don't cache an auto-minted key as a long-lived reference or infer a count from it — supply your own handle (below) when you need a stable, never-recycled identifier. (The surrogate `id`, by contrast, is globally unique and never reused — see [Numeric `id` is a surrogate key](#numeric-id-is-a-surrogate-key).)
+Because the number can be re-issued this way, a server-assigned `external_key` you saw before can, after a delete, later refer to a _different_ resource. Don't cache an auto-minted key as a long-lived reference or infer a count from it — supply your own handle (below) when you need a stable, never-recycled identifier. (The surrogate `id`, by contrast, is globally unique and never reused — see [Numeric `id` is a surrogate key](#numeric-id-is-a-surrogate-key).)
 
 ```bash
 # Caller-supplied external_key

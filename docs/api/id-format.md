@@ -39,18 +39,18 @@ This page is about the surrogate `id`. The string `external_key` (`ASSET-NNNN` /
 
 Surrogate ids no longer carry a dedicated "too large" rejection. A syntactically valid id that doesn't resolve takes the ordinary lookup path for its surface:
 
-| Surface                | Example                                          | Result                                                                      |
-| ---------------------- | ------------------------------------------------ | --------------------------------------------------------------------------- |
-| **Path parameter**     | `GET /api/v1/assets/2147483648`                  | `404 not_found` — in range, simply doesn't resolve to a row                 |
-| **Query `_id` filter** | `GET /api/v1/locations?parent_id=2147483648`     | `200` with an empty `data[]` page — a filter that matches nothing           |
+| Surface                | Example                                            | Result                                                                           |
+| ---------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Path parameter**     | `GET /api/v1/assets/2147483648`                    | `404 not_found` — in range, simply doesn't resolve to a row                      |
+| **Query `_id` filter** | `GET /api/v1/locations?parent_id=2147483648`       | `200` with an empty `data[]` page — a filter that matches nothing                |
 | **Request-body FK**    | `POST /api/v1/locations {"parent_id": 2147483648}` | `400 validation_error` / `code: fk_not_found` — the referenced row doesn't exist |
 
 The bounds controls are unchanged:
 
-| Input                                                   | Result                                          |
-| ------------------------------------------------------- | ----------------------------------------------- |
-| Path `0` or `-5`                                        | `400 validation_error` / `code: too_small`      |
-| Non-numeric (`abc`) or an int64 overflow (20+ digits)   | `400 validation_error` / `code: invalid_value`  |
+| Input                                                 | Result                                         |
+| ----------------------------------------------------- | ---------------------------------------------- |
+| Path `0` or `-5`                                      | `400 validation_error` / `code: too_small`     |
+| Non-numeric (`abc`) or an int64 overflow (20+ digits) | `400 validation_error` / `code: invalid_value` |
 
 ```http
 GET /api/v1/assets/2147483648
