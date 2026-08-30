@@ -34,14 +34,16 @@ pnpm dev
 
 ### 1. Create a Branch
 
-```bash
-# Branch naming:
-# - feature/add-xyz    (new features)
-# - fix/broken-xyz     (bug fixes)
-# - docs/update-xyz    (documentation content)
+Branch as `<type>/<slug>`, using a [conventional commit](https://www.conventionalcommits.org)
+type — `feat`, `fix`, `docs`, `chore`, `style`, `refactor`, `test`.
 
+```bash
 git checkout -b docs/update-getting-started
 ```
+
+Maintainers working from a tracked issue insert the ticket:
+`<type>/<ticket>-<slug>`, e.g. `docs/tra-0000-update-getting-started`. Outside
+contributors have no ticket and should use the plain `<type>/<slug>` form.
 
 ### 2. Write Your Content
 
@@ -109,6 +111,11 @@ Rules for the customer-facing release notes:
    - [ ] Content is accurate and well-written
    - [ ] Links are not broken
    - [ ] Commit messages use conventional format
+
+4. **How PRs are merged:**
+
+   PRs are merged with `--merge`, never squashed and never rebased, so that
+   individual commit history is preserved.
 
 ## Getting Help
 
