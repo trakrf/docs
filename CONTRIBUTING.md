@@ -2,6 +2,9 @@
 
 We love contributions! This guide will help you get started quickly.
 
+> Editing this file? `pnpm lint` checks that every `pnpm` script and repo path
+> named here still exists.
+
 ## What is this project?
 
 TrakRF Docs is the documentation site for the TrakRF platform, built with [Docusaurus](https://docusaurus.io/). It covers product documentation, API references, guides, and tutorials.
