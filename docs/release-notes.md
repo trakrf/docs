@@ -14,6 +14,57 @@ Two related logs cover different ground:
 
 Most releases change nothing you would notice, and those are not listed. A release appears on this page when it changes something in front of you.
 
+## v1.5.0 — September 4, 2026 {#v1-5-0}
+
+Locate is the focus of this release. It could previously show you a signal from a search you had already finished, keep moving after you let go of the trigger, and — in the case that mattered most — look like it had found something when it had found nothing. All of that is fixed. You can also now acquire a Locate target by scanning a barcode, and Settings tells you which reader you are connected to.
+
+### Locate tells you the truth about what it is hearing {#v1-5-0-locate}
+
+Three separate problems could each make a failed search look like a successful one.
+
+A search that ended without hearing the tag used to leave the previous search's reading on the gauge, so an item that was not there could show a strong signal. Readouts now fall to **No signal** rather than holding a number that is no longer being measured.
+
+Changing the target in the middle of a search did not always reach the reader. The reader went on filtering for the tag you started with, so you were shown another item's signal under your new target's name. A target change now reaches the reader before the search runs, and if it cannot, Locate says so instead of searching for the wrong thing.
+
+Releasing the trigger did not stop the search cleanly. The gauge kept moving and the audio kept sounding for a moment after you let go. The audio now stops on release, and the gauge **freezes at the reading you released on** — you pulled the trigger to read that number, so it stays on screen rather than blanking. If the tag was not being heard when you released, the gauge holds **No signal** instead of reviving the last value it heard.
+
+Locate also now finds tags whose identifier is stored in short form. These previously matched at only one tag size, so a tag could be searched for under a value that did not match it.
+
+### Acquire a Locate target by scanning a barcode {#v1-5-0-locate-barcode}
+
+You no longer have to type a 24- or 32-character tag identifier to start a Locate search. Scan the barcode instead.
+
+The workflow this is for is not scanning the tag you are standing next to — it is working from a cut sheet, pick list or work order that carries the barcode of the item you have been sent to find. Scan the paperwork, then go and find the thing.
+
+### Settings shows which reader you are connected to {#v1-5-0-reader-details}
+
+Settings now lists the connected reader's serial number and its three firmware versions. If you contact support about a reader, this is the page to read from — previously there was no way to tell from the app which firmware a reader in the field was running.
+
+### Tags scanned before you sign in are no longer lost {#v1-5-0-scan-before-login}
+
+You can scan tags without signing in, then sign in to see which assets they are. Signing in was clearing those tags before it looked them up, so the list came back empty and the scan was gone. Your scan now survives signing in, and the asset details fill in behind it.
+
+Switching organizations still clears scanned tags, as it always has — those results belong to the organization you were in.
+
+### Accounts set up for you must choose their own password {#v1-5-0-password}
+
+When someone sets up your account in person and gives you a starting password, TrakRF now asks you to choose your own the first time you sign in, and the app waits until you have. Nothing changes for any existing account — you will not be asked to change a password you already chose.
+
+### A more reliable reader connection {#v1-5-0-reader-reliability}
+
+A number of faults that made the reader look broken, unresponsive, or randomly unreliable are fixed. The most visible effect is that the reader recovers from a momentary problem instead of reporting an error it has already recovered from, and a reader that is refusing a command now says so rather than going quiet.
+
+### Smaller changes {#v1-5-0-smaller}
+
+- Location history is recorded to the minute rather than to the second. A move can take up to a minute to appear on reports; in exchange the history is far smaller and faster to read.
+- Saving from the Scan tab while a fixed reader is reading the same asset in the same minute no longer fails.
+
+## v1.4.1 — August 13, 2026 {#v1-4-1}
+
+### Change your password from your profile {#v1-4-1-change-password}
+
+You can now change your password from **Account menu → Profile** by entering your current one, without going through the forgotten-password email. This matters if your organization's mail system holds or blocks our messages — until now that email was the only way to change a password you knew.
+
 ## v1.4.0 — August 9, 2026 {#v1-4-0}
 
 The Assets screen was showing you only part of your data, and a saved scan took up to two minutes to appear on Reports. Both are fixed. Locate now works with 128-bit tags, and you can edit your own name and email.
