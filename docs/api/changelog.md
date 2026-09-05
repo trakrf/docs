@@ -9,6 +9,14 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Changes to the TrakRF app itself are logged separately in the [release notes](../release-notes). The two are deliberately decoupled: the API version tracks the contract documented here, while the app version moves on its own release cadence, so an app release that changes nothing for integrators produces no entry on this page.
 
+## Location history and movement events gain one-minute resolution {#minute-resolution-history}
+
+Ships with app **v1.5.0**. No path, field name, response shape, or error envelope changes — this entry records a behavioral semantics change to data your code already consumes, the same reason webhook delivery semantics are logged here.
+
+- **`GET /api/v1/assets/{asset_id}/history` returns at most one row per asset per minute.** The first location observed in a minute is the minute's recorded location; subsequent reads of the same asset in that minute do not add rows or change it. An operator save from the app is the exception — it overrides the current minute's recorded location. History was previously per-read; if your integration counted history rows as a proxy for read activity, that proxy is gone (it was never contractual). Row shape is unchanged.
+- **`asset.moved` webhooks inherit the same resolution.** Passive readers emit at most one location change per asset per minute, and a mid-minute move delivers with the next minute's observation — up to 60 seconds after the physical move. An asset seen by two overlapping read zones can no longer produce an event storm: the minute is a built-in debounce window. Operator saves emit immediately, carrying the overridden location as `from_location`. See [Webhooks → Movement detection has one-minute resolution](./webhooks#movement-detection-has-one-minute-resolution).
+- **`occurred_at` on save-driven events may carry the save's minute rather than the exact second.** Reader-driven events keep the scan instant. The recommended five-minute signature-timestamp tolerance absorbs this; a materially tighter window may not.
+
 ## v1.0 — Launch (2026-05-30)
 
 Initial public API release. Stable contract for paths, field names, response shapes, and error envelopes per the [v1 stability commitment](./versioning).

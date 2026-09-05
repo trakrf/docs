@@ -67,6 +67,8 @@ If you only have surrogate ids in hand (you cached them from a previous create o
 
 For per-asset history rather than current-state — "where has this asset been over the last seven days" — use `GET /api/v1/assets/{asset_id}/history?from=...&to=...`. The endpoint is the projection of the same scan-event stream with a different shape (time-series rows rather than current-state pairs). See [Pagination, filtering, sorting → Time range (history)](./pagination-filtering-sorting#time-range-history) for the `from`/`to` semantics.
 
+History has **one-minute resolution**: at most one row per asset per minute, recording the first location observed in that minute (an operator save from the app overrides it). It is location history, not a per-read scan log — a fixed reader seeing a stationary tag hundreds of times an hour produces one row per minute, and the raw read stream is not exposed. The same resolution governs when [`asset.moved` webhooks](./webhooks#movement-detection-has-one-minute-resolution) fire.
+
 ## See also
 
 - [Resource identifiers](./resource-identifiers) — how to address master-data rows by `id` or `external_key`.

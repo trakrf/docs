@@ -20,7 +20,17 @@ The volume difference is substantial. In a representative fixed-reader deploymen
 
 A scan that carries no location produces no event.
 
-If you need the full scan stream rather than movements, poll [`GET /api/v1/assets/{asset_id}/history`](/api) instead.
+If you need location history rather than movements, poll [`GET /api/v1/assets/{asset_id}/history`](/api) instead — it is recorded at the same one-minute resolution described below, not a per-read scan stream.
+
+### Movement detection has one-minute resolution
+
+Location history is recorded at one-minute granularity: an asset's first observation in a given minute sets that minute's recorded location, and later reads of the same asset in the same minute leave it unchanged. Movement events inherit that resolution, with three consequences for a receiver:
+
+- **Passive readers produce at most one location change per asset per minute.** An asset that moves mid-minute emits its event on the next minute's observation — up to 60 seconds after the physical move, not instantly. Design for that latency; it is normal, not a delivery delay.
+- **Overlapping read zones cannot flap.** An asset that two readers both see emits at most one movement event per minute, never an event per read — the minute acts as a built-in debounce window.
+- **An operator save is the exception: it wins the minute and emits immediately.** A save from the app's Scan tab overrides the current minute's recorded location on the spot and emits its movement event right away, with the location it overrode as `from_location`. If a fixed reader still sees the asset afterward, the next minute's read re-asserts the reader's location — expect that return move about a minute later.
+
+A same-minute re-save at an unchanged location emits nothing, consistent with the delta rule above.
 
 ## Registering a webhook
 
@@ -75,7 +85,7 @@ Delivered as `POST` with `Content-Type: application/json`.
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `event`                   | Always `asset.moved` in v1. Match on it anyway — more types will be added, and an unknown value should be ignored rather than treated as an error.                                                                       |
 | `delivery_id`             | UUID identifying one detected move. Stable across the retries of a single delivery — use it as your idempotency key.                                                                                                     |
-| `occurred_at`             | The scan instant that produced the move, in server time (RFC 3339, UTC). **Order by this**, not by arrival.                                                                                                              |
+| `occurred_at`             | The observation that produced the move, in server time (RFC 3339, UTC). Reader-driven events carry the scan instant; events from an app save may carry the save's minute rather than the exact second ([minute resolution](#movement-detection-has-one-minute-resolution)). **Order by this**, not by arrival. |
 | `data.asset.id`           | The surrogate `id`, identical to the one the REST API returns for that asset.                                                                                                                                            |
 | `data.asset.external_key` | Your natural key for the asset.                                                                                                                                                                                          |
 | `data.asset.name`         | The asset's display name at the time of the move.                                                                                                                                                                        |
@@ -155,7 +165,7 @@ Both compare in constant time — `crypto.timingSafeEqual` and `hmac.compare_dig
 
 The timestamp is inside the signed material so that a captured delivery cannot be replayed indefinitely. Reject a delivery whose `X-TrakRF-Timestamp` falls outside a tolerance window — five minutes is a reasonable default — in addition to checking the signature.
 
-**The signed timestamp is `occurred_at`, not the moment of transmission.** It is the scan instant, and it does not change when a delivery is retried. Your tolerance window is therefore measured from the physical scan, and it has to accommodate the pipeline latency between the scan and the delivery attempt, not just network time. Don't set it so tight that a normally-delayed event fails.
+**The signed timestamp is `occurred_at`, not the moment of transmission.** It is the observation that produced the move — at minute resolution for save-driven events — and it does not change when a delivery is retried. Your tolerance window is therefore measured from the physical observation, and it has to accommodate both the pipeline latency between observation and delivery attempt and the up-to-a-minute timestamp rounding, not just network time. Don't set it so tight that a normally-delayed event fails; the five-minute default absorbs all of this comfortably.
 
 ## Delivery semantics
 
@@ -194,10 +204,11 @@ See [Authentication](./authentication) for how to authenticate that call.
 In rough order of likelihood:
 
 1. **Nothing moved.** Delivery is delta-only. Confirm against [`GET /api/v1/reports/asset-locations`](/api) that assets have actually changed location.
-2. **The webhook is disabled.** Check the **Deliver events** checkbox on the Webhooks screen.
-3. **The subscription lapsed.** Delivery stops for an organization that is no longer entitled, and nothing in your integration surfaces it. Check billing.
-4. **Your endpoint started failing.** Use **Send test event** — it reports the status code your endpoint returned. Anything but a 2xx, including a redirect, is a failed delivery.
-5. **The scans carry no location.** Reads that resolve to no location produce no event.
+2. **The move just happened.** A move in the same minute as the asset's previous observation emits with the next minute's read — quiet for a minute is normal, not a failure. See [minute resolution](#movement-detection-has-one-minute-resolution).
+3. **The webhook is disabled.** Check the **Deliver events** checkbox on the Webhooks screen.
+4. **The subscription lapsed.** Delivery stops for an organization that is no longer entitled, and nothing in your integration surfaces it. Check billing.
+5. **Your endpoint started failing.** Use **Send test event** — it reports the status code your endpoint returned. Anything but a 2xx, including a redirect, is a failed delivery.
+6. **The scans carry no location.** Reads that resolve to no location produce no event.
 
 ## Not in v1
 
