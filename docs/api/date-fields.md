@@ -142,7 +142,7 @@ The two history-derived endpoints expose a per-row scan timestamp under differen
 
 | Field               | Endpoint                                | Always present?                  | Meaning                                                                                                      |
 | ------------------- | --------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `event_observed_at` | `GET /api/v1/assets/{asset_id}/history` | Yes — never `null`, never absent | When this scan event was observed for the asset.                                                             |
+| `event_observed_at` | `GET /api/v1/assets/{asset_id}/history` | Yes — never `null`, never absent | When the stay began: the first observation of the asset at this item's location.                             |
 | `asset_last_seen`   | `GET /api/v1/reports/asset-locations`   | Yes — never `null`, never absent | When the asset's most recent scan was observed. Drives the `-asset_last_seen` default sort on this endpoint. |
 
 Both fields are declared `required` on their respective response schemas (`AssetHistoryItem.event_observed_at`, `AssetLocationItem.asset_last_seen`) and **not** marked `nullable`. `/reports/asset-locations` returns one row per scanned asset, so an asset that has never been scanned does not appear in the response — there is no "scanned but `asset_last_seen: null`" state.
@@ -181,16 +181,18 @@ Inbound parsing on the `from` / `to` query parameters of `GET /api/v1/assets/{as
 
 ### `duration_seconds` on asset history rows
 
-`AssetHistoryItem` carries a sibling field next to `event_observed_at` — `duration_seconds: integer | null` — that measures how long the asset stayed at the **previous** location before this row's scan moved it. The semantics:
+Each history item is a **stay**: an unbroken run of observations of the asset at one location. `AssetHistoryItem` carries `duration_seconds: integer | null` next to `event_observed_at`, and it measures how long **this** stay lasted:
 
-| Value                | Meaning                                                                                                                             |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `null`               | This is the earliest scan event in the asset's history; there is no previous location to measure dwell against.                     |
-| Non-negative integer | Whole seconds elapsed between the previous scan-event timestamp and this row's `event_observed_at`, while at the previous location. |
+| Value                | Meaning                                                                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Non-negative integer | Whole seconds from this item's `event_observed_at` to the first observation of the asset anywhere else.                                        |
+| `null`               | The stay is ongoing: the asset has not been observed anywhere else since. Only the asset's newest stay can be `null`, whatever the date range. |
 
-The field is declared `required` and `nullable: true` on `AssetHistoryItem` — always emitted, `null` only on the earliest row. Codegen-derived clients surface it as a non-optional nullable integer. Null-check the value, don't key-check.
+The field is declared `required` and `nullable: true` on `AssetHistoryItem`, so it is always emitted. Codegen-derived clients surface it as a non-optional nullable integer. Null-check the value, don't key-check.
 
-`duration_seconds` is computed against scan-event timestamps at the storage layer; it doesn't surface on `/reports/asset-locations` (that endpoint reports the current snapshot, not a per-event dwell). For per-location dwell across an entire history window, sum `duration_seconds` across the relevant subset of rows on the client side.
+A stay runs from observation to observation. A stretch with no reads between two observations at the same location is inside the stay, not a gap in it, so `duration_seconds` is the time until the asset was next seen elsewhere, not the time a reader was seeing it. History is resolved to the minute, so a visit shorter than a minute may not appear as a stay of its own.
+
+`from` and `to` choose which stays are listed but do not clip them. A stay that began before `from` reports its real `event_observed_at`, and a stay that continues past `to` reports its full `duration_seconds`, or `null` if it is still ongoing. To total the time spent at a location, sum `duration_seconds` across that location's items. If only the time inside your window matters, clip the first and last items to the window on the client side. `duration_seconds` does not appear on `/reports/asset-locations`, which reports the current snapshot rather than stays.
 
 ### These fields are read-only
 
