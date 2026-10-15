@@ -62,6 +62,27 @@ const config: Config = {
         ],
       },
     ],
+    [
+      "docusaurus-plugin-llms",
+      {
+        generateLLMsTxt: true,
+        generateLLMsFullTxt: true,
+        generateMarkdownFiles: true,
+        preserveDirectoryStructure: true,
+        addMdExtension: true,
+        excludeImports: true,
+        removeDuplicateHeadings: true,
+        customLLMFiles: [
+          {
+            filename: "llms-api.txt",
+            includePatterns: ["api/**/*.md", "api/**/*.mdx"],
+            fullContent: true,
+            title: "TrakRF API Documentation",
+            description: "Integrator-focused API reference and conventions",
+          },
+        ],
+      },
+    ],
   ],
 
   presets: [
