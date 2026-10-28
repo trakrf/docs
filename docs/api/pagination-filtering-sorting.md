@@ -183,13 +183,21 @@ curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
      "$BASE_URL/api/v1/assets/4287/history?from=2026-04-01T00:00:00Z"
 ```
 
+History items are **stays**, not scans. The window selects which stays are listed but does not clip them:
+
+- A stay is listed when at least one of its observations falls between `from` and `to`.
+- A stay that began before `from` reports its real start in `event_observed_at`.
+- A stay that continues past `to` reports its real `duration_seconds`. It is `null` only if the asset has not been seen anywhere else since, so a window ending in the past does not report its newest item as ongoing when the asset moved afterwards.
+
+`total_count`, `limit` and `offset` count stays. See [Date fields → `duration_seconds`](./date-fields#duration_seconds-on-asset-history-rows).
+
 :::tip Common confusion: `from`/`to` is not `valid_from`/`valid_to`
 `from` / `to` (history query parameters) and `valid_from` / `valid_to` (resource schema fields) share a similar shape but answer different questions. The two pairs visually collapse in URL paths and log lines (`from=2026-04-01T00:00:00Z` is one trim away from `valid_from=2026-04-01T00:00:00Z`), so it's worth knowing which is which:
 
-| Pair                      | Where it lives                                          | What it bounds                                                                                                   |
-| ------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `from` / `to`             | Query params on `GET /api/v1/assets/{asset_id}/history` | The **observation window** — which scan events to include in the response. Scan timestamps, not effective dates. |
-| `valid_from` / `valid_to` | Resource schema fields ([Date fields](./date-fields))   | The resource's **effective-dating bounds** — when the asset itself became and stops being effective.             |
+| Pair                      | Where it lives                                          | What it bounds                                                                                                                  |
+| ------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `from` / `to`             | Query params on `GET /api/v1/assets/{asset_id}/history` | The **observation window** — which stays to include: those with an observation inside it. Scan timestamps, not effective dates. |
+| `valid_from` / `valid_to` | Resource schema fields ([Date fields](./date-fields))   | The resource's **effective-dating bounds** — when the asset itself became and stops being effective.                            |
 
 The history endpoint applies the [currently-effective predicate](./resource-identifiers#effective-dating-and-is-active) to the joined location and embedded tags inside each event, but the `from` / `to` query params are independent of that. Renaming the history pair to something like `since` / `until` is a v2 consideration; in v1 the names are what they are.
 :::
@@ -289,7 +297,7 @@ This is the canonical [master-data / scan-data](./data-model) consumption flow: 
 
 ### History
 
-Asset movement history over a window, newest event first (path takes the canonical integer asset `id`):
+Asset movement history over a window, newest stay first (path takes the canonical integer asset `id`):
 
 ```bash
 curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \

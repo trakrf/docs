@@ -37,10 +37,10 @@ The separation is intentional. Scan data carries provenance — which reader obs
 
 Consumption endpoints for scan data:
 
-| Endpoint                                | Shape                                      | Scope           |
-| --------------------------------------- | ------------------------------------------ | --------------- |
-| `GET /api/v1/assets/{asset_id}/history` | Per-asset scan history; time-series rows   | `tracking:read` |
-| `GET /api/v1/reports/asset-locations`   | Bulk current-location lookup across assets | `tracking:read` |
+| Endpoint                                | Shape                                         | Scope           |
+| --------------------------------------- | --------------------------------------------- | --------------- |
+| `GET /api/v1/assets/{asset_id}/history` | Per-asset location history; one item per stay | `tracking:read` |
+| `GET /api/v1/reports/asset-locations`   | Bulk current-location lookup across assets    | `tracking:read` |
 
 Both endpoints are projections of the scan-event stream — that's why the scope name reflects data lineage rather than the URL shape. See [Authentication → Scopes](./authentication#scopes) for the full mapping.
 
@@ -63,11 +63,11 @@ curl -H "Authorization: Bearer $TRAKRF_ACCESS_TOKEN" \
 
 The response is one row per scanned asset, with `asset_external_key`, `location_id`, `location_external_key`, and `asset_last_seen` for each. Pass repeated `asset_external_key` parameters for the assets you care about; the server returns rows in `-asset_last_seen` order by default. The `asset_external_key` query parameter (and its surrogate sibling `asset_id`) is the [repeatable filter](./pagination-filtering-sorting#filtering) that makes this batch-lookup expressible in one request rather than N — see [Pagination, filtering, sorting](./pagination-filtering-sorting) for the cursor and sort surface and the full filter param list on this endpoint.
 
-If you only have surrogate ids in hand (you cached them from a previous create or list), use `asset_id` instead — both filter forms are supported, and the resolution rules match every other paired-key surface on the API (the two are [mutually exclusive in a single request](./pagination-filtering-sorting#paired-by-id-and-by-natural-key-filters-are-mutually-exclusive); the asset and location filter pairs are independent and intersect when combined). For a single asset, filter the report down to it — `GET /api/v1/reports/asset-locations?asset_id=4287` — or read the latest row of `GET /api/v1/assets/{asset_id}/history`; the asset resource itself carries no location field.
+If you only have surrogate ids in hand (you cached them from a previous create or list), use `asset_id` instead — both filter forms are supported, and the resolution rules match every other paired-key surface on the API (the two are [mutually exclusive in a single request](./pagination-filtering-sorting#paired-by-id-and-by-natural-key-filters-are-mutually-exclusive); the asset and location filter pairs are independent and intersect when combined). For a single asset, filter the report down to it — `GET /api/v1/reports/asset-locations?asset_id=4287` — or read the newest item of `GET /api/v1/assets/{asset_id}/history`; the asset resource itself carries no location field.
 
-For per-asset history rather than current-state — "where has this asset been over the last seven days" — use `GET /api/v1/assets/{asset_id}/history?from=...&to=...`. The endpoint is the projection of the same scan-event stream with a different shape (time-series rows rather than current-state pairs). See [Pagination, filtering, sorting → Time range (history)](./pagination-filtering-sorting#time-range-history) for the `from`/`to` semantics.
+For per-asset history rather than current-state — "where has this asset been over the last seven days" — use `GET /api/v1/assets/{asset_id}/history?from=...&to=...`. The endpoint is the projection of the same scan-event stream with a different shape (a timeline of stays rather than current-state pairs). Each item is a **stay**: an unbroken run of observations at one location, with when it began (`event_observed_at`) and how long it lasted (`duration_seconds`, `null` while ongoing). See [Date fields → `duration_seconds`](./date-fields#duration_seconds-on-asset-history-rows) for how a stay is measured and [Pagination, filtering, sorting → Time range (history)](./pagination-filtering-sorting#time-range-history) for the `from`/`to` semantics.
 
-History has **one-minute resolution**: at most one row per asset per minute, recording the first location observed in that minute (an operator save from the app overrides it). It is location history, not a per-read scan log — a fixed reader seeing a stationary tag hundreds of times an hour produces one row per minute, and the raw read stream is not exposed. The same resolution governs when [`asset.moved` webhooks](./webhooks#movement-detection-has-one-minute-resolution) fire.
+History has **one-minute resolution**: the asset's location is recorded at most once per minute, taking the first location observed in that minute (an operator save from the app overrides it). It is location history, not a per-read scan log. A fixed reader seeing a stationary tag hundreds of times an hour for a week produces one stay, and the raw read stream is not exposed. The same resolution governs when [`asset.moved` webhooks](./webhooks#movement-detection-has-one-minute-resolution) fire.
 
 ## See also
 

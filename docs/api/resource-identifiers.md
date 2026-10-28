@@ -600,7 +600,7 @@ If your business logic needs to surface an expired record (e.g., to render a "de
 
 `GET /api/v1/reports/asset-locations` applies the currently-effective predicate to the **asset side** of every row by default: a row appears only when the asset's `valid_from` is in the past AND its `valid_to` is `null` or in the future. The location-side join is also filtered through the same predicate per the bulleted list above. A row's `asset_deleted_at: null` is **not** a "currently effective" signal — it only means the asset isn't soft-deleted; the asset's `valid_to` may still have elapsed independently, in which case the row is dropped from the response. Soft-delete (`deleted_at` / `asset_deleted_at`) and temporal validity (`valid_from` / `valid_to`) are independent dimensions ([Three axes of liveness](./pagination-filtering-sorting#three-axes-of-liveness)).
 
-To surface temporally inactive assets in the report — for retrospective "where did asset X end up before it was decommissioned" reporting — fall back to `GET /api/v1/assets/{asset_id}/history`, which carries scan-event rows without an effective-asset predicate on the asset itself.
+To surface temporally inactive assets in the report — for retrospective "where did asset X end up before it was decommissioned" reporting — fall back to `GET /api/v1/assets/{asset_id}/history`, which lists the asset's stays without an effective-asset predicate on the asset itself.
 
 ## Tag is a polymorphic resource
 
@@ -701,7 +701,7 @@ curl -X POST \
 
 Scan-event-derived data is projected through two endpoints:
 
-- `GET /api/v1/assets/{asset_id}/history` — the per-asset event timeline (timestamp, location, duration), authoritative for "what did this asset do over time?"
+- `GET /api/v1/assets/{asset_id}/history` — the per-asset timeline of stays at locations (start, location, duration), authoritative for "what did this asset do over time?"
 - `GET /api/v1/reports/asset-locations` — the latest snapshot per asset, authoritative for "where is each asset right now?"
 
 Both are gated by the `tracking:read` scope (see [Authentication → Scopes](./authentication#scopes)) — the same scope, because both are projections of the same underlying event stream.
