@@ -16,4 +16,6 @@ None of the integration surfaces below are documented yet for self-service. Earl
 
 ## What's documented today
 
+**[Tag numbering and encoding](./tag-numbering)** — how TrakRF numbers the tags it supplies: the EPC layout, encoding instructions for print bureaus, label rules, and first-article checks.
+
 For REST API integration (the primary customer-facing integration surface), start at **[Getting started → Using the API](/docs/getting-started/api)** and the **[interactive API reference](/api)**.
