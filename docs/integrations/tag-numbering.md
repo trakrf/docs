@@ -85,8 +85,8 @@ sequence:
 | `355E4ACFD0A5000000000001` | `urn:epc:id:gid:98872573.675840.1` |
 | `355E4ACFD0A5000000000002` | `urn:epc:id:gid:98872573.675840.2` |
 
-A standard decoder shows the Object Class as the namespace code × 4096 plus the first 3 characters
-of the customer's 12. That's expected, for example:
+A standard decoder shows the Object Class as the namespace code × 4096 plus the value of the first
+3 characters of the customer's tail, read as hex. That's expected, for example:
 
 ```text
 355E4ACFD0A5A00000000001 → urn:epc:id:gid:98872573.678400.1
@@ -138,13 +138,13 @@ The order specifies either a data file, or a start value with a hex increment.
 
 ## Label rules
 
-| Element                  | Content                                                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| Human-readable text      | The 8-digit sequence                                                                                                           |
-| Barcode                  | Code 128, holding the same 8 digits                                                                                            |
-| QR code                  | Only when the order asks for one: the full 24-character EPC                                                                    |
-| Header text              | Specified per order                                                                                                            |
-| Customer namespace order | Human-readable, barcode and QR content as specified per order — typically the customer's required characters, not the full EPC |
+| Element                            | Content                                                                                                                        |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Standard pool: human-readable text | The 8-digit sequence                                                                                                           |
+| Standard pool: barcode             | Code 128, holding the same 8 digits                                                                                            |
+| Standard pool: QR code             | Only when the order asks for one: the full 24-character EPC                                                                    |
+| Header text                        | Specified per order                                                                                                            |
+| Customer namespace order           | Human-readable, barcode and QR content as specified per order — typically the customer's required characters, not the full EPC |
 
 ## Acceptance checks
 
@@ -153,7 +153,8 @@ The order specifies either a data file, or a start value with a hex increment.
 1. The EPC decodes as GID-96 with General Manager Number `98872573`.
 2. The last 8 characters of the EPC equal the printed number. For a customer namespace, the
    customer's required rightmost characters equal the printed value.
-3. The barcode scans to the same 8 digits.
+3. The barcode scans to the same 8 digits. For a customer namespace, it scans to the customer's
+   printed value.
 
 Worked through for the standard-pool example:
 
@@ -165,7 +166,9 @@ Worked through for the standard-pool example:
 
 ### After the run, from the encode log
 
-- No two tags in the run carry the same EPC.
+- No two tags in the run carry the same EPC. Across runs, the bureau doesn't need to check against
+  earlier orders: TrakRF's allocation register draws every standard-pool block once, so no number is
+  issued twice.
 - The last number used is reported to TrakRF.
 
 ## How TrakRF shows tag IDs
