@@ -1,0 +1,5 @@
+block_id,first,last,ordered_qty,buffer_pct,tag_type,last_used,status
+PO7299-L1,10000001,10002625,2500,5,Avery Miniweb,,issued
+PO7299-L2,10002626,10005250,2500,5,Dogbone,,issued
+PO7299-L3,10005251,10007875,2500,5,Avery Web,,issued
+PO7299-L4,10007876,10012600,4500,5,Tageos EOS 261 U9 white PET,,issued

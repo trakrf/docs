@@ -76,6 +76,7 @@ const sidebars: SidebarsConfig = {
         "integrations/mqtt-message-format",
         "integrations/fixed-reader-setup",
         "integrations/tag-numbering",
+        "integrations/tag-allocations",
       ],
     },
   ],

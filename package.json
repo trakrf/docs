@@ -8,7 +8,7 @@
     "build": "docusaurus build",
     "serve": "docusaurus serve --host 0.0.0.0",
     "typecheck": "tsc",
-    "lint": "prettier --check . && node scripts/check-contributing.mjs && node scripts/check-tag-numbering.mjs",
+    "lint": "prettier --check . && node scripts/check-contributing.mjs && node scripts/check-tag-numbering.mjs && node scripts/check-tag-allocations.mjs",
     "lint:fix": "prettier --write .",
     "clear": "docusaurus clear",
     "swizzle": "docusaurus swizzle",

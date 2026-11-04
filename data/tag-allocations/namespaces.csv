@@ -1,0 +1,4 @@
+code,status,note
+000,standard,TrakRF standard pool
+001,reserved,customer namespace (owner in private mapping)
+0A5,reserved,documentation example on the tag numbering page; never assign

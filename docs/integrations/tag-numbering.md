@@ -56,6 +56,7 @@ with its own code.
   default, adjusted to the bureau's stated tolerance). Blocks needn't start or end on round
   numbers. Buffer numbers that go unused are retired, not reissued.
 - Within a roll, tags run from the lowest number to the highest.
+- The [tag allocation register](./tag-allocations) lists every block issued so far.
 
 ### What a standard decoder shows
 
