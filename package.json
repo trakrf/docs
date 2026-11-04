@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "docusaurus start --host 0.0.0.0",
     "prebuild": "node scripts/write-health-json.mjs",
-    "build": "docusaurus build",
+    "build": "docusaurus build && node scripts/trim-llms-changelog.mjs && node scripts/check-agent-docs.mjs",
     "serve": "docusaurus serve --host 0.0.0.0",
     "typecheck": "tsc",
     "lint": "prettier --check . && node scripts/check-contributing.mjs",
@@ -14,7 +14,8 @@
     "swizzle": "docusaurus swizzle",
     "write-translations": "docusaurus write-translations",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "check:contributing": "node scripts/check-contributing.mjs"
+    "check:contributing": "node scripts/check-contributing.mjs",
+    "check:agent-docs": "node scripts/check-agent-docs.mjs"
   },
   "dependencies": {
     "@docusaurus/core": "3.9.2",
@@ -32,6 +33,7 @@
     "@docusaurus/module-type-aliases": "3.9.2",
     "@docusaurus/tsconfig": "3.9.2",
     "@docusaurus/types": "3.9.2",
+    "docusaurus-plugin-llms": "0.6.0",
     "prettier": "^3.0.0",
     "typescript": "~5.6.2"
   },
