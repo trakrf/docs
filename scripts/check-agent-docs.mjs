@@ -51,4 +51,33 @@ for (const file of markdownFiles) {
   );
 }
 
+// llms-full.txt is only found by agents that already know the convention
+// unless the index points to it.
+for (const name of ["llms-full.txt", "llms-api.txt"]) {
+  assert(llms.includes(`/${name}`), `llms.txt does not link to ${name}`);
+}
+
+// The changelog is trimmed in the full-content files, never in its own mirror.
+const changelog = await readBuildFile("docs/api/changelog.md");
+const sourceChangelog = await readFile(
+  resolve("docs/api/changelog.md"),
+  "utf8",
+);
+const lastSourceEntry = [...sourceChangelog.matchAll(/^### (.+)$/gm)].at(-1)[1];
+assert(
+  changelog.includes(lastSourceEntry.replace(/\s*\{#[^}]+\}$/, "")),
+  "build/docs/api/changelog.md is missing older entries; the mirror must stay complete",
+);
+for (const name of ["llms-full.txt", "llms-api.txt"]) {
+  const text = files.get(name);
+  assert(
+    !text.includes(lastSourceEntry.replace(/\s*\{#[^}]+\}$/, "")),
+    `${name} still carries the full changelog history`,
+  );
+  assert(
+    /Older changelog entries:.*\/docs\/api\/changelog\.md/.test(text),
+    `${name} does not point to the full changelog`,
+  );
+}
+
 console.log("Agent documentation build output is complete and API-scoped.");

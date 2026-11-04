@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "docusaurus start --host 0.0.0.0",
     "prebuild": "node scripts/write-health-json.mjs",
-    "build": "docusaurus build",
+    "build": "docusaurus build && node scripts/trim-llms-changelog.mjs && node scripts/check-agent-docs.mjs",
     "serve": "docusaurus serve --host 0.0.0.0",
     "typecheck": "tsc",
     "lint": "prettier --check . && node scripts/check-contributing.mjs",
