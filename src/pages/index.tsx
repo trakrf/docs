@@ -20,7 +20,8 @@ function HomepageHeader() {
         <p className="hero__subtitle">{siteConfig.tagline}</p>
         <p>
           Coding with an agent? Browse our machine-readable documentation at{" "}
-          <a href="/llms.txt">/llms.txt</a>.
+          <a href="/llms.txt">/llms.txt</a>, or load it all at once from{" "}
+          <a href="/llms-full.txt">/llms-full.txt</a>.
         </p>
         <div style={{ marginTop: "1.5rem" }}>
           <Link
