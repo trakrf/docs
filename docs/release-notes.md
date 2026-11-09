@@ -14,6 +14,60 @@ Two related logs cover different ground:
 
 Most releases change nothing you would notice, and those are not listed. A release appears on this page when it changes something in front of you.
 
+## v1.6.0 — November 9, 2026 {#v1-6-0}
+
+Most of this release is about fixed readers and the alarms they drive. An alarm output can no longer get stuck on. You can update a CS463's software from the app, and the reader now recovers by itself from faults that used to need someone on site. Asset history now lists where an asset stayed, not one entry for every minute it sat there.
+
+### Alarm outputs can no longer get stuck on {#v1-6-0-outputs}
+
+An egress output saved with **Auto-off** left blank turned on at its first read and never turned off again. An output with a long auto-off stayed on for as long as it was set to, ten minutes in one case. Both are fixed: every output now turns itself off.
+
+- **Egress outputs need an Auto-off of 1 to 60 seconds**, unless your organization's **Geofence defaults** supply one. No output stays on for more than 60 seconds at a time.
+- **A presence alarm stays on while a tag is in view**, and goes off after the last one leaves. If the reader loses touch with TrakRF, the alarm turns itself off within 30 seconds rather than sounding until someone resets it.
+- **Deleting an output turns it off first.** If it can't be turned off, it is not deleted, and you are told why. **Delete anyway** removes it regardless, but an output left on that way can't be reset from the app.
+- **Two tags entering together fire an egress output once**, not twice.
+- **Two outputs on the same reader switch together**, instead of about five seconds apart.
+
+### Update a CS463's software from the app {#v1-6-0-reader-software}
+
+A CS463's settings on the **Readers** page now include a **Reader software** panel. It shows which version the reader is running and how its last update went. An organization admin can start an update there and follow it to the end. A new version is kept only once it has run for three minutes and stayed in touch with TrakRF. Otherwise the reader goes back to its previous version by itself.
+
+### Fixed readers recover by themselves {#v1-6-0-reader-recovery}
+
+A CS463's own software could start up looking healthy, with its radio still reading, while none of its reads reached TrakRF. Nothing showed that anything was wrong, and getting it going again meant someone restarting it on site. The reader now notices this within six minutes and restarts that software. If that doesn't work, it restarts the whole reader.
+
+### Fixed readers resume sending reads sooner after a restart {#v1-6-0-reader-restart}
+
+A CS463 fixed reader restarts after a power cut, after someone unplugs it, and at its own scheduled restart. Each time, it could take up to about seven minutes before its reads reached TrakRF again. During that time a tag passing the reader was not recorded, and an alarm watching that doorway could not fire.
+
+The reader was stuck waiting to open its secure connection to TrakRF, which needs random numbers it could not yet produce. It now takes them from a generator built into its own hardware. Reads resume about two minutes after power returns, as soon as the reader has finished starting up.
+
+### Asset history lists where an asset stayed {#v1-6-0-asset-history}
+
+**Reports → Asset History** used to list one entry for every minute an asset was seen. An asset parked in front of a reader for a week came back as about ten thousand identical rows. Each entry is now one stay: where the asset was, when it arrived, and how long it stayed before it was next seen somewhere else.
+
+The **Download History CSV** button on an asset's details panel in **Reports** did nothing. It now exports every stay in the range you chose, not just the ones loaded on screen.
+
+### Notice before a subscription runs out {#v1-6-0-subscription}
+
+If your organization's subscription has an end date, every screen shows a notice from 14 days before it. Organization admins are also emailed 14 days before, 3 days before, on the day it ends and when recording stops.
+
+Once a subscription ends, there is a short grace period. After that, TrakRF stops recording reads from your fixed readers and stops sending webhooks. The readers may still look online, and reads they send during that time are not recovered later. When the subscription is renewed, recording resumes without restarting the readers.
+
+Nothing changes for an organization whose subscription has no end date.
+
+### Capture each tag's TID and USER memory {#v1-6-0-capture-tag-data}
+
+A new **Capture all tag data** option in **Settings**, off by default, also reads each tag's TID and USER memory during a scan. The Share, CSV, Excel and PDF exports then include them. Scanning is slower with it on: in the same time it finds about 60% as many tags from a dense stack. Nothing is missed, so hold the trigger longer or make more passes. Leave it off for ordinary inventory.
+
+### Smaller changes {#v1-6-0-smaller}
+
+- The **Signal Power** slider runs from 10 to 30 dBm EIRP. Below 10 the reader does not read usefully, and 30 is the legal limit in most regions.
+- If connecting to the reader fails, you can try again without reloading the page.
+- A scan that the reader does not start on the first request is retried, instead of leaving the reader showing an error.
+- A barcode scan no longer leaves the reader stuck in barcode mode.
+- The inventory CSV export now includes each asset's description, as the Excel and PDF exports already did.
+
 ## v1.5.0 — September 4, 2026 {#v1-5-0}
 
 Locate is the focus of this release. It could previously show you a signal from a search you had already finished, keep moving after you let go of the trigger, and — in the case that mattered most — look like it had found something when it had found nothing. All of that is fixed. You can also now acquire a Locate target by scanning a barcode, and Settings tells you which reader you are connected to.
