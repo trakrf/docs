@@ -16,7 +16,9 @@ description: Org-wide geofence tuning applied to every portal.
 
 ## What this page does
 
-Geofence defaults sets four org-wide values that every output falls back to unless it sets its own: an **RSSI threshold** in dBm (minimum signal strength for an output to react — stronger is closer to 0), an **Age-out** in seconds (the re-arm window before an egress output can fire again on the same tag, or how long a presence output waits after the last read before clearing), an **Auto-off** in seconds (how long before an egress device flips itself off on its own, from 1 to 60 seconds), and a **Mode** (**System default (egress)**, **Egress**, or **Presence**). Leaving a field blank falls back to the system default rather than to zero.
+Geofence defaults sets four org-wide values that every output falls back to unless it sets its own: an **RSSI threshold** in dBm (minimum signal strength for an output to react — stronger is closer to 0), an **Age-out** in seconds (the re-arm window before an egress output can fire again on the same tag, or how long a presence output waits after the last read before clearing), an **Auto-off** in seconds, up to 60 (how long before an egress device turns itself off; this is an egress output's only off, so an egress output with no auto-off of its own needs one here), and a **Mode** (**System default (egress)**, **Egress**, or **Presence**). Leaving a field blank falls back to the system default rather than to zero.
+
+Saving a change that would leave an egress output with no auto-off — clearing or zeroing this value while outputs rely on it, or switching the mode to Egress — is refused, and the message names those outputs.
 
 Geofence defaults is enabled per organization. Organizations without it see a locked page in its place, reading that the feature isn't enabled for their organization and directing them to contact `support@trakrf.id` — a padlock next to **Geofence defaults** in the sidebar is expected in that case, not a bug.
 
