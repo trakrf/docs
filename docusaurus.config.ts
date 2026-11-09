@@ -62,6 +62,33 @@ const config: Config = {
         ],
       },
     ],
+    [
+      "docusaurus-plugin-llms",
+      {
+        generateLLMsTxt: true,
+        generateLLMsFullTxt: true,
+        generateMarkdownFiles: true,
+        preserveDirectoryStructure: true,
+        addMdExtension: true,
+        excludeImports: true,
+        removeDuplicateHeadings: true,
+        rootContent: [
+          "This file links every documentation page to its Markdown version. Fetching a single page's `.md` is the most reliable way for an agent to read it.",
+          "",
+          `- [Full documentation in one file](${docsHost}/llms-full.txt): every page's content. Large; older changelog entries are linked rather than included.`,
+          `- [API documentation in one file](${docsHost}/llms-api.txt): the API concept guides only.`,
+        ].join("\n"),
+        customLLMFiles: [
+          {
+            filename: "llms-api.txt",
+            includePatterns: ["api/**/*.md", "api/**/*.mdx"],
+            fullContent: true,
+            title: "TrakRF API Documentation",
+            description: "Integrator-focused API reference and conventions",
+          },
+        ],
+      },
+    ],
   ],
 
   presets: [
