@@ -9,6 +9,17 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Changes to the TrakRF app itself are logged separately in the [release notes](../release-notes). The two are deliberately decoupled: the API version tracks the contract documented here, while the app version moves on its own release cadence, so an app release that changes nothing for integrators produces no entry on this page.
 
+## Asset history lists stays, not scans {#history-stays}
+
+Ships with app **v1.6.0**. No path, field name or response shape changes. What a history item means changes, and so do `total_count` and paging, so code that reads the endpoint may need attention.
+
+- **Each item on `GET /api/v1/assets/{asset_id}/history` is a stay: an unbroken run of observations of the asset at one location.** Consecutive observations at the same location come back as one item. An asset parked in front of a reader for a week is one item, not one per minute. Moving away and coming back starts a new stay, and an observation that resolved to no location is a stay of its own (`location_id: null`).
+- **`event_observed_at` is when the stay began.** `duration_seconds` runs from there to the first observation of the asset anywhere else, and is `null` only while the stay is ongoing.
+- **`total_count`, `limit` and `offset` count stays.** If your integration paged through history expecting one item per recorded minute, it now receives far fewer items for the same window.
+- **`from` and `to` select stays without clipping them.** A stay is listed when at least one of its observations falls inside the window. A stay that began before `from` reports its real start, and a stay that continues past `to` reports its real duration. So a window ending in the past no longer reports its newest item as ongoing when the asset moved afterwards.
+- **A gap in reads does not end a stay.** Two observations at the same location a week apart, with nothing in between, are one stay covering the week. A stay tells you where the asset was last seen and when it was next seen elsewhere. It does not mean a reader saw the asset throughout.
+- **Docs correction: `duration_seconds` was described backwards.** These docs said it measured time at the *previous* location and was `null` on the *earliest* item. It has always measured time at the item's own location until the asset was next seen elsewhere, and it is `null` on the newest item. See [Date fields → `duration_seconds`](./date-fields#duration_seconds-on-asset-history-rows).
+
 ## Location history and movement events gain one-minute resolution {#minute-resolution-history}
 
 Ships with app **v1.5.0**. No path, field name, response shape, or error envelope changes — this entry records a behavioral semantics change to data your code already consumes, the same reason webhook delivery semantics are logged here.
