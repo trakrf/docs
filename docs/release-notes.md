@@ -14,6 +14,14 @@ Two related logs cover different ground:
 
 Most releases change nothing you would notice, and those are not listed. A release appears on this page when it changes something in front of you.
 
+## v1.6.0 — November 9, 2026 {#v1-6-0}
+
+### Fixed readers resume sending reads sooner after a restart {#v1-6-0-reader-restart}
+
+A CS463 fixed reader restarts after a power cut, after someone unplugs it, and at its own scheduled restart. Each time, it could take up to about seven minutes before its reads reached TrakRF again. During that time a tag passing the reader was not recorded, and an alarm watching that doorway could not fire.
+
+The reader was stuck waiting to open its secure connection to TrakRF, which needs random numbers it could not yet produce. It now takes them from a generator built into its own hardware. Reads resume about two minutes after power returns, as soon as the reader has finished starting up.
+
 ## v1.5.0 — September 4, 2026 {#v1-5-0}
 
 Locate is the focus of this release. It could previously show you a signal from a search you had already finished, keep moving after you let go of the trigger, and — in the case that mattered most — look like it had found something when it had found nothing. All of that is fixed. You can also now acquire a Locate target by scanning a barcode, and Settings tells you which reader you are connected to.
