@@ -17,6 +17,7 @@ const sidebars: SidebarsConfig = {
         "user-guide/location-tracking",
         "user-guide/reports-exports",
         "user-guide/organization-management",
+        "user-guide/sms-notifications",
       ],
     },
   ],
