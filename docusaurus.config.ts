@@ -205,6 +205,19 @@ const config: Config = {
             },
           ],
         },
+        {
+          title: "Legal",
+          items: [
+            {
+              label: "Privacy Policy",
+              to: "/privacy",
+            },
+            {
+              label: "Terms and Conditions",
+              to: "/terms",
+            },
+          ],
+        },
       ],
       copyright: `Copyright © ${new Date().getFullYear()} DevOps To AI LLC dba TrakRF. Built with Docusaurus.`,
     },
