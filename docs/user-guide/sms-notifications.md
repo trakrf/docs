@@ -33,15 +33,22 @@ to. **Message and data rates may apply.**
 
 ## How you opt in
 
-SMS alerts are set up per asset, inside the TrakRF app, by a signed-in member of your organization.
-Nobody is enrolled automatically, and a phone number given elsewhere in TrakRF (for example at
-sign-up) does **not** subscribe anyone to text messages.
+SMS alerts are set up per asset, inside the TrakRF app. Nobody is enrolled automatically, and a
+phone number given elsewhere in TrakRF (for example at sign-up) does **not** subscribe anyone to
+text messages.
 
-To subscribe someone to SMS alerts for an asset:
+There are two ways a number gets subscribed:
+
+- **You subscribe yourself.** As a signed-in member of your organization, you add your own mobile
+  number to an asset and confirm your own consent.
+- **A teammate adds you.** A signed-in member of your organization adds your number, after you have
+  agreed to receive the alerts, and confirms that you agreed.
+
+Either way, the steps in the app are the same:
 
 1. Open **Assets** and click the notifications (bell) button on the asset's row.
-2. Click **Add subscriber**, then pick an existing contact or add a new one with their mobile
-   number.
+2. Click **Add subscriber**, then pick an existing contact (yourself, or the person you are adding)
+   or add a new one with the mobile number.
 3. Under **Send alerts by**, tick **SMS**.
 4. Read the SMS consent statement below the channels and tick its checkbox. The checkbox is **never
    pre-checked**, and **Subscribe** stays disabled until it is ticked. It is cleared again whenever
@@ -64,8 +71,9 @@ The consent statement reads, with the contact, asset and number filled in:
 > Message and data rates may apply. Reply HELP for help or STOP to opt out. See the
 > [Terms and Conditions](/terms) and [Privacy Policy](/privacy).
 
-Only tick it once the person who owns that number has agreed to receive the alerts. If they have
-not, untick **SMS** and subscribe them by email instead.
+If you are subscribing your own number, ticking it records your own agreement. If you are adding
+someone else, only tick it once the person who owns that number has agreed to receive the alerts. If
+they have not, untick **SMS** and subscribe them by email instead.
 
 ## How to opt out or get help
 
