@@ -62,7 +62,7 @@ The consent statement reads, with the contact, asset and number filled in:
 > I confirm _[contact]_ has agreed to receive recurring automated SMS alerts from TrakRF about
 > _[asset]_ at _[mobile number]_. Consent is not a condition of purchase. Message frequency varies.
 > Message and data rates may apply. Reply HELP for help or STOP to opt out. See the
-> [Terms of Service](https://trakrf.id/tos) and [Privacy Policy](https://trakrf.id/privacy-policy).
+> [Terms and Conditions](/terms) and [Privacy Policy](/privacy).
 
 Only tick it once the person who owns that number has agreed to receive the alerts. If they have
 not, untick **SMS** and subscribe them by email instead.
@@ -92,5 +92,5 @@ and HELP requests.
 for marketing or promotional purposes.** We share it only with the messaging provider that delivers
 the texts on our behalf.
 
-For more detail, see our [Privacy Policy](https://trakrf.id/privacy-policy) and
-[Terms of Service](https://trakrf.id/tos). Questions: [support@trakrf.id](mailto:support@trakrf.id).
+For more detail, see our [Privacy Policy](/privacy) and
+[Terms and Conditions](/terms). Questions: [support@trakrf.id](mailto:support@trakrf.id).
