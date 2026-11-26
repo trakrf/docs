@@ -20,7 +20,7 @@ The next block starts at **10013126**.
 | PO7299-L2  | 10002626 | 10005250 | 2500    | 125    | Dogbone                     | issued | —         |
 | PO7299-L3  | 10005251 | 10007875 | 2500    | 125    | Avery Web                   | issued | —         |
 | PO7299-L4  | 10007876 | 10012600 | 4500    | 225    | Tageos EOS 261 U9 white PET | issued | —         |
-| DBTEST2-L1 | 10012601 | 10013125 | 500     | 25     | AD MiniWeb U9               | issued | —         |
+| DBTEST2-L1 | 10012601 | 10013125 | 500     | 25     | AD MiniWeb U9               | closed | 10013100  |
 
 - **Ordered** is the first part of the block; **Buffer** is the overrun allowance at its end.
 - **Status**: `issued` (with the bureau), `closed` (last number used reported, the rest retired), or `void` (cancelled, never reissued).
