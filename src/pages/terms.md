@@ -30,7 +30,8 @@ send messages to people who have not agreed to receive them.
 - **Program:** TrakRF asset alerts, transactional text messages about activity on the assets your
   organization monitors, such as an asset being seen at or moving between locations.
 - **Opt-in:** a number receives SMS alerts only after it is subscribed to an asset in the TrakRF
-  application and the person subscribing it confirms that the number's owner has agreed. See
+  application, either by the number's owner or by a member of their organization with the owner's
+  agreement, and the person subscribing it confirms that consent. See
   [SMS Notifications](/docs/user-guide/sms-notifications).
 - **Opt-out:** reply **STOP** to any message to stop receiving texts. You will receive one
   confirmation message. Alerts can also be switched off in the application at any time. Reply
