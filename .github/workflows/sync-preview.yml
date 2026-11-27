@@ -47,7 +47,15 @@ jobs:
             });
 
             // Filter out draft PRs if desired
-            const activePRs = prs.filter(pr => !pr.draft);
+            // Fork PRs are excluded. Preview is built from branches in this
+            // repository only: the merge step fetches `origin <branch>`, which
+            // for a fork names a branch that is not here (or a different branch
+            // that happens to share the name). `head.repo` is null when the
+            // fork has been deleted.
+            const sameRepo = pr =>
+              pr.head.repo !== null &&
+              pr.head.repo.full_name === `${context.repo.owner}/${context.repo.repo}`;
+            const activePRs = prs.filter(pr => !pr.draft && sameRepo(pr));
 
             // Return PR numbers and their branch names
             const prInfo = activePRs.map(pr => ({
