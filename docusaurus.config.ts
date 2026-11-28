@@ -7,7 +7,11 @@ type DeployEnv = "production" | "preview";
 function resolveDeployEnv(): DeployEnv {
   const explicit = process.env.DEPLOY_ENV;
   if (explicit === "production" || explicit === "preview") return explicit;
-  if (process.env.CF_PAGES_BRANCH === "main") return "production";
+  // Backstop for a Pages environment with DEPLOY_ENV unset. Production builds
+  // from `release` (see .github/workflows/release.yml); `main` stays listed so
+  // the switch from `main` can land in either order.
+  const branch = process.env.CF_PAGES_BRANCH;
+  if (branch === "release" || branch === "main") return "production";
   if (process.env.CF_PAGES === "1") return "preview";
   return "preview";
 }

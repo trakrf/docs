@@ -120,6 +120,28 @@ Rules for the customer-facing release notes:
    PRs are merged with `--merge`, never squashed and never rebased, so that
    individual commit history is preserved.
 
+## How Changes Reach the Site
+
+Merging to `main` publishes nothing. `main` is what the preview site shows,
+together with every open non-draft PR. Production builds from the `release`
+branch, and only the Release workflow (`.github/workflows/release.yml`) moves
+it.
+
+- **Release:** tag a commit on `main` and push the tag:
+
+  ```bash
+  git tag v1.7.0 origin/main
+  git push origin v1.7.0
+  ```
+
+- **Urgent fix:** run the Release workflow by hand with no input. It publishes
+  current `main` without a tag.
+- **Roll back:** run the Release workflow by hand with an earlier tag.
+
+The workflow refuses any commit that is not on `main`. Docs for unreleased
+platform behaviour can merge once reviewed: they reach customers with the
+next docs release, not before.
+
 ## Getting Help
 
 - **Questions?** Open a GitHub Discussion
