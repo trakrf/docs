@@ -127,17 +127,23 @@ together with every open non-draft PR. Production builds from the `release`
 branch, and only the Release workflow (`.github/workflows/release.yml`) moves
 it.
 
-- **Release:** when a platform version reaches production, tag the docs
-  commit that describes it with the same version and push the tag:
+- **Release:** docs ship together with the platform. When a platform version
+  is promoted to production, tag the docs commit that describes it with the
+  same version and push the tag:
 
   ```bash
   git tag v1.6.0 origin/main
   git push origin v1.6.0
   ```
 
-- **Docs-only fix between platform releases:** run the Release workflow by
-  hand with no input. It publishes current `main` without a tag, so tags stay
-  one-to-one with platform versions.
+- **Docs-only re-release:** tag the platform version that is in production,
+  with the date appended:
+
+  ```bash
+  git tag v1.6.0-20261128 origin/main
+  git push origin v1.6.0-20261128
+  ```
+
 - **Roll back:** run the Release workflow by hand with an earlier tag.
 
 The workflow refuses any commit that is not on `main`. Docs for unreleased
