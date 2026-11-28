@@ -1,0 +1,62 @@
+name: Release
+
+# Publishes the docs site to production. Cloudflare Pages builds production
+# from the `release` branch, so this workflow publishes a commit by pointing
+# `release` at it. Merging to `main` publishes nothing.
+#
+# Push a `v*` tag to release that tag's commit. Run it by hand to release a
+# ref straight away (an urgent fix), or to roll back to an earlier tag.
+# Either way the commit must already be on `main`, so production never serves
+# anything that skipped review.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Tag, branch or SHA to publish. Leave empty for current main."
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  # Never let two releases race on the `release` branch.
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history and tags: the ancestry check needs both.
+          fetch-depth: 0
+
+      - name: Resolve the commit to publish
+        id: resolve
+        env:
+          REF: ${{ github.event_name == 'push' && github.ref_name || inputs.ref }}
+        run: |
+          set -euo pipefail
+          ref="${REF:-origin/main}"
+          sha=$(git rev-parse --verify "${ref}^{commit}")
+          if ! git merge-base --is-ancestor "${sha}" origin/main; then
+            echo "::error::${ref} (${sha}) is not on main. Only reviewed commits publish."
+            exit 1
+          fi
+          echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+          echo "Publishing ${ref} -> ${sha}"
+
+      - name: Point release at it
+        env:
+          SHA: ${{ steps.resolve.outputs.sha }}
+        run: |
+          set -euo pipefail
+          # Force, because a rollback moves `release` backwards.
+          git push --force origin "${SHA}:refs/heads/release"
+          echo "### Published \`${SHA}\` to \`release\`" >> "$GITHUB_STEP_SUMMARY"
