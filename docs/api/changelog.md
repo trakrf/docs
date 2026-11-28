@@ -9,6 +9,16 @@ This log records changes to the TrakRF public API under `/api/v1/` that affect i
 
 Changes to the TrakRF app itself are logged separately in the [release notes](../release-notes). The two are deliberately decoupled: the API version tracks the contract documented here, while the app version moves on its own release cadence, so an app release that changes nothing for integrators produces no entry on this page.
 
+## BLE gateways record the strongest gateway's location {#ble-strongest-gateway}
+
+Ships with the next app release. No path, field name or response shape changes. What decides a BLE tag's recorded location changes, and so does when its `asset.moved` events fire. Fixed RFID readers are unchanged.
+
+- **A BLE tag's recorded location is the gateway that hears it most strongly.** It was the first gateway to report it each minute, which let a stationary tag heard by several gateways bounce between rooms. A different gateway now takes over only once it is clearly stronger for several seconds. History still has one row per asset per minute, holding the location decided at the end of the minute.
+- **BLE moves emit when they are decided, not on the next minute.** A move in the middle of a minute updates that minute's recorded location and emits `asset.moved` right away, with `occurred_at` at the moment of the switch. Fixed readers keep the up-to-60-second latency.
+- **An operator save still wins its minute**, for BLE gateways and fixed readers alike.
+
+See [Webhooks → Movement detection has one-minute resolution](./webhooks#movement-detection-has-one-minute-resolution).
+
 ## Asset history lists stays, not scans {#history-stays}
 
 Ships with app **v1.6.0**. No path, field name or response shape changes. What a history item means changes, and so do `total_count` and paging, so code that reads the endpoint may need attention.
